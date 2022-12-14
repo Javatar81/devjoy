@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: init-project-
+spec:
+  pipelineRef:
+    name: init-project-
+  serviceAccountName: pipeline
+  timeout: 1h0m0s
+  workspaces:
+    - name: src
+      volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+          storageClassName: ocs-storagecluster-cephfs
+          volumeMode: Filesystem
+    - name: auth
+      secret:
+        secretName: user-1-git-secret
+    - name: additional-resources
+      configMap:
+        name: additional-resources-
+      

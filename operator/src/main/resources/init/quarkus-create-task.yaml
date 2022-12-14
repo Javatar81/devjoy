@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: quarkus-create
+spec:
+  params:
+    - name: GROUP_ID
+      type: string
+      description: The maven group id
+      default: ""
+    - name: ARTIFACT_ID
+      type: string
+      description: he maven group id
+      default: ""
+  steps:
+    - image: quay.io/bschmeli/devjoy-quarkuscli:2.14.2.Final
+      command:
+        - quarkus
+        - create
+        - "$(params.GROUP_ID):$(params.ARTIFACT_ID)"
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

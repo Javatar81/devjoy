@@ -1,0 +1,24 @@
+domain: devjoy.io
+layout:
+- quarkus.javaoperatorsdk.io/v1-alpha
+projectName: devjoy-generator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: devjoy.io
+  kind: Repository
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: devjoy.io
+  kind: DevEnvironment
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: devjoy.io
+  kind: Project
+  version: v1alpha1
+version: "3"

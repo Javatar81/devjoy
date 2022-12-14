@@ -1,0 +1,141 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: init-project-
+spec:
+  params:
+    - name: git_url
+      type: string
+      description: Git clone URL
+    - name: git_user
+      type: string
+      description: Git user
+    - name: git_user_email
+      type: string
+      description: Git user
+    - name: quarkus_group_id
+      type: string
+      description: Maven group id for quarkus project
+      default: ""
+    - name: quarkus_artifact_id
+      type: string
+      description: Maven artifact id for quarkus project
+      default: ""
+  tasks:
+    - name: quarkus-create
+      params:
+        - name: GROUP_ID
+          value: "$(params.quarkus_artifact_id)"
+        - name: ARTIFACT_ID
+          value: "$(params.quarkus_group_id)"
+      taskRef:
+        kind: Task
+        name: quarkus-create
+      workspaces:
+        - name: source
+          workspace: src
+    - name: git-init
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) init && git -C $(params.quarkus_artifact_id) config http.sslVerify false && git -C $(params.quarkus_artifact_id) checkout -b main
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      runAfter:
+        - quarkus-create
+      workspaces:
+        - name: source
+          workspace: src
+    - name: git-additional-resources
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            cp --verbose $(workspaces.input.path)/*.* $(params.quarkus_artifact_id)
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      runAfter:
+        - git-init
+      workspaces:
+        - name: source
+          workspace: src
+        - name: input
+          workspace: additional-resources
+    - name: git-commit
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) add . && git -C $(params.quarkus_artifact_id) commit -m "quarkus project generated"
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      runAfter:
+        - git-additional-resources
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      workspaces:
+        - name: source
+          workspace: src
+    - name: git-push
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) remote add origin $(params.git_url) && git -C $(params.quarkus_artifact_id) push -u origin main
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      runAfter:
+        - git-commit
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      workspaces:
+        - name: source
+          workspace: src
+        - name: basic-auth
+          workspace: auth
+  workspaces:
+    - name: src
+    - name: auth
+    - name: additional-resources
+  
