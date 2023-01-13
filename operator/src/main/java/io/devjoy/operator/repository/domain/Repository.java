@@ -78,4 +78,9 @@ public class Repository {
 			return new Repository(this);
 		}
 	}
+	@Override
+	public String toString() {
+		return String.format("Repository [user=%s, name=%s, cloneUrl=%s, visibility=%s, provider=%s]", user, name,
+				cloneUrl, visibility, provider);
+	}
 }

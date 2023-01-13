@@ -13,12 +13,12 @@ resources:
     crdVersion: v1
     namespaced: true
   domain: devjoy.io
-  kind: DevEnvironment
+  kind: Project
   version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: true
   domain: devjoy.io
-  kind: Project
+  kind: DevEnvironment
   version: v1alpha1
 version: "3"

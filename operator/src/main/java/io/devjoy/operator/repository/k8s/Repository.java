@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.model.annotation.Version;
 @Group("devjoy.io")
 public class Repository extends CustomResource<RepositorySpec, RepositoryStatus> implements Namespaced {
 	
+	private static final long serialVersionUID = -1909978809916196318L;
+
 	public io.devjoy.operator.repository.domain.Repository toRepository() {
 		Builder builder = io.devjoy.operator.repository.domain.Repository.builder()
 		.withName(getMetadata().getName());
@@ -28,7 +30,6 @@ public class Repository extends CustomResource<RepositorySpec, RepositoryStatus>
 	 */
 	@Override
 	public void setSpec(RepositorySpec spec) {
-		// TODO Auto-generated method stub
 		super.setSpec(spec);
 	}
 }

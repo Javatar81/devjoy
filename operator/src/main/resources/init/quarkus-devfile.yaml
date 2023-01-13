@@ -1,8 +1,14 @@
-schemaVersion: 2.1.0
+schemaVersion: 2.2.0
 metadata:
   name: quarkus-quickstart
 projects:
-  - name: quarkus-quickstarts
+  - name: project-name
+    git:
+      remotes:
+        origin: "myorigin"
+      checkoutFrom:
+        revision: "main"
+        remote: origin
 commands:
   - exec:
       commandLine: mvn package

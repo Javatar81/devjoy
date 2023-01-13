@@ -17,6 +17,10 @@ public interface RepoService {
 	  @Path("/user/repos")
 	  GetRepoOutput create(@HeaderParam("Authorization") String authorization, CreateRepoInput body);
 	  
+	  @POST
+	  @Path("/admin/users/{username}/repos")
+	  GetRepoOutput createByAdmin(@HeaderParam("Authorization") String authorization, @PathParam("username") String user, CreateRepoInput body);
+	  
 	  @GET
 	  @Path("/repos/{owner}/{repo}")
 	  GetRepoOutput getByUserAndName(@HeaderParam("Authorization") String authorization, @PathParam("owner") String owner, @PathParam("repo") String repo);

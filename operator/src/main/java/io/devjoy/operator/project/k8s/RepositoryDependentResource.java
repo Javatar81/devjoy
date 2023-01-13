@@ -1,5 +1,7 @@
 package io.devjoy.operator.project.k8s;
 
+import java.util.HashMap;
+
 import io.devjoy.operator.repository.domain.GitProvider;
 import io.devjoy.operator.repository.domain.Visibility;
 import io.devjoy.operator.repository.k8s.ManagedSpec;
@@ -14,6 +16,9 @@ import io.quarkus.runtime.util.StringUtil;
 @KubernetesDependent
 public class RepositoryDependentResource extends CRUDKubernetesDependentResource<Repository, Project>{
 
+	private static final String ENVIRONMENT_NAME_LABEL_KEY = "devjoy.io/environment.name";
+	private static final String ENVIRONMENT_NAMESPACE_LABEL_KEY = "devjoy.io/environment.namespace";
+
 	public RepositoryDependentResource() {
 		super(Repository.class);
 		
@@ -26,13 +31,17 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 			.withName(primary.getMetadata().getName())
 			.withNamespace(primary.getMetadata().getNamespace());
 		repository.setMetadata(metaBuilder.build());
+		HashMap<String, String> labels = new HashMap<>();
+		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());
+		labels.put(ENVIRONMENT_NAME_LABEL_KEY, primary.getSpec().getEnvironmentName());
+		repository.getMetadata().setLabels(labels);
 		RepositorySpec spec = new RepositorySpec();
 		if (StringUtil.isNullOrEmpty(primary.getSpec().getExistingRepositoryCloneUrl())) {
 			ManagedSpec managed = new ManagedSpec();
 			spec.setManaged(managed);
 			managed.setDeleteRepoOnFinalize(true);
 			managed.setProvider(GitProvider.GITEA);
-			managed.setUser("user-1");
+			managed.setUser(primary.getSpec().getOwner().getUser());
 			managed.setVisibility(Visibility.PUBLIC);
 		} else {
 			spec.setExistingRepositoryCloneUrl(primary.getSpec().getExistingRepositoryCloneUrl());
@@ -40,5 +49,4 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 		repository.setSpec(spec);
 		return repository;
 	}
-
 }

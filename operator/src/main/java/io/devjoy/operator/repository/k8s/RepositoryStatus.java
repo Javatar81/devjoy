@@ -8,8 +8,9 @@ public class RepositoryStatus {
     private String repositoryCreated;
     private String repositoryExists;
     private String cloneUrl;
+    private String internalCloneUrl;
     
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
     
 	public String getRepositoryCreated() {
 		return repositoryCreated;
@@ -34,5 +35,11 @@ public class RepositoryStatus {
 	}
 	public void setCloneUrl(String cloneUrl) {
 		this.cloneUrl = cloneUrl;
+	}
+	public String getInternalCloneUrl() {
+		return internalCloneUrl;
+	}
+	public void setInternalCloneUrl(String internalCloneUrl) {
+		this.internalCloneUrl = internalCloneUrl;
 	}
 }

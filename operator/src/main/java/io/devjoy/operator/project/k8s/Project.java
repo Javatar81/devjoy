@@ -7,5 +7,9 @@ import io.fabric8.kubernetes.model.annotation.Version;
 
 @Version("v1alpha1")
 @Group("devjoy.io")
-public class Project extends CustomResource<ProjectSpec, ProjectStatus> implements Namespaced {}
+public class Project extends CustomResource<ProjectSpec, ProjectStatus> implements Namespaced {
+
+	private static final long serialVersionUID = -8776278057613557829L;
+
+}
 

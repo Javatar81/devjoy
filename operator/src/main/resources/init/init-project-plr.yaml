@@ -22,7 +22,7 @@ spec:
           volumeMode: Filesystem
     - name: auth
       secret:
-        secretName: user-1-git-secret
+        secretName: -git-secret
     - name: additional-resources
       configMap:
         name: additional-resources-

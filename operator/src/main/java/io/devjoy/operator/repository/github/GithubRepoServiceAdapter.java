@@ -17,19 +17,21 @@ import io.devjoy.operator.repository.domain.RepositoryService;
 @Github
 public class GithubRepoServiceAdapter implements RepositoryService {
 
+	private static final String TOKEN_PREFIX = "token ";
+	private static final String BEARER_PREFIX = "Bearer ";
 	@Inject
     @RestClient
     RepoService repoService;
 
 	@Override
-	public Repository create(Repository repository, String token) {
-		return repoService.create("token " + token, new CreateRepoInput(repository)).toRepository();
+	public Repository create(Repository repository, String token, String baseUri) {
+		return repoService.create(TOKEN_PREFIX + token, new CreateRepoInput(repository)).toRepository();
 	}
 
 	@Override
-	public Optional<Repository> getByUserAndName(String user, String name, String token) {
+	public Optional<Repository> getByUserAndName(String user, String name, String token, String baseUri) {
 		try {
-			return Optional.ofNullable(repoService.getByUserAndName("Bearer " + token, user, name))
+			return Optional.ofNullable(repoService.getByUserAndName(BEARER_PREFIX + token, user, name))
 				.map(GetRepoOutput::toRepository);
 		} catch(WebApplicationException e) {
 			if	(e.getResponse().getStatus() == StatusCode.NOT_FOUND) {
@@ -41,8 +43,8 @@ public class GithubRepoServiceAdapter implements RepositoryService {
 	}
 
 	@Override
-	public void delete(Repository repository, String token) {
-		repoService.deleteByUserAndName("Bearer " + token, repository.getUser(), repository.getName());
+	public void delete(Repository repository, String token, String baseUri) {
+		repoService.deleteByUserAndName(BEARER_PREFIX + token, repository.getUser(), repository.getName());
 	}
 
 }

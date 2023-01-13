@@ -78,7 +78,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 .PHONY: bundle
 bundle:  ## Generate bundle manifests and metadata, then validate generated files.
 ## marker
-	cat target/kubernetes/repositories.devjoy.io-v1alpha1.yml target/kubernetes/devenvironments.devjoy.io-v1alpha1.yml target/kubernetes/projects.devjoy.io-v1alpha1.yml target/kubernetes/kubernetes.yml | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
+	cat target/kubernetes/repositories.devjoy.io-v1alpha1.yml target/kubernetes/devenvironments.devjoy.io-v1alpha1.yml target/kubernetes/projects.devjoy.io-v1alpha1.yml target/kubernetes/devenvironments.devjoy.io-v1alpha1.yml target/kubernetes/kubernetes.yml | operator-sdk generate bundle -q --overwrite --version $(VERSION) $(BUNDLE_METADATA_OPTS)
 	operator-sdk bundle validate ./bundle
 	
 .PHONY: bundle-build
