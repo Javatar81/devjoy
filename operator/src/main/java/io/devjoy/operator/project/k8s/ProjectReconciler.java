@@ -1,7 +1,5 @@
 package io.devjoy.operator.project.k8s;
 
-import java.io.IOException;
-import java.net.URI;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -11,10 +9,10 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaUserSecretDependentResource;
+import io.devjoy.operator.environment.k8s.TaskDependentResource;
 import io.devjoy.operator.environment.service.EnvironmentServiceImpl;
 import io.devjoy.operator.repository.k8s.Repository;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.http.HttpRequest;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -64,25 +62,23 @@ public class ProjectReconciler implements Reconciler<Project> {
 					LOG.info("Setting workspace factory url");
 					PipelineRunDependentResource.getResource(tektonClient, resource)
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
-					WorkspaceStatus status = new WorkspaceStatus();
-					Repository repository = context.getSecondaryResource(Repository.class).get();
-					String devFilePath = repository.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
-					status.setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
-					resource.getStatus().setWorkspace(status);
-					LOG.info("Calling workspace factory url to init workspace");
-					HttpRequest factoryRequest = client.getHttpClient().newHttpRequestBuilder()
-						.uri(URI.create(status.getFactoryUrl()))
-						.build();
-					try {
-						client.getHttpClient().send(factoryRequest, null);
-					} catch (IOException ex) {
-						LOG.error("Error calling factory URL", ex);
-					}
+					onPipelineRunComplete(resource, context);
 				}
 				
 				return UpdateControl.patchStatus(resource);
 			}
 		}).orElseGet(UpdateControl::noUpdate);
+	}
+
+	private void onPipelineRunComplete(Project resource, Context<Project> context) {
+		WorkspaceStatus status = new WorkspaceStatus();
+		Optional<Repository> repository = context.getSecondaryResource(Repository.class);
+		repository.ifPresent(r -> {
+			String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
+			status.setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
+			resource.getStatus().setWorkspace(status);
+		});
+		
 	}
 
 	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {

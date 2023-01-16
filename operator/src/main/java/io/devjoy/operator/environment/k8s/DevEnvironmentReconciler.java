@@ -15,6 +15,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 	        @Dependent(type = GiteaCatalogSourceDependentResource.class),
 	        @Dependent(type = GiteaSubscriptionDependentResource.class),
 	        @Dependent(type = GiteaDependentResource.class),
+	        @Dependent(type = TaskDependentResource.class),
 	        @Dependent(name = "adminSecret", type = GiteaAdminSecretDependentResource.class, reconcilePrecondition = SecretTokenNotChangedCondition.class),
 	    })
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> { 

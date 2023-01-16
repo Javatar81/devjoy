@@ -1,6 +1,8 @@
 package io.devjoy.operator.project.k8s;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -51,6 +53,18 @@ public class PipelineRunDependentResource extends CRUDKubernetesDependentResourc
 			.add(new ParamBuilder().withName("quarkus_group_id").withNewValue(primary.getMetadata().getName()).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("quarkus_artifact_id").withNewValue(primary.getMetadata().getName()).build());
+		
+		// E.g. quarkus-resteasy-reactive quarkus-reactive-routes
+		Optional.ofNullable(primary.getSpec().getQuarkus())
+			.map(q -> q.getExtensions().stream().collect(Collectors.joining(" ")))
+			.ifPresent(ext -> pipelineRun.getSpec().getParams()
+					.add(new ParamBuilder().withName("quarkus_extensions")
+							.withNewValue(ext)
+									.build()));
+		
+		
+		
+		
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
 			.forEach(w -> w.getSecret().setSecretName(user + w.getSecret().getSecretName()));

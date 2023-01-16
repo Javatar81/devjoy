@@ -11,6 +11,8 @@ public class ProjectSpec {
 	private String environmentName;
 	@JsonPropertyDescription("The owner of the project. Can be a user or an organization.")
 	private ProjectOwner owner;
+	@JsonPropertyDescription("The quarkus configuration if this is a quarkus project.")
+	private QuarkusSpec quarkus;
 	
 	public String getExistingRepositoryCloneUrl() {
 		return existingRepositoryCloneUrl;
@@ -35,5 +37,11 @@ public class ProjectSpec {
 	}
 	public void setOwner(ProjectOwner owner) {
 		this.owner = owner;
+	}
+	public QuarkusSpec getQuarkus() {
+		return quarkus;
+	}
+	public void setQuarkus(QuarkusSpec quarkus) {
+		this.quarkus = quarkus;
 	} 
 }

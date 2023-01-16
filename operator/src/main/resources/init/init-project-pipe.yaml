@@ -21,6 +21,10 @@ spec:
       type: string
       description: Maven artifact id for quarkus project
       default: ""
+    - name: quarkus_extensions
+      type: string
+      description: The blank-separated list of quarkus extensions
+      default: ""
   tasks:
     - name: quarkus-create
       params:
@@ -28,6 +32,8 @@ spec:
           value: "$(params.quarkus_artifact_id)"
         - name: ARTIFACT_ID
           value: "$(params.quarkus_group_id)"
+        - name: EXTENSIONS
+          value: "$(params.quarkus_extensions)"
       taskRef:
         kind: Task
         name: quarkus-create
