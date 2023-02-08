@@ -1,0 +1,18 @@
+domain: devjoy.io
+layout:
+- quarkus.javaoperatorsdk.io/v1-alpha
+projectName: gitea-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: devjoy.io
+  kind: Gitea
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: devjoy.io
+  kind: GiteaRepository
+  version: v1alpha1
+version: "3"

@@ -1,0 +1,7 @@
+kind: OAuthClient
+apiVersion: oauth.openshift.io/v1
+metadata:
+ name: devjoy
+secret:  test
+redirectURIs:
+grantMethod: prompt
