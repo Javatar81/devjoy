@@ -36,7 +36,7 @@ public class Option {
 	}
 	
 	public String[] toArray() {
-		return new String[] {name, value};
+		return new String[] {String.format("--%s", name), value};
 	}
 	
 }
