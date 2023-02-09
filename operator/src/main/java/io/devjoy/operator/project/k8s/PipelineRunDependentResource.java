@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import io.devjoy.operator.repository.k8s.Repository;
+import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
@@ -36,7 +36,7 @@ public class PipelineRunDependentResource extends CRUDKubernetesDependentResourc
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + primary.getMetadata().getName()).build());
 		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
-			cloneUrl = client.resources(Repository.class)
+			cloneUrl = client.resources(GiteaRepository.class)
 					.inNamespace(primary.getMetadata().getNamespace())
 					.withName(primary.getMetadata().getName())
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)

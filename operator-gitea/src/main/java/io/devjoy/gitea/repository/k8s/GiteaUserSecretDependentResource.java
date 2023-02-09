@@ -1,8 +1,11 @@
 package io.devjoy.gitea.repository.k8s;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -16,6 +19,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Base64;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteSpec;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -50,10 +55,12 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		desired.getData().put("user", Base64.encodeBytes(
 				username.getBytes()));
-		String giteaRoute = getRouteFromGitea(primary);
+		Route routeFromGitea = getRouteFromGitea(primary);
+		String giteaRouteWithProtocol = String.format("%s://%s", "http" + (routeFromGitea.getSpec().getTls() != null ? "s": ""), routeFromGitea.getSpec().getHost());
+		
 		desired.getData().put(".gitconfig", Base64.encodeBytes(
 				String.format("[credential \"%s\"]\n"
-						+ "\nhelper = store", giteaRoute).getBytes()));
+						+ "\nhelper = store", giteaRouteWithProtocol).getBytes()));
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		desired.getMetadata().setLabels(labels);
@@ -69,22 +76,20 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			.ifPresentOrElse(t -> {
 				LOG.info("Updating token for secret {}", desired.getMetadata().getName());
 				desired.getData().put(TOKEN_KEY, Base64.encodeBytes(t.getBytes()));
+				getGitCredentials(username, t, giteaRouteWithProtocol).ifPresent(c ->
 				desired.getData().put(".git-credentials", Base64.encodeBytes(
-						getGitCredentials(username, t, withoutProtocol(giteaRoute)).getBytes()));
+						c.getBytes())));
 			}, () -> LOG.warn("Cannot update token."));
 		}
 		return desired;
 	}
 
-	private String withoutProtocol(String giteaRoute) {
-		return giteaRoute.replaceAll(".+://", "");
-	}
-
-	private String getRouteFromGitea(Gitea primary) {
+	private Route getRouteFromGitea(Gitea primary) {
 		return GiteaRouteDependentResource.getResource(primary, (OpenShiftClient) client)
-				.waitUntilCondition(c -> c != null &&!StringUtil.isNullOrEmpty(c.getSpec().getHost()), 10, TimeUnit.SECONDS)
-				.getSpec().getHost();
+				.waitUntilCondition(c -> c != null &&!StringUtil.isNullOrEmpty(c.getSpec().getHost()), 10, TimeUnit.SECONDS);
 	}
+	
+	
 
 	private void addOwnerReference(Gitea primary, Secret desired) {
 		List<OwnerReference> ownerReferences = new ArrayList<>();
@@ -97,8 +102,15 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		client.secrets().inNamespace(desired.getMetadata().getNamespace()).createOrReplace(desired);
 	}
 	
-	private String getGitCredentials(String username, String token, String gitBaseUrl) {
-		return String.format("https://%s:%s@%s", username, token, gitBaseUrl);
+	private Optional<String> getGitCredentials(String username, String token, String gitBaseUrl) {
+		try {
+			URL url = new URL(gitBaseUrl);
+			return Optional.of(String.format("%s://%s:%s@%s%s", url.getProtocol(), username, token, url.getHost(), url.getFile()));
+		} catch (MalformedURLException e) {
+			LOG.error("Invalid gitBaseUrl " + gitBaseUrl, e);
+			return Optional.empty();
+		}
+		
 	}
 
 	public static Resource<Secret> getResource(Gitea primary, String username, KubernetesClient client) {

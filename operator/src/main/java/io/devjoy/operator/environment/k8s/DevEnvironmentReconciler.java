@@ -12,11 +12,12 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(
 	    dependents = {
-	        @Dependent(type = GiteaCatalogSourceDependentResource.class),
-	        @Dependent(type = GiteaSubscriptionDependentResource.class),
-	        @Dependent(type = GiteaDependentResource.class),
+	        //@Dependent(type = GiteaCatalogSourceDependentResource.class),
+	        //@Dependent(type = GiteaSubscriptionDependentResource.class),
+	        //@Dependent(type = GiteaDependentResource.class),
 	        @Dependent(type = TaskDependentResource.class),
-	        @Dependent(name = "adminSecret", type = GiteaAdminSecretDependentResource.class, reconcilePrecondition = SecretTokenNotChangedCondition.class),
+	        @Dependent(type = BuildPipelineDependentResource.class),
+	        //@Dependent(name = "adminSecret", type = GiteaAdminSecretDependentResource.class, reconcilePrecondition = SecretTokenNotChangedCondition.class),
 	    })
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> { 
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
@@ -41,9 +42,6 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> {
 	resource.getStatus().setGiteaResource(
 			GiteaDependentResource.getResource(client, resource).get() == null ? "Error: Gitea resource not found"
 					: "Gitea resource available");
-	resource.getStatus().setGiteaAdminSecret(
-			GiteaAdminSecretDependentResource.getResource(resource, client).get() == null ? "Error: Gitea admin secret not found"
-					: "Gitea admin secret available");
 	return UpdateControl.patchStatus(resource);
   }
 }

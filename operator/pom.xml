@@ -45,13 +45,14 @@
       <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client-reactive-jackson</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>tekton-client</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.devjoy</groupId>
+      <artifactId>gitea-operator</artifactId>
+      <version>0.0.1-SNAPSHOT</version> 
+     </dependency>
   </dependencies>
 
   <build>

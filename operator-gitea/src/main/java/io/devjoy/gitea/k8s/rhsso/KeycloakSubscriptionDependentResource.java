@@ -32,7 +32,7 @@ public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDepende
 	
 	@Override
 	protected Subscription desired(Gitea primary, Context<Gitea> context) {
-		LOG.info("Setting desired state from DevEnvironment {}", primary.getMetadata().getName());
+		LOG.info("Setting desired state from gitea {}", primary.getMetadata().getName());
 		Subscription subscription = client.resources(Subscription.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/subscription.yaml")).get();
 		subscription.getMetadata().setNamespace(primary.getMetadata().getNamespace());

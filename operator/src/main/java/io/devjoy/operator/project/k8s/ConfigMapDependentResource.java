@@ -15,7 +15,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
-import io.devjoy.operator.repository.k8s.Repository;
+import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -40,7 +40,7 @@ public class ConfigMapDependentResource extends CRUDKubernetesDependentResource<
 		String name = cm.getMetadata().getName() + primary.getMetadata().getName();
 		cm.getMetadata().setName(name);
 		cm.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		Repository repository = client.resources(Repository.class)
+		GiteaRepository repository = client.resources(GiteaRepository.class)
 			.inNamespace(primary.getMetadata().getNamespace())
 			.withName(primary.getMetadata().getName())
 			.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES);
@@ -75,7 +75,7 @@ public class ConfigMapDependentResource extends CRUDKubernetesDependentResource<
 		return devFile;
 	}
 	
-	private String getCloneUrl(Project primary, Repository repository) {
+	private String getCloneUrl(Project primary, GiteaRepository repository) {
 		if (StringUtil.isNullOrEmpty(primary.getSpec().getExistingRepositoryCloneUrl())) {
 			if (!StringUtil.isNullOrEmpty(repository.getStatus().getInternalCloneUrl())) {
 				return repository.getStatus().getInternalCloneUrl();

@@ -7,3 +7,6 @@ This project has been generated with operator-sdk 1.25.3:
     
 # Docs
 https://developers.redhat.com/articles/2022/03/22/write-kubernetes-java-java-operator-sdk-part-2#implement_the_controller
+
+
+https://github.com/quarkiverse/quarkus-openapi-generator
