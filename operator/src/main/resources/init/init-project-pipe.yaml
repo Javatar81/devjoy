@@ -35,7 +35,7 @@ spec:
         - name: EXTENSIONS
           value: "$(params.quarkus_extensions)"
       taskRef:
-        kind: Task
+        kind: ClusterTask
         name: quarkus-create
       workspaces:
         - name: source

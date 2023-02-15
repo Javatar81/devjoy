@@ -9,12 +9,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.GiteaApiService;
+import io.devjoy.gitea.domain.PasswordService;
 import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.domain.UserService;
@@ -23,8 +26,10 @@ import io.devjoy.gitea.k8s.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.repository.domain.RepositoryService;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -36,21 +41,24 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.runtime.util.StringUtil;
 
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
-	private static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
-	private static final String LABEL_GITEA_NAME = "devjoy.io/gitea.name";
+	public static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
+	public static final String LABEL_GITEA_NAME = "devjoy.io/gitea.name";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;
 	private final TokenService tokenService;
+	private final PasswordService passwordService;
 	private final UserService userService;
 	private final RepositoryService repositoryService;
 	private final GiteaApiService apiService;
 
-	public GiteaRepositoryReconciler(OpenShiftClient client, TokenService tokenService, UserService userService, RepositoryService repositoryService, GiteaApiService apiService) {
+	public GiteaRepositoryReconciler(OpenShiftClient client, TokenService tokenService, UserService userService,
+			RepositoryService repositoryService, GiteaApiService apiService, PasswordService passwordService) {
 		this.client = client;
 		this.tokenService = tokenService;
 		this.userService = userService;
 		this.repositoryService = repositoryService;
 		this.apiService = apiService;
+		this.passwordService = passwordService;
 	}
 
 	@Override
@@ -69,9 +77,37 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
 			assureUserCreated(resource, g);
 			assureRepositoryExists(resource, context, g);
+			
 			return assureGiteaLabelsSet(resource, g);
 		}).orElse(noUpdate);
 		
+	}
+
+	Map<SecretReferenceSpec, String> assureWebhookSecretsExist(Stream<SecretReferenceSpec> secretRefs) {
+		Map<SecretReferenceSpec, String> secrets = new HashMap<>();
+		Map<String, Map<String, List<SecretReferenceSpec>>> secRefMap = secretRefs.collect(Collectors.groupingBy(SecretReferenceSpec::getNamespace, Collectors.groupingBy(SecretReferenceSpec::getName)));
+		secRefMap.values().stream()
+			.flatMap(refs -> refs.values().stream())
+			.forEach(secRefs -> {
+				Resource<Secret> secretResource = client.secrets().inNamespace(secRefs.get(0).getNamespace()).withName(secRefs.get(0).getName());
+				Optional<Secret> existingSecret = Optional.ofNullable(secretResource.get());
+				existingSecret.orElseThrow(() -> new ServiceException("Secret not found, referred by " + secRefs));
+				existingSecret.ifPresent(s ->
+					secRefs.stream().forEach(r -> {
+						if (StringUtil.isNullOrEmpty(s.getData().get(r.getKey()))) {
+							String generatedPassword = passwordService.generateNewPassword(12);
+							s.getData().put(r.getKey(), generatedPassword);
+							secrets.put(r, generatedPassword);
+							secretResource
+								.edit(rs -> new SecretBuilder(rs).addToData(r.getKey(), io.fabric8.kubernetes.client.utils.Base64.encodeBytes(generatedPassword.getBytes()))
+								.build());
+						} else {
+							secrets.put(r, new String(Base64.getDecoder().decode(s.getData().get(r.getKey()))));
+							LOG.info("Key {} exists. Nothing to do.", r.getKey());
+						}
+				}));
+			});
+		return secrets;
 	}
 
 	private void assureUserCreated(GiteaRepository resource, Gitea g) {
@@ -84,13 +120,21 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		Optional<String> token = userSecret.map(s -> s.getData().get("token"))
 			.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim());
 		
-		Optional<Repository> repository = apiService.getBaseUri(g).flatMap(uri -> token.map(t -> repositoryService.createIfNotExists(resource, t, uri)));
+		Optional<Repository> repository = apiService.getBaseUri(g).flatMap(uri -> token.map(t -> {
+			Repository repo = repositoryService.createIfNotExists(resource, t, uri);
+			var secrets = Optional.ofNullable(resource.getSpec().getWebhooks()).map(w -> w.stream().map(WebhookSpec::getSecretRef)).map(this::assureWebhookSecretsExist);
+			
+			secrets.ifPresent(s -> repositoryService.createWebHooks(resource, s, t, uri));		
+			
+			return repo;
+		}));
 		
 		LOG.info("Setting clone urls");
 		repository.ifPresent(r -> {
 			resource.getStatus().setCloneUrl(r.getCloneUrl());
 			determineInternalCloneUrl(r.getCloneUrl(), g)
 				.ifPresent(url -> resource.getStatus().setInternalCloneUrl(url));
+			
 		});
 	}
 
@@ -108,19 +152,26 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	@SuppressWarnings("unchecked")
-	private Optional<Secret> recocileUserSecret(GiteaRepository resource, @SuppressWarnings("rawtypes") Context context, Gitea g) {
+	/**
+	 * We need to synchronize this method since several repositories could be reconciled in parallel.
+	 * 
+	 * @param resource
+	 * @param context
+	 * @param g
+	 * @return
+	 */
+	private synchronized Optional<Secret> recocileUserSecret(GiteaRepository resource, @SuppressWarnings("rawtypes") Context context, Gitea g) {
 		Optional<Secret> userSecret = getUserSecret(resource, g);
 		if (!userSecret.isPresent()) {
 			LOG.info("User secret not present. Creating it for user {} ", resource.getSpec().getUser());
-			GiteaUserSecretDependentResource secret = new GiteaUserSecretDependentResource(resource.getSpec().getUser(), client, tokenService);
-			secret.reconcileDirectly(g, context);
-		}
+		} 
+		GiteaUserSecretDependentResource secret = new GiteaUserSecretDependentResource(resource.getSpec().getUser(), client, tokenService);
+		secret.reconcileDirectly(g, context);
 		return userSecret;
 	}
 
 	private Optional<Secret> getUserSecret(GiteaRepository resource, Gitea g) {
-		Optional<Secret> userSecret = Optional.ofNullable(GiteaUserSecretDependentResource.getResource(g, resource.getSpec().getUser(), client).get());
-		return userSecret;
+		return Optional.ofNullable(GiteaUserSecretDependentResource.getResource(g, resource.getSpec().getUser(), client).get());
 	}
 
 	private Optional<Gitea> associatedGitea(GiteaRepository resource) {

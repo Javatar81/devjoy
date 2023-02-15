@@ -1,0 +1,98 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: build-project-
+spec:
+  params:
+    - name: git_url
+      type: string
+      description: Git clone URL
+    - name: image_url
+      type: string
+      description: The url of the resulting image
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: >-
+            $(params.git_url)
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'false'
+        - name: crtFileName
+          value: ca-bundle.crt
+        - name: deleteExisting
+          value: 'true'
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:a538c423e7a11aae6ae582a411fdb090936458075f99af4ce5add038bb6983e8
+        - name: userHome
+          value: /tekton/home
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: sources
+        - name: basic-auth
+          workspace: auth
+    - name: build-jar
+      params:
+        - name: MAVEN_IMAGE
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/openshift/java:latest
+        - name: GOALS
+          value:
+            - clean
+            - package
+        - name: PROXY_PROTOCOL
+          value: http
+        - name: CONTEXT_DIR
+          value: .
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      workspaces:
+        - name: source
+          workspace: sources
+        - name: maven-settings
+          workspace: mvn-settings
+    - name: build-and-push-image
+      params:
+        - name: IMAGE
+          value: >-
+            $(params.image_url)
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:0a86ecbdfbe86e9d225b7fe4b090a0dd6d323f8afdfdf2bd933ff223ddb53320
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: src/main/docker/Dockerfile.jvm
+        - name: CONTEXT
+          value: .
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - build-jar
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: sources
+  workspaces:
+    - name: sources
+    - name: mvn-settings
+    - name: auth

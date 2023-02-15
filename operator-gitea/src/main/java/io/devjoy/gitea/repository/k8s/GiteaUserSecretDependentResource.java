@@ -20,7 +20,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.Base64;
 import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.RouteSpec;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -67,12 +66,24 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		addOwnerReference(primary, desired);
 		//Replace the token because reconcile will call this again and we can't get the token anymore
 		Secret existingSecret = getResource(primary, username, client).get();
+		reconcileToken(primary, desired, giteaRouteWithProtocol, existingSecret);
+		/*if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(WEBHOOK_SECRET_KEY))) {
+			LOG.info("Webhook secret already set. Taking it over from existing to desired.");
+			desired.getData().put(WEBHOOK_SECRET_KEY, existingSecret.getData().get(WEBHOOK_SECRET_KEY));
+		} else {
+			LOG.info("Webhook secret not set. Generating new secret.");
+			desired.getData().put(WEBHOOK_SECRET_KEY, Base64.encodeBytes(passwordService.generateNewPassword(12).getBytes()));
+		}*/
+		return desired;
+	}
+
+	private void reconcileToken(Gitea primary, Secret desired, String giteaRouteWithProtocol, Secret existingSecret) {
 		if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(TOKEN_KEY))) {
 			LOG.info("Token already set. Taking it over from existing to desired.");
 			desired.getData().put(TOKEN_KEY, existingSecret.getData().get(TOKEN_KEY));
 		} else {
 			LOG.info("Token not set. Generating new token.");
-			tokenService.replaceUserTokenViaCli(primary, username, "devjoy")
+			tokenService.createUserTokenViaCli(primary, username, "devjoy-" + primary.getMetadata().getNamespace())
 			.ifPresentOrElse(t -> {
 				LOG.info("Updating token for secret {}", desired.getMetadata().getName());
 				desired.getData().put(TOKEN_KEY, Base64.encodeBytes(t.getBytes()));
@@ -81,7 +92,6 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 						c.getBytes())));
 			}, () -> LOG.warn("Cannot update token."));
 		}
-		return desired;
 	}
 
 	private Route getRouteFromGitea(Gitea primary) {
@@ -110,11 +120,14 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			LOG.error("Invalid gitBaseUrl " + gitBaseUrl, e);
 			return Optional.empty();
 		}
-		
 	}
 
 	public static Resource<Secret> getResource(Gitea primary, String username, KubernetesClient client) {
 		return client.resources(Secret.class).inNamespace(primary.getMetadata().getNamespace()).withName(
-				username + "-git-secret");
+				getName(username));
+	}
+
+	public static String getName(String username) {
+		return username + "-git-secret";
 	}
 }

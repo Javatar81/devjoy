@@ -7,14 +7,20 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.ws.rs.WebApplicationException;
 
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
+import org.openapi.quarkus.gitea_json.model.CreateHookOption;
+import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
 import org.openapi.quarkus.gitea_json.model.CreateRepoOption;
+import org.openapi.quarkus.gitea_json.model.Hook;
 import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +29,8 @@ import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.repository.api.RepoService;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaRepositoryConditionType;
+import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
+import io.devjoy.gitea.repository.k8s.WebhookSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 
 
@@ -30,6 +38,38 @@ import io.fabric8.kubernetes.api.model.ConditionBuilder;
 public class RepositoryService {
 	private static final Logger LOG = LoggerFactory.getLogger(RepositoryService.class);
 
+	public void createWebHooks(GiteaRepository repository, Map<SecretReferenceSpec, String> secrets, String token, String baseUri) {
+		try {
+			RepoService dynamicUrlClient = getDynamicUrlClient(baseUri);
+			var hooks = dynamicUrlClient.getHooks(token, repository.getSpec().getUser(), repository.getMetadata().getName()).stream()
+				.collect(Collectors.toList());
+			repository.getSpec().getWebhooks().stream()
+				.filter(w -> hooks.stream().noneMatch(h -> hookEquals(h, w)))
+				.forEach(w -> {
+					LOG.info("Creating hook");
+					CreateHookOption hookOption = new CreateHookOption();
+					hookOption.setActive(w.isActive());
+					hookOption.setBranchFilter(w.getBranchFilter());
+					hookOption.setType(TypeEnum.valueOf(w.getType()));
+					hookOption.setEvents(w.getEvents());
+						hookOption.setConfig(
+								Map.of("content_type", "json", 
+										"url", w.getTargetUrl(), 
+										"secret", secrets.get(w.getSecretRef())));
+					dynamicUrlClient.createHook(token, repository.getSpec().getUser(),
+							repository.getMetadata().getName(), hookOption);
+			});
+		} catch (URISyntaxException e) {
+			LOG.error("Error creating web hook", e);
+		}
+	}
+	
+	private boolean hookEquals(Hook a, WebhookSpec b) {
+		return a.getType().equalsIgnoreCase(b.getType()) 
+				&& Objects.equals(a.getConfig().get("url"), b.getTargetUrl()) 
+				&& Objects.equals(a.getEvents(), b.getEvents());
+	}
+		
 	public Repository createIfNotExists(GiteaRepository repository, String token, String baseUri) {
 		return getByUserAndName(repository.getSpec().getUser(), repository.getMetadata().getName(), token, baseUri)
 			.orElseGet(() -> {

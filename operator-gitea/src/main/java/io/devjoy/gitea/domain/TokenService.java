@@ -30,7 +30,8 @@ public class TokenService {
 		this.execService = execService;
 	}
 
-	public Optional<String> replaceUserTokenViaCli(Gitea gitea, String userName, String tokenName) {
+	public Optional<String> createUserTokenViaCli(Gitea gitea, String userName, String tokenName) {
+		// We cannot delete nor create a unique token
 		Command cmd = Command.builder()
 				.withExecutable("/usr/bin/giteacmd")
 				.withArgs(List.of("admin", "user", "generate-access-token"))

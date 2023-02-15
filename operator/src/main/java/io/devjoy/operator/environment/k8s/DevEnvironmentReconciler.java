@@ -3,6 +3,12 @@ package io.devjoy.operator.environment.k8s;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
+import io.devjoy.operator.environment.k8s.build.BuildPipelineDependentResource;
+import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependentResource;
+import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependentResource;
+import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
+import io.devjoy.operator.project.k8s.PipelineDependentResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -17,6 +23,10 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 	        //@Dependent(type = GiteaDependentResource.class),
 	        @Dependent(type = TaskDependentResource.class),
 	        @Dependent(type = BuildPipelineDependentResource.class),
+	        @Dependent(type = BuildPushTriggerTemplateDependentResource.class),
+	        @Dependent(type = BuildEventListenerDependentResource.class),
+	        @Dependent(type = WebhookSecretDependentResource.class),
+	        @Dependent(type = GiteaPushTriggerBindingDependentResource.class),
 	        //@Dependent(name = "adminSecret", type = GiteaAdminSecretDependentResource.class, reconcilePrecondition = SecretTokenNotChangedCondition.class),
 	    })
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> { 

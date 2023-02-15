@@ -1,5 +1,7 @@
 package io.devjoy.gitea.repository.k8s;
 
+import java.util.List;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
@@ -15,6 +17,8 @@ public class GiteaRepositorySpec {
 	@JsonPropertyDescription("Whether the repository should be deleted with the repository resource. Default is true.")
 	@JsonProperty(defaultValue = "true")
 	private boolean deleteOnFinalize = true;
+	@JsonPropertyDescription("Webhooks for the repository.")
+	private List<WebhookSpec> webhooks;
 
 	public String getUser() {
 		return user;
@@ -34,4 +38,16 @@ public class GiteaRepositorySpec {
 	public void setDeleteOnFinalize(boolean deleteRepoOnFinalize) {
 		this.deleteOnFinalize = deleteRepoOnFinalize;
 	}
+	public List<WebhookSpec> getWebhooks() {
+		return webhooks;
+	}
+	public void setWebhooks(List<WebhookSpec> webhooks) {
+		this.webhooks = webhooks;
+	}
+	@Override
+	public String toString() {
+		return String.format("GiteaRepositorySpec [visibility=%s, user=%s, deleteOnFinalize=%s, webhooks=%s]",
+				visibility, user, deleteOnFinalize, webhooks);
+	}
+	
 }
