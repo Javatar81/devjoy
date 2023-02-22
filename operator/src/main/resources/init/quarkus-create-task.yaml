@@ -1,5 +1,5 @@
 apiVersion: tekton.dev/v1beta1
-kind: ClusterTask
+kind: Task
 metadata:
   name: quarkus-create
 spec:
@@ -21,11 +21,11 @@ spec:
         - quarkus
         - create
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
-      image: 'quay.io/bschmeli/devjoy-quarkuscli:2.14.2.Final'
+      image: 'quay.io/devjoy/quarkuscli:latest'
       name: create
       resources: {}
       workingDir: $(workspaces.source.path)
-    - image: 'quay.io/bschmeli/devjoy-quarkuscli:2.14.2.Final'
+    - image: 'quay.io/devjoy/quarkuscli:latest'
       name: add-extensions
       resources: {}
       script: >-

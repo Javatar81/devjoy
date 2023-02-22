@@ -1,6 +1,5 @@
 package io.devjoy.operator.project.k8s;
 
-import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -11,7 +10,6 @@ import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaUserSecretDependentResource;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
-import io.devjoy.operator.environment.service.EnvironmentServiceImpl;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
@@ -23,25 +21,22 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(type = RepositoryDependentResource.class),
-		@Dependent(type = PipelineDependentResource.class), @Dependent(type = PipelineRunDependentResource.class),
-		@Dependent(type = ConfigMapDependentResource.class), })
+		@Dependent(type = PipelineRunDependentResource.class),
+		})
 public class ProjectReconciler implements Reconciler<Project> {
 	private final OpenShiftClient client;
 	private final TektonClient tektonClient;
 	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
-	private final EnvironmentServiceImpl envService;
 	
-	public ProjectReconciler(OpenShiftClient client, EnvironmentServiceImpl envService, TektonClient tektonClient) {
+	public ProjectReconciler(OpenShiftClient client, TektonClient tektonClient) {
 		this.client = client;
-		this.envService = envService;
 		this.tektonClient = tektonClient;
 	}
 
 	@Override
 	public UpdateControl<Project> reconcile(Project resource, Context<Project> context) {
 		LOG.info("Reconcile");
-		UpdateControl<Project> defaultUpdateControl = UpdateControl.noUpdate();
-		UpdateControl<Project> defaultUpdateControlSchedule = defaultUpdateControl.rescheduleAfter(Duration.ofSeconds(5));
+		
 		if (resource.getStatus() == null) {
 			resource.setStatus(new ProjectStatus());
 		}

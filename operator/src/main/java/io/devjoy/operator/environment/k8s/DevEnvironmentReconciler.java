@@ -8,7 +8,10 @@ import io.devjoy.operator.environment.k8s.build.BuildPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependentResource;
 import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependentResource;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
-import io.devjoy.operator.project.k8s.PipelineDependentResource;
+import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentResource;
+import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
+import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
+import io.devjoy.operator.environment.k8s.init.QuarkusTaskDependentResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -18,16 +21,15 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 
 @ControllerConfiguration(
 	    dependents = {
-	        //@Dependent(type = GiteaCatalogSourceDependentResource.class),
-	        //@Dependent(type = GiteaSubscriptionDependentResource.class),
-	        //@Dependent(type = GiteaDependentResource.class),
-	        @Dependent(type = TaskDependentResource.class),
 	        @Dependent(type = BuildPipelineDependentResource.class),
 	        @Dependent(type = BuildPushTriggerTemplateDependentResource.class),
 	        @Dependent(type = BuildEventListenerDependentResource.class),
 	        @Dependent(type = WebhookSecretDependentResource.class),
 	        @Dependent(type = GiteaPushTriggerBindingDependentResource.class),
-	        //@Dependent(name = "adminSecret", type = GiteaAdminSecretDependentResource.class, reconcilePrecondition = SecretTokenNotChangedCondition.class),
+	        @Dependent(type = AdditionalResourcesConfigmapDependentResource.class),
+	        @Dependent(type = InitPipelineDependentResource.class),
+	        @Dependent(type = AdditionalResourceTaskDependentResource.class),
+	        @Dependent(type = QuarkusTaskDependentResource.class),
 	    })
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> { 
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);

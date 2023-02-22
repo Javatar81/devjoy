@@ -26,9 +26,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.quarkus.runtime.util.StringUtil;
 
 public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
+	private static final String KEY_GITCONFIG = ".gitconfig";
+	private static final String KEY_GIT_CREDENTIALS = ".git-credentials";
+	private static final String KEY_TOKEN = "token";
 	private static final String LABEL_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_VALUE = "user";
-	private static final String TOKEN_KEY = "token";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaUserSecretDependentResource.class);
 	private String username;
 	private TokenService tokenService;
@@ -57,7 +59,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		Route routeFromGitea = getRouteFromGitea(primary);
 		String giteaRouteWithProtocol = String.format("%s://%s", "http" + (routeFromGitea.getSpec().getTls() != null ? "s": ""), routeFromGitea.getSpec().getHost());
 		
-		desired.getData().put(".gitconfig", Base64.encodeBytes(
+		desired.getData().put(KEY_GITCONFIG, Base64.encodeBytes(
 				String.format("[credential \"%s\"]\n"
 						+ "\nhelper = store", giteaRouteWithProtocol).getBytes()));
 		HashMap<String, String> labels = new HashMap<>();
@@ -74,22 +76,26 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			LOG.info("Webhook secret not set. Generating new secret.");
 			desired.getData().put(WEBHOOK_SECRET_KEY, Base64.encodeBytes(passwordService.generateNewPassword(12).getBytes()));
 		}*/
+		LOG.info("Data {}", desired.getData());
 		return desired;
 	}
 
 	private void reconcileToken(Gitea primary, Secret desired, String giteaRouteWithProtocol, Secret existingSecret) {
-		if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(TOKEN_KEY))) {
+		if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(KEY_TOKEN))) {
 			LOG.info("Token already set. Taking it over from existing to desired.");
-			desired.getData().put(TOKEN_KEY, existingSecret.getData().get(TOKEN_KEY));
+			desired.getData().put(KEY_TOKEN, existingSecret.getData().get(KEY_TOKEN));
+			desired.getData().put(KEY_GIT_CREDENTIALS, existingSecret.getData().get(KEY_GIT_CREDENTIALS));
 		} else {
 			LOG.info("Token not set. Generating new token.");
 			tokenService.createUserTokenViaCli(primary, username, "devjoy-" + primary.getMetadata().getNamespace())
 			.ifPresentOrElse(t -> {
 				LOG.info("Updating token for secret {}", desired.getMetadata().getName());
-				desired.getData().put(TOKEN_KEY, Base64.encodeBytes(t.getBytes()));
-				getGitCredentials(username, t, giteaRouteWithProtocol).ifPresent(c ->
-				desired.getData().put(".git-credentials", Base64.encodeBytes(
-						c.getBytes())));
+				desired.getData().put(KEY_TOKEN, Base64.encodeBytes(t.getBytes()));
+				getGitCredentials(username, t, giteaRouteWithProtocol).ifPresent(c -> 
+					desired.getData().put(KEY_GIT_CREDENTIALS, Base64.encodeBytes(
+						c.getBytes()))
+				);
+				
 			}, () -> LOG.warn("Cannot update token."));
 		}
 	}

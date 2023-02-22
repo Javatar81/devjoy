@@ -35,7 +35,7 @@ spec:
         - name: EXTENSIONS
           value: "$(params.quarkus_extensions)"
       taskRef:
-        kind: ClusterTask
+        kind: Task
         name: quarkus-create
       workspaces:
         - name: source
@@ -66,29 +66,21 @@ spec:
           workspace: src
     - name: git-additional-resources
       params:
-        - name: BASE_IMAGE
-          value: >-
-            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
-        - name: GIT_SCRIPT
-          value: |
-            cp --verbose $(workspaces.input.path)/*.* $(params.quarkus_artifact_id)
-        - name: USER_HOME
-          value: /root
-        - name: VERBOSE
-          value: 'true'
-        - name: GIT_USER_NAME
-          value: "$(params.git_user)"
-        - name: GIT_USER_EMAIL
-          value: "$(params.git_user_email)"
-      taskRef:
-        kind: ClusterTask
-        name: git-cli
+        - name: PROJECT
+          value: $(params.quarkus_artifact_id)
+        - name: REPOSITORY
+          value: $(params.git_url)
+        - name: FILE
+          value: devfile.yaml
       runAfter:
         - git-init
+      taskRef:
+        kind: Task
+        name: additional-resources
       workspaces:
-        - name: source
+        - name: target
           workspace: src
-        - name: input
+        - name: source
           workspace: additional-resources
     - name: git-commit
       params:

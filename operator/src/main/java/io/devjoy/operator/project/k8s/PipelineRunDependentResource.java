@@ -6,34 +6,49 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
+import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
 import io.fabric8.tekton.pipeline.v1beta1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.quarkus.runtime.util.StringUtil;
 
+/**
+ * 
+ * This resource is not garbage collected and thus will not use an owner reference
+ *
+ */
 @KubernetesDependent
-public class PipelineRunDependentResource extends CRUDKubernetesDependentResource<PipelineRun, Project>{
-	
+public class PipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, Updater<PipelineRun, Project>{
+	private static final Logger LOG = LoggerFactory.getLogger(PipelineRunDependentResource.class);
 	@Inject
 	TektonClient tektonClient;
 	
 	public PipelineRunDependentResource() {
 		super(PipelineRun.class);
 	}
-
+	
 	@Override
 	protected PipelineRun desired(Project primary, Context<Project> context) {
+		LOG.info("Setting desired state for pipeline run");
 		PipelineRun pipelineRun = getPipelineRunFromYaml(tektonClient);
 		String name = getName(primary, pipelineRun);
 		pipelineRun.getMetadata().setName(name);
-		pipelineRun.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + primary.getMetadata().getName()).build());
+		
+		DevEnvironment devEnvironment = getOwningEnvironment(primary).get();
+		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
+		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
+		LOG.info("Referencing {}", pipelineRun.getSpec().getPipelineRef());
 		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
 			cloneUrl = client.resources(GiteaRepository.class)
@@ -62,15 +77,12 @@ public class PipelineRunDependentResource extends CRUDKubernetesDependentResourc
 							.withNewValue(ext)
 									.build()));
 		
-		
-		
-		
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
 			.forEach(w -> w.getSecret().setSecretName(user + w.getSecret().getSecretName()));
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "additional-resources".equals(w.getName()))
-			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + primary.getMetadata().getName()));
+			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));
 		return pipelineRun;
 	}
 
@@ -99,5 +111,11 @@ public class PipelineRunDependentResource extends CRUDKubernetesDependentResourc
 				.pipelineRuns()
 				.inNamespace(primary.getMetadata().getNamespace())
 				.withName(getName(primary, run));
+	}
+	
+	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {
+		return Optional.ofNullable(
+				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
+						.withName(owningProject.getSpec().getEnvironmentName()).get());
 	}
 }
