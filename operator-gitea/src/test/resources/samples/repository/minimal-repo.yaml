@@ -1,0 +1,6 @@
+apiVersion: devjoy.io/v1alpha1
+kind: GiteaRepository
+metadata:
+  name: example
+spec: 
+  user: test

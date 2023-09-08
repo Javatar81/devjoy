@@ -37,7 +37,7 @@ public class KeycloakOperatorGroupDependentResource extends CRUDKubernetesDepend
 		LOG.debug("Creating desired operator group");
 		OperatorGroup operatorGroup = client.resources(OperatorGroup.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/operator-group.yaml"))
-				.get();
+				.item();
 		operatorGroup.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		
 		if (operatorGroup.getSpec().getTargetNamespaces() == null) {

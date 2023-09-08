@@ -12,9 +12,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.WebApplicationException;
-
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.openapi.quarkus.gitea_json.model.CreateHookOption;
@@ -32,6 +29,8 @@ import io.devjoy.gitea.repository.k8s.GiteaRepositoryConditionType;
 import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.WebhookSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.WebApplicationException;
 
 
 @ApplicationScoped

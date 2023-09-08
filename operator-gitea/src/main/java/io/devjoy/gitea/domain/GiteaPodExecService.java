@@ -6,8 +6,6 @@ import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +17,7 @@ import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.ExecWatch;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class GiteaPodExecService {

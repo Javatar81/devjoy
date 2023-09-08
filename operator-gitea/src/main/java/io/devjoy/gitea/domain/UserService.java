@@ -8,8 +8,6 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.openapi.quarkus.gitea_json.api.AdminApi;
 import org.openapi.quarkus.gitea_json.model.CreateUserOption;
@@ -20,10 +18,12 @@ import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.GiteaConditionType;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class UserService {
 	private static final String OPTION_USERNAME = "username";
+	private static final String OPTION_PASSWORD = "password";
 	private static final String ARG_USER = "user";
 	private static final String ARG_ADMIN = "admin";
 	private static final String ADMIN_COMMAND = "/usr/bin/giteacmd";
@@ -69,6 +69,18 @@ public class UserService {
 			.withExecutable(ADMIN_COMMAND)
 			.withArgs(List.of(ARG_ADMIN, ARG_USER, "delete"))
 			.addOption(new Option(OPTION_USERNAME, gitea.getSpec().getAdminUser()))
+			.build();
+					
+		execService.execOnDeployment(gitea, cmd);
+	}
+
+	public void changeUserPasswordViaExec(Gitea gitea, String user, String password) {
+		LOG.info("Waiting up to 180 seconds for replicas to become ready....");
+		Command cmd = Command.builder()
+			.withExecutable(ADMIN_COMMAND)
+			.withArgs(List.of(ARG_ADMIN, ARG_USER, "change-password"))
+			.addOption(new Option(OPTION_USERNAME, user))
+			.addOption(new Option(OPTION_PASSWORD, password))
 			.build();
 					
 		execService.execOnDeployment(gitea, cmd);

@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(labelSelector = PostgresPvcDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = PostgresPvcDiscriminator.class, labelSelector = PostgresPvcDependentResource.LABEL_SELECTOR)
 public class PostgresPvcDependentResource extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(PostgresPvcDependentResource.class);
 	private static final String LABEL_KEY = "devjoy.io/pvc.target";
@@ -29,7 +29,7 @@ public class PostgresPvcDependentResource extends CRUDKubernetesDependentResourc
 		LOG.info("Setting desired Postgres pvc");
 		PersistentVolumeClaim pvc = client.persistentVolumeClaims()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/pvc.yaml"))
-				.get();
+				.item();
 		String name = pvc.getMetadata().getName() + primary.getMetadata().getName() + "-pvc";
 		pvc.getMetadata().setName(name);
 		pvc.getMetadata().setNamespace(primary.getMetadata().getNamespace());

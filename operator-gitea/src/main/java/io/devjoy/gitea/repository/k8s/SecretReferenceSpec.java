@@ -1,6 +1,6 @@
 package io.devjoy.gitea.repository.k8s;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 public class SecretReferenceSpec {
 	private String namespace;

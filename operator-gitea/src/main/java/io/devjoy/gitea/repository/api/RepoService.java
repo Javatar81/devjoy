@@ -2,18 +2,18 @@ package io.devjoy.gitea.repository.api;
 
 import java.util.List;
 
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 import org.jboss.resteasy.annotations.jaxrs.HeaderParam;
 import org.openapi.quarkus.gitea_json.model.CreateHookOption;
 import org.openapi.quarkus.gitea_json.model.CreateRepoOption;
 import org.openapi.quarkus.gitea_json.model.Hook;
 import org.openapi.quarkus.gitea_json.model.Repository;
+
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
 
 @Path("")
 @RegisterRestClient

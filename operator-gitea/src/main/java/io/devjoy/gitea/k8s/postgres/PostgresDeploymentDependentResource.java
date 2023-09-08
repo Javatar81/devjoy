@@ -17,11 +17,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(labelSelector = PostgresDeploymentDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = PostgresDeploymentDiscriminator.class, labelSelector = PostgresDeploymentDependentResource.LABEL_SELECTOR)
 public class PostgresDeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(PostgresDeploymentDependentResource.class);
-	private static final String LABEL_KEY = "devjoy.io/deployment.target";
-	private static final String LABEL_VALUE = "postgres";
+	static final String LABEL_KEY = "devjoy.io/deployment.target";
+	static final String LABEL_VALUE = "postgres";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
 	public PostgresDeploymentDependentResource() {
@@ -33,7 +33,7 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 		LOG.info("Setting desired Postgres deployment");
 		Deployment deployment = client.apps().deployments()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/deployment.yaml"))
-				.get();
+				.item();
 		String name = deployment.getMetadata().getName() + primary.getMetadata().getName();
 		deployment.getMetadata().setName(name);
 		deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());

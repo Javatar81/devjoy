@@ -18,7 +18,7 @@ public class KeycloakDependentResource extends CRUDKubernetesDependentResource<K
 	@Override
 	protected Keycloak desired(Gitea primary, Context<Gitea> context) {
 		Keycloak keycloak = client.resources(Keycloak.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/keycloak.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/keycloak.yaml")).item();
 		keycloak.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		String name = resourceName(primary);
 		keycloak.getMetadata().setName(name);

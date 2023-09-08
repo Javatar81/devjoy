@@ -8,7 +8,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = PostgresServiceDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = PostgresServiceDiscriminator.class, labelSelector = PostgresServiceDependentResource.LABEL_SELECTOR)
 public class PostgresServiceDependentResource extends CRUDKubernetesDependentResource<Service, Gitea>{
 	private static final String LABEL_KEY = "devjoy.io/svc.target";
 	private static final String LABEL_VALUE = "postgres";
@@ -22,7 +22,7 @@ public class PostgresServiceDependentResource extends CRUDKubernetesDependentRes
 	protected Service desired(Gitea primary, Context<Gitea> context) {
 		Service svc = client.services()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/service.yaml"))
-				.get();
+				.item();
 		String name = svc.getMetadata().getName() + primary.getMetadata().getName();
 		svc.getMetadata().setName(name);
 		svc.getMetadata().setNamespace(primary.getMetadata().getNamespace());

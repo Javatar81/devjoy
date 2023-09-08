@@ -2,12 +2,12 @@ package io.devjoy.gitea.domain;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.context.ApplicationScoped;
 
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.openapi.quarkus.gitea_json.model.AccessToken;
@@ -17,7 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.api.AccessTokenService;
 import io.devjoy.gitea.k8s.Gitea;
-import io.fabric8.kubernetes.client.utils.Base64;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class TokenService {
@@ -37,6 +37,7 @@ public class TokenService {
 				.withArgs(List.of("admin", "user", "generate-access-token"))
 				.addOption(new Option("username", userName))
 				.addOption(new Option("token-name", tokenName))
+				.addOption(new Option("scopes", "repo"))
 				.build();
 		Pattern pattern = Pattern.compile("created:\\s+([a-f0-9_\\-]+)");
 		
@@ -91,6 +92,6 @@ public class TokenService {
 	}
 	
 	private String getTokenFrom(String username, String password) {
-		return String.format("Basic %s", Base64.encodeBytes((username +  ":" + password).getBytes()));
+		return String.format("Basic %s", Base64.getEncoder().encode((username +  ":" + password).getBytes()));
 	}
 }

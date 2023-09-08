@@ -1,5 +1,10 @@
 package io.devjoy.gitea.k8s.rhsso;
 
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+
+import org.apache.commons.compress.utils.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +26,7 @@ public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDepende
 	
 	@Override
 	public Subscription create(Subscription target, Gitea primary, Context<Gitea> context) {
+		
 		Subscription subscription = getResource(client, primary).get();
 		if (subscription != null) {
 			LOG.debug("Subscription found. Skipping creation.");
@@ -28,17 +34,20 @@ public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDepende
 		} else {
 			return super.create(target, primary, context);
 		}
+		
 	}
 	
 	@Override
 	protected Subscription desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired state from gitea {}", primary.getMetadata().getName());
 		Subscription subscription = client.resources(Subscription.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/subscription.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/subscription.yaml")).item();
 		subscription.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		return subscription;
 	}
 	
+	
+
 	static Resource<Subscription> getResource(KubernetesClient client, Gitea gitea) {
 		return client.resources(Subscription.class).inNamespace(gitea.getMetadata().getNamespace()).withName("rhsso-operator");
 	}

@@ -1,14 +1,10 @@
 package io.devjoy.gitea.k8s.gitea;
 
-import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
-import javax.inject.Inject;
-import javax.ws.rs.WebApplicationException;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.openapi.quarkus.gitea_json.model.AccessToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,11 +15,12 @@ import io.devjoy.gitea.k8s.Gitea;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Base64;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.inject.Inject;
+import jakarta.ws.rs.WebApplicationException;
 
 /**
  * This class represents the secret resource to store the username, password and token of the Gitea admin user.
@@ -31,7 +28,7 @@ import io.quarkus.runtime.util.StringUtil;
  * not stored in this secret. 
  *
  */
-@KubernetesDependent(labelSelector = GiteaAdminSecretDependentResource.SELECTOR)
+@KubernetesDependent(resourceDiscriminator = GiteaAdminSecretDiscriminator.class, labelSelector = GiteaAdminSecretDependentResource.SELECTOR)
 public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
 	
 	private static final String DATA_KEY_PASSWORD = "password";
@@ -62,35 +59,33 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.debug("Setting desired state");
 		Secret desired = client.resources(Secret.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/admin-secret.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/admin-secret.yaml")).item();
 		String adminUser = primary.getSpec().getAdminUser();
 		String adminPassword = primary.getSpec().getAdminPassword();
 		desired.getMetadata().setName(adminUser + desired.getMetadata().getName());
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		desired.getData().put("user", Base64.encodeBytes(
-				adminUser.getBytes()));
-		
+		desired.getData().put("user", new String(Base64.getEncoder().encode(
+				adminUser.getBytes())));
 		
 		Optional.ofNullable(getResource(primary, client).get())
 			.map(s -> s.getData().get(DATA_KEY_PASSWORD))
 			.ifPresentOrElse(pw -> desired.getData().put(DATA_KEY_PASSWORD, pw),
 				() -> {
 					if (!StringUtil.isNullOrEmpty(adminPassword)) {
-						desired.getData().put(DATA_KEY_PASSWORD, Base64.encodeBytes(
-								adminPassword.getBytes()));
+						LOG.info("Storing admin password from Gitea spec.");
+						desired.getData().put(DATA_KEY_PASSWORD, new String(Base64.getEncoder().encode(
+								adminPassword.getBytes())));
 					} else {
 						LOG.warn("No password available. Will set it later");
 					}
 				}
 			);
 		
-		
-		
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		labels.put(LABEL_TYPE_KEY, LABEL_TYPE_VALUE);
 		desired.getMetadata().setLabels(labels);
-		
+
 		//Replace the token because reconcile will call this again and we can't get the token anymore
 		giteaApiService.getBaseUri(primary)
 			.ifPresent(baseUri -> {
@@ -101,17 +96,21 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 						LOG.info("Token already set. Taking it over from existing to desired.");
 						desired.getData().put(TOKEN_KEY, existingSecret.getData().get(TOKEN_KEY));
 					} else if(existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(DATA_KEY_PASSWORD))){
-						String password = new String(Base64.decode(existingSecret.getData().get(DATA_KEY_PASSWORD)));
+						//String password = new String(Base64.getDecoder().decode(existingSecret.getData().get(DATA_KEY_PASSWORD)));
 						LOG.info("Token not set. Generating new token.");
-						AccessToken token = tokenService.replaceUserToken(baseUri, adminUser, password);
+						tokenService.createUserTokenViaCli(primary, adminUser, "devjoy-" + primary.getMetadata().getNamespace())
+						.ifPresentOrElse(t -> {
+							LOG.info("Updating token for secret {}", desired.getMetadata().getName());
+							desired.getData().put(TOKEN_KEY, new String(Base64.getEncoder().encode(t.getBytes())));
+						}, () -> LOG.warn("Cannot update token."));
+						
+						/*AccessToken token = tokenService.replaceUserToken(baseUri, adminUser, password);
 						LOG.info("Token is {}", token.getSha1());
-						desired.getData().put(TOKEN_KEY, Base64.encodeBytes(token.getSha1().getBytes()));
-						LOG.info("Updated token for secret {}", desired.getMetadata().getName());		
+						desired.getData().put(TOKEN_KEY, new String(Base64.getEncoder().encode(token.getSha1().getBytes())));
+						LOG.info("Updated token for secret {}", desired.getMetadata().getName());		*/
 					} else {
 						LOG.info("Secret is not yet created");	
 					}
-				} catch (IOException e) {
-					LOG.error("Error setting token data", e);
 				} catch (WebApplicationException e1) {
 					LOG.error("Error setting token data", e1);
 				}

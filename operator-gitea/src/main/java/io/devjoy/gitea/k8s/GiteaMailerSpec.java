@@ -7,7 +7,6 @@ public class GiteaMailerSpec {
 	private String host;
 	private String user;
 	private String password;
-	private boolean tls;
 	private String heloHostname;
 	private boolean registerEmailConfirm;
 	private boolean enableNotifyMail;
@@ -46,12 +45,6 @@ public class GiteaMailerSpec {
 	}
 	public void setPassword(String password) {
 		this.password = password;
-	}
-	public boolean isTls() {
-		return tls;
-	}
-	public void setTls(boolean tls) {
-		this.tls = tls;
 	}
 	public String getHeloHostname() {
 		return heloHostname;

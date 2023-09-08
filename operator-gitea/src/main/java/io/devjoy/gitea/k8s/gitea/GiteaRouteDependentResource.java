@@ -1,7 +1,5 @@
 package io.devjoy.gitea.k8s.gitea;
 
-import javax.inject.Inject;
-
 import io.devjoy.gitea.k8s.Gitea;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
@@ -12,6 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource<Route, Gitea> {
@@ -26,7 +25,7 @@ public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource
 	protected Route desired(Gitea primary, Context<Gitea> context) {
 		Route route = ocpClient.routes()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/route.yaml"))
-				.get();
+				.item();
 		String name = primary.getMetadata().getName();
 		route.getMetadata().setName(name);
 		route.getMetadata().setNamespace(primary.getMetadata().getNamespace());

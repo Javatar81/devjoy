@@ -4,9 +4,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import javax.annotation.Generated;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
+import jakarta.annotation.Generated;
 
 public class WebhookSpec {
 	@JsonPropertyDescription("The target url of the webhook.")

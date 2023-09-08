@@ -4,10 +4,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.enterprise.context.ApplicationScoped;
-import javax.validation.constraints.Min;
-
 import org.apache.commons.lang3.RandomStringUtils;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.validation.constraints.Min;
 
 @ApplicationScoped
 public class PasswordService {

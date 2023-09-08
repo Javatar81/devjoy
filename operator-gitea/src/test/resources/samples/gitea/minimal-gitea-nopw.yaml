@@ -4,6 +4,7 @@ metadata:
   name: minimalnopw
 spec:
   logLevel: INFO
+  resourceRequirementsEnabled: false
   disableRegistration: false
   adminPasswordLength: 12
   migrateRepositories: false

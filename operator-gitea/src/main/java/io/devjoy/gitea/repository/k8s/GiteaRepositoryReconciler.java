@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -73,6 +74,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		}
 		
 		UpdateControl<GiteaRepository> noUpdate = UpdateControl.noUpdate();
+		noUpdate = noUpdate.rescheduleAfter(30, TimeUnit.SECONDS);
 		return associatedGitea(resource).map(g -> {
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
 			assureUserCreated(resource, g);
@@ -99,7 +101,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 							s.getData().put(r.getKey(), generatedPassword);
 							secrets.put(r, generatedPassword);
 							secretResource
-								.edit(rs -> new SecretBuilder(rs).addToData(r.getKey(), io.fabric8.kubernetes.client.utils.Base64.encodeBytes(generatedPassword.getBytes()))
+								.edit(rs -> new SecretBuilder(rs).addToData(r.getKey(), new String(Base64.getEncoder().encode(generatedPassword.getBytes())))
 								.build());
 						} else {
 							secrets.put(r, new String(Base64.getDecoder().decode(s.getData().get(r.getKey()))));

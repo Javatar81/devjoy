@@ -3,8 +3,6 @@ package io.devjoy.gitea.domain;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import javax.enterprise.context.ApplicationScoped;
-
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.devjoy.gitea.k8s.Gitea;
@@ -12,6 +10,7 @@ import io.devjoy.gitea.k8s.gitea.GiteaRouteDependentResource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class GiteaApiService {

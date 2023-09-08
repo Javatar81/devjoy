@@ -6,8 +6,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import org.openapi.quarkus.keycloak_yaml.model.KeycloakClientSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +20,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class KeycloakClientDependentResource extends CRUDKubernetesDependentResource<KeycloakClient, Gitea> {
@@ -42,7 +41,7 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 	@Override
 	protected KeycloakClient desired(Gitea primary, Context<Gitea> context) {
 		KeycloakClient keycloakClient = client.resources(KeycloakClient.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/client.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/client.yaml")).item();
 		ObjectMeta metadata = keycloakClient.getMetadata();
 		KeycloakClientSpec spec = keycloakClient.getSpec();
 		metadata.setNamespace(primary.getMetadata().getNamespace());

@@ -5,10 +5,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import org.openapi.quarkus.keycloak_yaml.model.KeycloakRealmSpec;
-import org.openapi.quarkus.keycloak_yaml.model.KeycloakRealmSpecRealmIdentityProviders;
+import org.openapi.quarkus.keycloak_yaml.model.KeycloakRealmSpecRealmIdentityProvidersInner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +20,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResource<KeycloakRealm, Gitea> {
@@ -39,12 +38,12 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 	@Override
 	protected KeycloakRealm desired(Gitea primary, Context<Gitea> context) {
 		KeycloakRealm realm = client.resources(KeycloakRealm.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/realm.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/realm.yaml")).item();
 		realm.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		String name = resourceName(primary);
 		realm.getMetadata().setName(name);
 		KeycloakRealmSpec spec = realm.getSpec();
-		Optional<KeycloakRealmSpecRealmIdentityProviders> ocpProvider = getDevjoyIdentityProvider(spec);
+		Optional<KeycloakRealmSpecRealmIdentityProvidersInner> ocpProvider = getDevjoyIdentityProvider(spec);
 		spec.getRealm().setRealm(name);
 		spec.getRealm().setId(name);
 		spec.getRealm().setDisplayName(primary.getMetadata().getName());
@@ -57,7 +56,7 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 		oauthClient.ifPresent(oauth -> 
 			ocpProvider
 				.map(p -> p.alias(alias(primary)))
-				.map(KeycloakRealmSpecRealmIdentityProviders::getConfig)
+				.map(KeycloakRealmSpecRealmIdentityProvidersInner::getConfig)
 				.ifPresent(c -> {
 					c.put("clientSecret", oauth.getSecret());
 					c.put("baseUrl", client.getMasterUrl().toString());
@@ -91,7 +90,7 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 		return realm;
 	}
 
-	private Optional<KeycloakRealmSpecRealmIdentityProviders> getDevjoyIdentityProvider(KeycloakRealmSpec spec) {
+	private Optional<KeycloakRealmSpecRealmIdentityProvidersInner> getDevjoyIdentityProvider(KeycloakRealmSpec spec) {
 		return spec.getRealm().getIdentityProviders().stream()
 			.filter(i -> "devjoy-ocp".equals(i.getAlias()))
 			.findAny();

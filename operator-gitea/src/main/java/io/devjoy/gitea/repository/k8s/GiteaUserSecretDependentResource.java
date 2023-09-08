@@ -3,6 +3,7 @@ package io.devjoy.gitea.repository.k8s;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -18,7 +19,6 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Base64;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -51,17 +51,17 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired state");
 		Secret desired = client.resources(Secret.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/user-secret.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/user-secret.yaml")).item();
 		desired.getMetadata().setName(username + desired.getMetadata().getName());
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		desired.getData().put("user", Base64.encodeBytes(
-				username.getBytes()));
+		desired.getData().put("user", new String(Base64.getEncoder().encode(
+				username.getBytes())));
 		Route routeFromGitea = getRouteFromGitea(primary);
 		String giteaRouteWithProtocol = String.format("%s://%s", "http" + (routeFromGitea.getSpec().getTls() != null ? "s": ""), routeFromGitea.getSpec().getHost());
 		
-		desired.getData().put(KEY_GITCONFIG, Base64.encodeBytes(
+		desired.getData().put(KEY_GITCONFIG, new String(Base64.getEncoder().encode(
 				String.format("[credential \"%s\"]\n"
-						+ "\nhelper = store", giteaRouteWithProtocol).getBytes()));
+						+ "\nhelper = store", giteaRouteWithProtocol).getBytes())));
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		desired.getMetadata().setLabels(labels);
@@ -76,7 +76,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			LOG.info("Webhook secret not set. Generating new secret.");
 			desired.getData().put(WEBHOOK_SECRET_KEY, Base64.encodeBytes(passwordService.generateNewPassword(12).getBytes()));
 		}*/
-		LOG.info("Data {}", desired.getData());
+		//LOG.info("Data {}", desired.getData());
 		return desired;
 	}
 
@@ -90,10 +90,10 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			tokenService.createUserTokenViaCli(primary, username, "devjoy-" + primary.getMetadata().getNamespace())
 			.ifPresentOrElse(t -> {
 				LOG.info("Updating token for secret {}", desired.getMetadata().getName());
-				desired.getData().put(KEY_TOKEN, Base64.encodeBytes(t.getBytes()));
+				desired.getData().put(KEY_TOKEN, new String(Base64.getEncoder().encode(t.getBytes())));
 				getGitCredentials(username, t, giteaRouteWithProtocol).ifPresent(c -> 
-					desired.getData().put(KEY_GIT_CREDENTIALS, Base64.encodeBytes(
-						c.getBytes()))
+					desired.getData().put(KEY_GIT_CREDENTIALS, new String(Base64.getEncoder().encode(
+						c.getBytes())))
 				);
 				
 			}, () -> LOG.warn("Cannot update token."));

@@ -18,11 +18,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(labelSelector = GiteaDeploymentDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = GiteaDeploymentDiscriminator.class, labelSelector = GiteaDeploymentDependentResource.LABEL_SELECTOR)
 public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentResource<Deployment, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaDeploymentDependentResource.class);
-	private static final String LABEL_KEY = "devjoy.io/deployment.target";
-	private static final String LABEL_VALUE = "gitea";
+	static final String LABEL_KEY = "devjoy.io/deployment.target";
+	static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
 	public GiteaDeploymentDependentResource() {
@@ -33,7 +33,7 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 		LOG.info("Setting desired Gitea deployment");
 		Deployment deployment = client.apps().deployments()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/deployment.yaml"))
-				.get();
+				.item();
 		String name = primary.getMetadata().getName();
 		deployment.getMetadata().setName(name);
 		deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
@@ -43,11 +43,18 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 		template.getSpec().setServiceAccountName(name);
 		template.getMetadata().getLabels().put("name", name);
 		
-		Optional<Container> postgresContainer = template.getSpec().getContainers().stream()
-				.filter(c -> "postgresql".equals(c.getName())).findFirst();
-		postgresContainer.ifPresent(c -> {
+		Optional<Container> giteaContainer = template.getSpec().getContainers().stream()
+				.filter(c -> "gitea".equals(c.getName())).findFirst();
+			giteaContainer.ifPresent(c -> {
 			setImage(primary, c);
-			setResources(primary, c);
+			if (primary.getSpec().isResourceRequirementsEnabled()) {
+				setResourcesDefaults(primary, c);
+			} else {
+				c.getResources().getRequests().clear();
+				c.getResources().getLimits().clear();
+
+			}
+			
 		});
 		setVolumes(name, template);
 		if (deployment.getMetadata().getLabels() == null) {
@@ -62,10 +69,10 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 			.findAny().ifPresent(v -> v.getPersistentVolumeClaim().setClaimName(name + "-pvc"));
 		template.getSpec().getVolumes().stream()
 			.filter(v -> "gitea-config".equals(v.getName()))
-			.findAny().ifPresent(v -> v.getConfigMap().setName(name + "-config"));
+			.findAny().ifPresent(v -> v.getSecret().setSecretName(name + "-config"));
 	}
 
-	private void setResources(Gitea primary, Container c) {
+	private void setResourcesDefaults(Gitea primary, Container c) {
 		if (!StringUtil.isNullOrEmpty(primary.getSpec().getCpuRequest())) {
 			LOG.info("Setting cpu requests to {} ", primary.getSpec().getCpuRequest());
 			c.getResources().getRequests().put("cpu", new Quantity(primary.getSpec().getCpuRequest()));
@@ -84,12 +91,13 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 	private void setImage(Gitea primary, Container c) {
 		String[] imageAndTag = c.getImage().split(":");
 		if (!StringUtil.isNullOrEmpty(primary.getSpec().getImage())) {
-			imageAndTag[0] = primary.getSpec().getPostgres().getImage();	
+			imageAndTag[0] = primary.getSpec().getImage();	
 		}
 		if (!StringUtil.isNullOrEmpty(primary.getSpec().getImageTag())) {
-			imageAndTag[1] = primary.getSpec().getPostgres().getImageTag();	
+			imageAndTag[1] = primary.getSpec().getImageTag();	
 		}
 		c.setImage(imageAndTag[0] + ":" + imageAndTag[1]);
+		
 	}
 	
 	public static Resource<Deployment> getResource(Gitea primary, KubernetesClient client) {

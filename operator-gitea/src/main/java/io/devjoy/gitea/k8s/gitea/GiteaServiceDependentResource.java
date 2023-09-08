@@ -13,7 +13,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = GiteaServiceDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = GiteaDeploymentDiscriminator.class,labelSelector = GiteaServiceDependentResource.LABEL_SELECTOR)
 public class GiteaServiceDependentResource extends CRUDKubernetesDependentResource<Service, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaServiceDependentResource.class);
 	private static final String LABEL_KEY = "devjoy.io/svc.target";
@@ -28,7 +28,7 @@ public class GiteaServiceDependentResource extends CRUDKubernetesDependentResour
 	protected Service desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea service");
 		Service svc = client.services()
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/service.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/service.yaml")).item();
 		String name = primary.getMetadata().getName();
 		svc.getMetadata().setName(name);
 		LOG.info("Name is {} ", name);

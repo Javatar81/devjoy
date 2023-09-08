@@ -1,6 +1,6 @@
 package io.devjoy.gitea.k8s.postgres;
 
-import javax.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class PostgresConfig {

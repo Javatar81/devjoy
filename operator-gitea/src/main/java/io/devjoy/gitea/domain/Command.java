@@ -6,7 +6,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import javax.annotation.Generated;
+import jakarta.annotation.Generated;
 
 public class Command {
 	String executable;

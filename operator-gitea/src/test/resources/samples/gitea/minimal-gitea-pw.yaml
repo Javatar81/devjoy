@@ -3,6 +3,7 @@ kind: Gitea
 metadata:
   name: minimal
 spec:
+  isResourceRequirementsEnabled: false
   logLevel: INFO
   disableRegistration: false
   adminPasswordLength: 12

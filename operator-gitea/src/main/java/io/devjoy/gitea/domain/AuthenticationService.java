@@ -8,7 +8,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.enterprise.context.ApplicationScoped;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +22,7 @@ import io.devjoy.gitea.k8s.rhsso.KeycloakRealmDependentResource;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class AuthenticationService {

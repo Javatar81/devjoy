@@ -1,0 +1,42 @@
+apiVersion: devjoy.io/v1alpha1
+kind: Gitea
+metadata:
+  name: max
+spec:
+  isResourceRequirementsEnabled: false
+  logLevel: DEBUG
+  disableRegistration: true
+  adminPasswordLength: 12
+  migrateRepositories: true
+  registerEmailConfirm: false
+  adminUser: devjoyadmin123
+  adminPassword: devjoy123
+  enableCaptcha: true
+  allowCreateOrganization: true
+  adminEmail: devjoyadmin@example.com
+  ssl: false
+  image: quay.io/gpte-devops-automation/gitea
+  imageTag: latest
+  mailer:
+    enableNotifyMail: true
+    enabled: true
+    from: devjoy-gitea@example.com
+    heloHostname: devjoy-helo 
+    host: devjoy-mailer.example.com
+    password: devjoy123
+    registerEmailConfirm: true
+    type:  SMTP
+    user: devjoymailer
+  migrateRepositories: true
+  sso: false
+  configOverrides:
+    default:
+      APP_NAME: "max-override"
+    repository:
+      DISABLE_STARS: "true"
+    repository.editor:
+      LINE_WRAP_EXTENSIONS: ".txt,.md,.markdown,.mdown,.mkd,.livemd"
+    repository.pull-request:
+      ADD_CO_COMMITTER_TRAILERS: "true"
+    log:
+      LEVEL: "warn"

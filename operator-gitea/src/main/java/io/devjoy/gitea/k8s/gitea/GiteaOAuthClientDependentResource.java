@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +22,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.inject.Inject;
 
 @KubernetesDependent(labelSelector = GiteaOAuthClientDependentResource.LABEL_SELECTOR)
 public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentResource<OAuthClient, Gitea> implements Matcher<OAuthClient, Gitea> {
@@ -43,20 +42,22 @@ public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentRe
 		super(OAuthClient.class);
 	}
 
+	
+
 	/*
 	 * We override this to get resource via client because it seems not to be cached.
 	 * This might be caused by namespaceless nature of the OAuthClient resource.
-	 */
+	 *
 	@Override
 	public Optional<OAuthClient> getSecondaryResource(Gitea primaryResource) {
 		return super.getSecondaryResource(primaryResource).or(() -> Optional.ofNullable(getResource(primaryResource, ocpClient).get()));
-	}
+	}*/
 	
 	@Override
 	protected OAuthClient desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired state");
 		OAuthClient client = ocpClient.resources(OAuthClient.class)
-				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/oauth-client.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/oauth-client.yaml")).item();
 		String name = clientName(primary);
 		client.getMetadata().setName(name);
 		ArrayList<String> redirectURIs = new ArrayList<>();
@@ -64,12 +65,14 @@ public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentRe
 		String callbackPath = OAUTH2_CALLBACK;
 		apiService.getRouterBaseUri(primary).ifPresent(uri -> redirectURIs.add(uri + callbackPath));
 		redirectURIs.add(apiService.getLocalBaseUri(primary) + callbackPath);
-		Optional<String> keycloakUrl = Optional.ofNullable(KeycloakDependentResource.getResource(primary, ocpClient)
-				.waitUntilCondition(c -> c!= null && c.getStatus() != null && !StringUtil.isNullOrEmpty(c.getStatus().getExternalURL()), 180, TimeUnit.SECONDS))
-				.map(k -> k.getStatus().getExternalURL());
-		keycloakUrl.ifPresent(url -> 
-			redirectURIs.add(String.format("%s/auth/realms/%s/broker/%s/endpoint", url, KeycloakRealmDependentResource.resourceName(primary), KeycloakRealmDependentResource.alias(primary)))	
-		);
+		if (primary.getSpec() != null && primary.getSpec().isSso()) {
+			Optional<String> keycloakUrl = Optional.ofNullable(KeycloakDependentResource.getResource(primary, ocpClient)
+					.waitUntilCondition(c -> c!= null && c.getStatus() != null && !StringUtil.isNullOrEmpty(c.getStatus().getExternalURL()), 180, TimeUnit.SECONDS))
+					.map(k -> k.getStatus().getExternalURL());
+			keycloakUrl.ifPresent(url -> 
+				redirectURIs.add(String.format("%s/auth/realms/%s/broker/%s/endpoint", url, KeycloakRealmDependentResource.resourceName(primary), KeycloakRealmDependentResource.alias(primary)))	
+			);
+		}
 		Optional<OAuthClient> existingClient = Optional.ofNullable(GiteaOAuthClientDependentResource.getResource(primary, ocpClient).get());
 		existingClient.ifPresentOrElse(c -> {
 			if (StringUtil.isNullOrEmpty(c.getSecret())) {
