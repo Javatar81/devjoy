@@ -8,6 +8,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.gitea.GiteaRouteDependentResource;
 import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -23,7 +24,7 @@ public class GiteaApiService {
 	}
 	
 	public Optional<String> getBaseUri(Gitea gitea) {
-		if (accessMode == ApiAccessMode.EXTERNAL) {
+		if (accessMode == ApiAccessMode.EXTERNAL && gitea.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
 			return getRouterBaseUri(gitea);
 		} else {
 			return Optional.ofNullable(getLocalBaseUri(gitea));

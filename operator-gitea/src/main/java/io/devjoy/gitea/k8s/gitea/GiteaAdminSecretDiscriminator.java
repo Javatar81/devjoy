@@ -11,7 +11,6 @@ public class GiteaAdminSecretDiscriminator implements ResourceDiscriminator<Secr
 
     @Override
     public Optional<Secret> distinguish(Class<Secret> resource, Gitea primary, Context<Gitea> context) {
-        String adminUser = primary.getSpec().getAdminUser();
-        return Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName(adminUser + "-git-secret").get());
+        return Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName(GiteaAdminSecretDependentResource.getName(primary)).get());
     }
 }

@@ -11,7 +11,7 @@ public class PostgresPvcDiscriminator implements ResourceDiscriminator<Persisten
 
     @Override
     public Optional<PersistentVolumeClaim> distinguish(Class<PersistentVolumeClaim> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().persistentVolumeClaims().inNamespace(primary.getMetadata().getNamespace()).withName("postgresPvc").get());
+        return Optional.ofNullable(context.getClient().persistentVolumeClaims().inNamespace(primary.getMetadata().getNamespace()).withName(PostgresPvcDependentResource.getName(primary)).get());
     }
 
 

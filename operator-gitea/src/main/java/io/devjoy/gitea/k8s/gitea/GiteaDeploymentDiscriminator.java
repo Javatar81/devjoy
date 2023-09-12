@@ -11,7 +11,7 @@ public class GiteaDeploymentDiscriminator implements ResourceDiscriminator<Deplo
  
     @Override
     public Optional<Deployment> distinguish(Class<Deployment> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().apps().deployments().inNamespace(primary.getMetadata().getNamespace()).withName("giteaDeployment").get());
+        return Optional.ofNullable(context.getClient().apps().deployments().inNamespace(primary.getMetadata().getNamespace()).withName(primary.getMetadata().getName()).get());
     }
 
 

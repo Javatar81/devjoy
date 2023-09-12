@@ -22,6 +22,7 @@ import io.devjoy.gitea.k8s.GiteaMailerSpec;
 import io.devjoy.gitea.k8s.postgres.PostgresConfig;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -152,9 +153,11 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		    LOG.info("Read app.ini. Adding configuration parameters based on Gitea resource.");
 		    iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
 		    configureDatabase(primary, iniConfiguration);
-		    Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
-		    	.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
-		    route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec().isSsl()));
+		    if(primary.getSpec().isIngressEnabled() && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
+				Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
+					.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
+				route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec().isSsl()));
+			}
 		    configureServer(iniConfiguration);
 		    iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty("ALLOW_LOCALNETWORKS", "false");
 		    if (primary.getSpec().getLogLevel() != null) {

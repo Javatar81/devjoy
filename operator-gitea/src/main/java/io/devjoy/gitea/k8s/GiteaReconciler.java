@@ -3,6 +3,7 @@ package io.devjoy.gitea.k8s;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -39,7 +40,10 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.openshift.api.model.OAuthClient;
+import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
+import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
+import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -61,14 +65,14 @@ import io.quarkus.runtime.util.StringUtil;
 		//@Dependent(type = GiteaOAuthClientDependentResource.class),
 		@Dependent(type = GiteaServiceAccountDependentResource.class),
 		@Dependent(name = "giteaService", type = GiteaServiceDependentResource.class), 
-		@Dependent(type = GiteaRouteDependentResource.class),
+		//@Dependent(reconcilePrecondition = GiteaRouteReconcileCondition.class, type = GiteaRouteDependentResource.class),
 		@Dependent(name = "giteaPvc", type = GiteaPvcDependentResource.class), 
 		@Dependent(name = "postgresService", type = PostgresServiceDependentResource.class),
 		@Dependent(name = "postgresSecret", type = PostgresSecretDependentResource.class), 
 		@Dependent(name = "postgresPvc", type = PostgresPvcDependentResource.class),
 		@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependentResource.class), 
-		@Dependent(type = KeycloakOperatorGroupDependentResource.class),
-		@Dependent(type = KeycloakSubscriptionDependentResource.class),
+		//@Dependent(type = KeycloakOperatorGroupDependentResource.class),
+		//@Dependent(type = KeycloakSubscriptionDependentResource.class),
 		//@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakResourceReconcileCondition.class), 
 		//@Dependent(type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakResourceReconcileCondition.class),
 		//@Dependent(type = KeycloakSubscriptionDependentResource.class, reconcilePrecondition = KeycloakResourceReconcileCondition.class),
@@ -87,7 +91,10 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	private KubernetesDependentResource<Keycloak, Gitea> keycloakDR;
 	private KubernetesDependentResource<KeycloakClient, Gitea> keycloakClientDR;
 	private KubernetesDependentResource<KeycloakRealm, Gitea> keycloakRealmDR;
+	private KubernetesDependentResource<OperatorGroup, Gitea> operatorGroupDR;
+	private KubernetesDependentResource<Subscription, Gitea> subscriptionDR;
 	private KubernetesDependentResource<OAuthClient, Gitea> oauthClientDR;
+	private KubernetesDependentResource<Route, Gitea> giteaRouteDR;	
 
 	private static String KEYCLOAK_API_VERSION = "v1alpha1";
 	
@@ -112,25 +119,52 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		oauthClientDR = new GiteaOAuthClientDependentResource();
 		oauthClientDR.setKubernetesClient(client);
 		oauthClientDR.configureWith(new KubernetesDependentResourceConfig<>());
+		giteaRouteDR = new GiteaRouteDependentResource();
+		giteaRouteDR.setKubernetesClient(client);
+		giteaRouteDR.configureWith(new KubernetesDependentResourceConfig<>());
+		operatorGroupDR = new KeycloakOperatorGroupDependentResource();
+		operatorGroupDR.setKubernetesClient(client);
+		operatorGroupDR.configureWith(new KubernetesDependentResourceConfig<>());
+		subscriptionDR = new KeycloakSubscriptionDependentResource();
+		subscriptionDR.setKubernetesClient(client);
+		subscriptionDR.configureWith(new KubernetesDependentResourceConfig<>());
 	}
 
 	@Override
 	public Map<String, EventSource> prepareEventSources(EventSourceContext<Gitea> context) {
-		return prepareKeycloakResources(context);
-	}
-
-	private Map<String, EventSource> prepareKeycloakResources(EventSourceContext<Gitea> context) {
-		if(context.getClient().apiextensions().getApiGroup("keycloak.org") != null && KEYCLOAK_API_VERSION.equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion())){
+		Map<String, EventSource> eventSources = new HashMap<>();
+		if(keycloakApiAvailable()){
 			LOG.info("Keycloak is available");
-			return Map.of(
-				"keycloakDR", keycloakDR.initEventSource(context),
-				"keycloakClientDR", keycloakClientDR.initEventSource(context),
-				"keycloakRealmDR", keycloakRealmDR.initEventSource(context)
-			);
+			eventSources.put("keycloakDR", keycloakDR.initEventSource(context));
+			eventSources.put("keycloakClientDR", keycloakClientDR.initEventSource(context));
+			eventSources.put("keycloakRealmDR", keycloakRealmDR.initEventSource(context));
 		} else {
 			LOG.warn("Keycloak API not available. Has it been installed on your cluster?");
-			return Collections.emptyMap();
 		}
+		if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
+			eventSources.put("giteaRouteDR", giteaRouteDR.initEventSource(context));
+		} else {
+			LOG.warn("OpenShift API Group {} not available. No oauth integration into RHSSO possible", OpenShiftAPIGroups.ROUTE);
+		}
+		if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.OAUTH)) {
+			eventSources.put("oauthClientDR", oauthClientDR.initEventSource(context));
+		} else {
+			LOG.warn("OpenShift API Group {} not available. No oauth integration into RHSSO possible", OpenShiftAPIGroups.OAUTH);
+		}
+		if (client.supportsOpenShiftAPIGroup("operators.coreos.com")) {
+			eventSources.put("operatorGroupDR", operatorGroupDR.initEventSource(context));
+			eventSources.put("subscriptionDR", subscriptionDR.initEventSource(context));
+		}
+		else {
+			LOG.warn("OpenShift API Group operators.coreos.com not available. RHSSO must be installed manually.");
+		}
+		return eventSources;
+	}
+	
+
+	private boolean keycloakApiAvailable() {
+		return client.apiextensions().getApiGroup("keycloak.org") != null 
+			&& KEYCLOAK_API_VERSION.equals(client.apiextensions().getApiGroup("keycloak.org").getApiVersion());
 	}
 
 
@@ -157,14 +191,34 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			updateCtrl = UpdateControl.updateResourceAndStatus(resource);
 		} 
 		reconcileTrustMap(resource);
+		if(keycloakApiAvailable()){
+			reconcileSsoResources(resource, context);
+		}
+		if(resource.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
+			giteaRouteDR.reconcile(resource, context);
+		}
 		if (resource.getSpec().isSso()) {
 			reconcileAuthenticationSource(resource);
+		}
+		if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.OAUTH)) {
+			oauthClientDR.reconcile(resource, context);
+		}
+		if (client.supportsOpenShiftAPIGroup("operators.coreos.com")) {
+			operatorGroupDR.reconcile(resource, context);
+			subscriptionDR.reconcile(resource, context);
 		}
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
 		}
 		return updateCtrl;
 		
+	}
+
+	public void reconcileSsoResources(Gitea primary, Context<Gitea> context) {
+		keycloakDR.reconcile(primary, context);
+    	keycloakClientDR.reconcile(primary, context);
+    	keycloakRealmDR.reconcile(primary, context);
+		oauthClientDR.reconcile(primary, context);
 	}
 
 	private void moveAdminPasswordToSecret(Gitea resource) {

@@ -10,7 +10,6 @@ spec:
   migrateRepositories: false
   registerEmailConfirm: false
   adminUser: devjoyadmin
-  enableNotifyMail: false
   enableCaptcha: false
   allowCreateOrganization: false
   adminEmail: devjoyadmin@example.com

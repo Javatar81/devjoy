@@ -24,13 +24,18 @@ public class PostgresPvcDependentResource extends CRUDKubernetesDependentResourc
 		super(PersistentVolumeClaim.class);
 		
 	}
+
+	public static String getName(Gitea primary) {
+		return "postgresql-" + primary.getMetadata().getName().toLowerCase() + "-pvc";
+	}
+
 	@Override
 	protected PersistentVolumeClaim desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Postgres pvc");
 		PersistentVolumeClaim pvc = client.persistentVolumeClaims()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/pvc.yaml"))
 				.item();
-		String name = pvc.getMetadata().getName() + primary.getMetadata().getName() + "-pvc";
+		String name = getName(primary);
 		pvc.getMetadata().setName(name);
 		pvc.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (primary.getSpec() != null) {

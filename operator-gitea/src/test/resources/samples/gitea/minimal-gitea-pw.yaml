@@ -3,7 +3,7 @@ kind: Gitea
 metadata:
   name: minimal
 spec:
-  isResourceRequirementsEnabled: false
+  resourceRequirementsEnabled: false
   logLevel: INFO
   disableRegistration: false
   adminPasswordLength: 12
@@ -11,7 +11,6 @@ spec:
   registerEmailConfirm: false
   adminUser: devjoyadmin
   adminPassword: devjoy
-  enableNotifyMail: false
   enableCaptcha: false
   allowCreateOrganization: false
   adminEmail: devjoyadmin@example.com

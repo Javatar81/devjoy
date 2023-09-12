@@ -11,7 +11,7 @@ public class PostgresDeploymentDiscriminator implements ResourceDiscriminator<De
  
     @Override
     public Optional<Deployment> distinguish(Class<Deployment> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().apps().deployments().inNamespace(primary.getMetadata().getNamespace()).withName("postgresDeployment").get());
+        return Optional.ofNullable(context.getClient().apps().deployments().inNamespace(primary.getMetadata().getNamespace()).withName("postgresql-" + primary.getMetadata().getName()).get());
     }
 
 

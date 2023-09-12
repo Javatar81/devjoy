@@ -11,7 +11,7 @@ public class PostgresSecretDiscriminator implements ResourceDiscriminator<Secret
 
     @Override
     public Optional<Secret> distinguish(Class<Secret> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName("postgres-" + primary.getMetadata().getName()).get());
+        return Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName("postgresql-" + primary.getMetadata().getName()).get());
     }
 
 

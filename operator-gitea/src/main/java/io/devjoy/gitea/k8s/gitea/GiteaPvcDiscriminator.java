@@ -11,7 +11,7 @@ public class GiteaPvcDiscriminator implements ResourceDiscriminator<PersistentVo
 
     @Override
     public Optional<PersistentVolumeClaim> distinguish(Class<PersistentVolumeClaim> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().persistentVolumeClaims().inNamespace(primary.getMetadata().getNamespace()).withName("giteaPvc").get());
+        return Optional.ofNullable(context.getClient().persistentVolumeClaims().inNamespace(primary.getMetadata().getNamespace()).withName(primary.getMetadata().getName() + "-pvc").get());
     }
 
 

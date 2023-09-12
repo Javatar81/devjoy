@@ -31,6 +31,8 @@ public class GiteaSpec {
 	private boolean disableRegistration;
 	private boolean enableCaptcha;
 	private boolean allowCreateOrganization;
+	@JsonPropertyDescription("Create a route / ingress to access for Gitea.")
+	private boolean ingressEnabled = true;
 	@JsonPropertyDescription("Enables SSL for Gitea.")
 	private boolean ssl;
 	@JsonPropertyDescription("Enables SSO using RHSSO and OpenShift.")
@@ -200,6 +202,12 @@ public class GiteaSpec {
 	}
 	public void setConfigOverrides(GiteaConfigOverrides configOverrides) {
 		this.configOverrides = configOverrides;
+	}
+	public boolean isIngressEnabled() {
+		return ingressEnabled;
+	}
+	public void setIngressEnabled(boolean ingressEnabled) {
+		this.ingressEnabled = ingressEnabled;
 	}
 	
 }
