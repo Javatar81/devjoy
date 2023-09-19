@@ -1,5 +1,8 @@
 package io.devjoy.gitea.k8s.gitea;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.devjoy.gitea.k8s.Gitea;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
@@ -14,6 +17,7 @@ import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource<Route, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaRouteDependentResource.class);
 	@Inject
 	OpenShiftClient ocpClient;
 	
@@ -23,6 +27,7 @@ public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource
 	
 	@Override
 	protected Route desired(Gitea primary, Context<Gitea> context) {
+		LOG.info("Reconciling");
 		Route route = ocpClient.routes()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/route.yaml"))
 				.item();

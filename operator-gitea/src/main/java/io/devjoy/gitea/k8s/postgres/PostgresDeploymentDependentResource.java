@@ -28,13 +28,17 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 		super(Deployment.class);
 	}
 	
+	public static String getName(Gitea primary) {
+		return "postgresql-" + primary.getMetadata().getName();
+	}
+
 	@Override
 	protected Deployment desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Postgres deployment");
 		Deployment deployment = client.apps().deployments()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/deployment.yaml"))
 				.item();
-		String name = deployment.getMetadata().getName() + primary.getMetadata().getName();
+		String name = getName(primary);
 		deployment.getMetadata().setName(name);
 		deployment.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		deployment.getSpec().getSelector().getMatchLabels().put("name", name);
@@ -44,10 +48,15 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 		Optional<Container> postgresContainer = template.getSpec().getContainers().stream()
 				.filter(c -> "postgresql".equals(c.getName())).findFirst();
 		postgresContainer.ifPresent(c -> {
-			setEnv(name, c);
+			setEnv(PostgresSecretDependentResource.getName(primary), c);
 			if (primary.getSpec().getPostgres() != null) {
 				setImage(primary.getSpec().getPostgres(), c);
-				setResources(primary.getSpec().getPostgres(), c);
+				if (primary.getSpec().isResourceRequirementsEnabled()) {
+					setResources(primary.getSpec().getPostgres(), c);
+				} else {
+					c.getResources().getRequests().clear();
+					c.getResources().getLimits().clear();
+				}
 			}
 		});
 		template.getSpec().getVolumes().stream()

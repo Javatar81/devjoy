@@ -144,7 +144,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
 			eventSources.put("giteaRouteDR", giteaRouteDR.initEventSource(context));
 		} else {
-			LOG.warn("OpenShift API Group {} not available. No oauth integration into RHSSO possible", OpenShiftAPIGroups.ROUTE);
+			LOG.warn("OpenShift API Group {} not available. Route cannot be created", OpenShiftAPIGroups.ROUTE);
 		}
 		if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.OAUTH)) {
 			eventSources.put("oauthClientDR", oauthClientDR.initEventSource(context));
@@ -173,6 +173,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		LOG.info("Reconciling");
 		UpdateControl<Gitea> updateCtrl = UpdateControl.noUpdate();
 		updater.init(resource);
+		if(resource.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
+			LOG.info("Route is enabled");
+			giteaRouteDR.reconcile(resource, context);
+		} else {
+			LOG.info("Route is disabled");
+		}
 		LOG.info("Waiting for Gitea pod to be ready...");
 		if(!userService.getAdminId(resource).isPresent()) {
 			userService.createAdminUserViaExec(resource);
@@ -194,9 +200,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		if(keycloakApiAvailable()){
 			reconcileSsoResources(resource, context);
 		}
-		if(resource.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
-			giteaRouteDR.reconcile(resource, context);
-		}
+		
 		if (resource.getSpec().isSso()) {
 			reconcileAuthenticationSource(resource);
 		}
