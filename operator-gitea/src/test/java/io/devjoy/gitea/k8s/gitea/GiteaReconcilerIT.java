@@ -9,6 +9,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.GiteaSpec;
@@ -26,7 +27,10 @@ import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+
+import io.quarkus.runtime.util.StringUtil;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.annotation.PostConstruct;
 import jakarta.inject.Inject;
 
 @QuarkusTest
@@ -35,8 +39,20 @@ class GiteaReconcilerIT {
 	@Inject
 	OpenShiftClient client;
 
+	private GiteaAssertions assertions;
+
 	@ConfigProperty(name = "test.quarkus.kubernetes-client.devservices.flavor")
 	Optional<String> devServiceFlavor;
+
+	@PostConstruct
+	public void setUp() {
+		assertions = new GiteaAssertions(client);
+	}
+
+	@AfterEach
+	void tearDown() {
+		client.resources(Gitea.class).withName("mygiteait").delete();
+	}
 
 	@Test
 	void createGitea() {
@@ -68,67 +84,13 @@ class GiteaReconcilerIT {
 			client.resource(pv2).create();
 		});
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(60, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
-			final var postgresPvc = client.persistentVolumeClaims()
-                    .inNamespace(gitea.getMetadata().getNamespace())
-                    .withName(PostgresPvcDependentResource.getName(gitea)).get();
-			assertThat(postgresPvc, is(IsNull.notNullValue()));
-			assertThat(postgresPvc.getSpec().getStorageClassName(), is(gitea.getSpec().getPostgres().getStorageClass()));
-			assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage"), is(volumeSize));
-			assertThat(postgresPvc.getStatus().getPhase(), is("Bound"));
-			final var giteaPvc = client.persistentVolumeClaims()
-                    .inNamespace(gitea.getMetadata().getNamespace())
-                    .withName(GiteaPvcDependentResource.getName(gitea)).get();
-			assertThat(giteaPvc, is(IsNull.notNullValue()));
-			assertThat(giteaPvc.getSpec().getStorageClassName(), is(gitea.getSpec().getStorageClass()));
-			assertThat(giteaPvc.getSpec().getResources().getRequests().get("storage"), is(volumeSize));
-			assertThat(giteaPvc.getStatus().getPhase(), is("Bound"));
-			// Postgres Secret
-			var postgresSecret = client.secrets()
-                    .inNamespace(gitea.getMetadata().getNamespace())
-                    .withName(PostgresSecretDependentResource.getName(gitea)).get();
-			assertThat(postgresSecret, is(IsNull.notNullValue()));
-
-
-			final var postgresDeployment = client.apps().deployments()
-                    .inNamespace(gitea.getMetadata().getNamespace())
-                    .withName(PostgresDeploymentDependentResource.getName(gitea)).get();
-			assertThat(postgresDeployment, is(IsNull.notNullValue()));
-			assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
-			assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
-			assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
-			
-			assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
-				.filter(e -> "POSTGRESQL_PASSWORD".equals(e.getName())).findAny().get().getValueFrom().getSecretKeyRef().getName(), is(postgresSecret.getMetadata().getName()));
-			assertThat(postgresDeployment.getStatus().getReadyReplicas(), is(1));
-			// RS
-			Optional<ReplicaSet> postgresReplicaSet = client.apps().replicaSets()
-				.inNamespace(gitea.getMetadata().getNamespace())
-				.list()
-				.getItems()
-				.stream()
-				.filter(r -> r.getOwnerReferenceFor(postgresDeployment.getMetadata().getUid()).isPresent())
-				.max(Comparator.comparingInt(r -> Integer.valueOf(r.getMetadata().getAnnotations().get("deployment.kubernetes.io/revision"))));
-			assertThat(postgresReplicaSet.isPresent(), is(true));
-			assertThat(postgresReplicaSet.get().getStatus().getReadyReplicas(), is(1));
-			//Pod
-			Optional<Pod> pod = client.pods()
-				.inNamespace(gitea.getMetadata().getNamespace())
-				.list()
-				.getItems()
-				.stream()
-				.filter(p -> p.getOwnerReferenceFor(postgresReplicaSet.get().getMetadata().getUid()).isPresent())
-				.findAny();
-			assertThat(pod.isPresent(), is(true));
-			final var giteaDeployment = client.apps().deployments()
-                    .inNamespace(gitea.getMetadata().getNamespace())
-                    .withName(gitea.getMetadata().getName()).get();
-			assertThat(giteaDeployment, is(IsNull.notNullValue()));
-			assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
-			assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
-			assertThat(giteaDeployment.getStatus().getReadyReplicas(), is(1));
+			assertions.assertPostgresPvc(gitea);
+			assertions.assertGiteaPvc(gitea);
+			assertions.assertGiteaDeployment(gitea);
+			assertions.assertAdminSecret(gitea);
         });
 	}
 

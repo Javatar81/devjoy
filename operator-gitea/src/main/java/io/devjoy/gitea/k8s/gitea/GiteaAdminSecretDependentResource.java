@@ -126,6 +126,6 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 
 	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {
 		return client.resources(Secret.class).inNamespace(primary.getMetadata().getNamespace()).withName(
-				primary.getSpec().getAdminUser() + "-git-secret");
+				getName(primary));
 	}
 }

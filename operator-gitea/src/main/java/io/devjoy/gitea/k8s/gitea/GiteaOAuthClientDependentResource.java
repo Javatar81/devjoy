@@ -90,7 +90,7 @@ public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentRe
 		return client;
 	}
 	
-	@Override
+	/*@Override
 	public Result<OAuthClient> match(OAuthClient actualResource, Gitea primary,
 		      Context<Gitea> context) {
 		var desired = this.desired(primary, context);
@@ -100,7 +100,7 @@ public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentRe
 		 && Objects.equals(actualResource.getRedirectURIs(), desired.getRedirectURIs())
 		 && Objects.equals(actualResource.getGrantMethod(), desired.getGrantMethod());
 	    return Result.computed(equal, desired);
-	}
+	}*/
 
 	public static String clientName(Gitea primary) {
 		return primary.getMetadata().getName() + "-client";

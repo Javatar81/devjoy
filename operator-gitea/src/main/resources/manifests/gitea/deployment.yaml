@@ -32,9 +32,9 @@ spec:
             scheme: HTTP
           initialDelaySeconds: 10
           timeoutSeconds: 1
-          periodSeconds: 30
+          periodSeconds: 10
           successThreshold: 1
-          failureThreshold: 3
+          failureThreshold: 10
         livenessProbe:
           httpGet:
             path: /
