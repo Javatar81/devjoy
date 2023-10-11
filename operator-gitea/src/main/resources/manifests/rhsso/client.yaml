@@ -8,7 +8,7 @@ spec:
     matchLabels:
   client:
     clientId: devjoy-gitea
-    secret: test
+    secret: ""
     standardFlowEnabled: true
     clientAuthenticatorType: client-secret
     defaultClientScopes:

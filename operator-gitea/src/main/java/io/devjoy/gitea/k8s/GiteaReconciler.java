@@ -75,11 +75,11 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(name = "postgresPvc", type = PostgresPvcDependentResource.class),
 		@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependentResource.class), 
 		@Dependent(reconcilePrecondition = GiteaOAuthClientReconcileCondition.class, type = GiteaOAuthClientDependentResource.class),
-		/*@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
+		@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
-		@Dependent(dependsOn = {"keycloakOG", "keycloakSub"}, type = KeycloakDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
-		@Dependent(dependsOn = {"keycloakOG", "keycloakSub"}, type = KeycloakRealmDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
-		@Dependent(dependsOn = {"keycloakOG", "keycloakSub"}, type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class),*/ 
+		@Dependent(type = KeycloakDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
+		@Dependent(type = KeycloakRealmDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
+		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
 		
 })
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea> { 

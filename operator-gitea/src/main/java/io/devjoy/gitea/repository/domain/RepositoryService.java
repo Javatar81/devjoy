@@ -109,7 +109,7 @@ public class RepositoryService {
 			if	(e.getResponse().getStatus() == 404) {
 				return Optional.empty();
 			} else {
-				throw e;
+				throw new ServiceException("Repository cannot be found via API", e);
 			}
 		} catch (IllegalStateException | RestClientDefinitionException | URISyntaxException e) {
 			LOG.error("Error calling repository API", e);

@@ -16,14 +16,13 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
+@ApplicationScoped
 public class GiteaAssertions {
-
-    private OpenShiftClient client;
-
-    public GiteaAssertions(OpenShiftClient client) {
-        this.client = client;
-    }
+    @Inject
+    OpenShiftClient client;
 
     public void assertPostgresPvc(Gitea desired) {
         final var postgresPvc = client.persistentVolumeClaims()
@@ -53,6 +52,14 @@ public class GiteaAssertions {
         final var adminSecret = GiteaAdminSecretDependentResource.getResource(desired, client);
         assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("user"))), is(desired.getSpec().getAdminUser()));
         assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(IsNull.notNullValue()));
+    }
+
+    public void assertGitea(Gitea desired) {
+        final var gitea = client.resources(Gitea.class)
+                .inNamespace(desired.getMetadata().getNamespace())
+                .withName(desired.getMetadata().getName())
+                .get();
+        assertThat(gitea.getSpec().getAdminPassword(), is(IsNull.notNullValue()));
     }
 
     public void assertGiteaDeployment(Gitea desired) {

@@ -23,18 +23,18 @@ public class KeycloakOperatorGroupDependentResource extends CRUDKubernetesDepend
 	}
 	
 
-	@Override
+	/*@Override
 	public OperatorGroup create(OperatorGroup target, Gitea primary, Context<Gitea> context) {
 		Optional<OperatorGroup> groupWithTargetNamespace = client.resources(OperatorGroup.class).inNamespace(primary.getMetadata().getNamespace())
 			.list().getItems()
 			.stream().filter(g -> g.getSpec().getTargetNamespaces() != null && g.getSpec().getTargetNamespaces().contains(primary.getMetadata().getNamespace()))
 			.findAny();
 		return groupWithTargetNamespace.orElse(super.create(target, primary, context));
-	}
+	}*/
 	
 	@Override
 	protected OperatorGroup desired(Gitea primary, Context<Gitea> context) {
-		LOG.debug("Creating desired operator group");
+		LOG.info("Creating desired operator group");
 		OperatorGroup operatorGroup = client.resources(OperatorGroup.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/operator-group.yaml"))
 				.item();

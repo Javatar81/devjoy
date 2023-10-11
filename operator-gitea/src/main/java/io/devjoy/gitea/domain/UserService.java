@@ -94,7 +94,8 @@ public class UserService {
 				.addOption(new Option(OPTION_USERNAME, userName))
 				.addOption(new Option("password", "devjoy"))
 				.addOption(new Option("email", userName + "@example.com"))
-				.addOption(new Option("must-change-password=true", ""))
+				// If the user must change password, token will be invalid, hence must change is set to false
+				.addOption(new Option("must-change-password=false", ""))
 				.build();
 		return execService.execOnDeployment(gitea, cmd);
 	}

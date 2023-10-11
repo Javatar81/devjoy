@@ -40,6 +40,7 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 	
 	@Override
 	protected KeycloakClient desired(Gitea primary, Context<Gitea> context) {
+		LOG.info("Reconciling");
 		KeycloakClient keycloakClient = client.resources(KeycloakClient.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/client.yaml")).item();
 		ObjectMeta metadata = keycloakClient.getMetadata();
@@ -70,6 +71,8 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 				if(isNullOrEmpty(c.getSecret())) {
 					LOG.info("Setting secret for existing client instance because it was empty");
 					spec.getClient().setSecret(passwordService.generateNewPassword(SECRET_LENGTH));
+				} else {
+					spec.getClient().setSecret(c.getSecret());
 				}
 			}, () -> {
 				LOG.info("Setting secret for new client instance");

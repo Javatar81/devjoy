@@ -32,7 +32,7 @@ public class GiteaPodExecService {
 
 	public Optional<String> execOnDeployment(Gitea gitea, Command cmd) {
 		LOG.debug("Executing {}", cmd);
-		Optional<Deployment> deployment = Optional.ofNullable(GiteaDeploymentDependentResource.getResource(gitea, client).waitUntilCondition(c -> c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() > 0, 180, TimeUnit.SECONDS));
+		Optional<Deployment> deployment = Optional.ofNullable(GiteaDeploymentDependentResource.getResource(gitea, client).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() > 0, 180, TimeUnit.SECONDS));
 		return deployment.flatMap(d -> {
 			Optional<ReplicaSet> replicaSet = client.apps().replicaSets()
 				.inNamespace(gitea.getMetadata().getNamespace())

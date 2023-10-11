@@ -12,11 +12,18 @@ import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class KeycloakReconcileCondition implements Condition<Route, Gitea> {
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakReconcileCondition.class);
-    private static String KEYCLOAK_API_VERSION = "v1alpha1";
+    private static String KEYCLOAK_API_VERSION = "v1";
 
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-        return primary.getSpec().isSso() && context.getClient().apiextensions().getApiGroup("keycloak.org") != null 
+        
+        boolean met = primary.getSpec().isSso() && context.getClient().apiextensions().getApiGroup("keycloak.org") != null 
         && KEYCLOAK_API_VERSION.equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
+        if (!met) {
+            LOG.warn("Keycloak will not be provided. Property sso={}, apiGroupAvailable={}, apiVersion={}", primary.getSpec().isSso(),
+                context.getClient().apiextensions().getApiGroup("keycloak.org") != null,
+                context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
+        }
+        return met;
     }
 }

@@ -1,6 +1,7 @@
 package io.devjoy.gitea.repository.k8s;
 
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,6 +41,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.ws.rs.WebApplicationException;
 
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	public static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
@@ -78,9 +80,12 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		return associatedGitea(resource).map(g -> {
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
 			assureUserCreated(resource, g);
-			assureRepositoryExists(resource, context, g);
-			
-			return assureGiteaLabelsSet(resource, g);
+			Optional<Repository> repo = assureRepositoryExists(resource, context, g);
+			UpdateControl<GiteaRepository> ctrl = assureGiteaLabelsSet(resource, g);
+			if (!repo.isPresent()) {
+				ctrl.rescheduleAfter(10, TimeUnit.SECONDS);
+			}
+			return ctrl;
 		}).orElse(noUpdate);
 		
 	}
@@ -113,11 +118,21 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	private void assureUserCreated(GiteaRepository resource, Gitea g) {
-		userService.getUserId(g, resource.getSpec().getUser())
-			.ifPresentOrElse(id -> {},() -> userService.createUserViaExec(g, resource.getSpec().getUser()));
+		LOG.info("Assure user {} is created", resource.getSpec().getUser());
+		Optional<String> userId = userService.getUserId(g, resource.getSpec().getUser())
+			.map(id -> {LOG.info("User with id {} exists", id); return id;})
+			.or(() -> {
+				LOG.info("Creating new user");
+				return userService.createUserViaExec(g, resource.getSpec().getUser());
+			});
+		if (userId.isEmpty()) {
+			LOG.warn("Failed to create user {}", resource.getSpec().getUser());
+		}
+		 
 	}
 
-	private void assureRepositoryExists(GiteaRepository resource, Context<GiteaRepository> context, Gitea g) {
+	private Optional<Repository> assureRepositoryExists(GiteaRepository resource, Context<GiteaRepository> context, Gitea g) {
+		LOG.info("Assure repository {} is created", resource.getMetadata().getName());
 		Optional<Secret> userSecret = recocileUserSecret(resource, context, g);
 		Optional<String> token = userSecret.map(s -> s.getData().get("token"))
 			.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim());
@@ -132,15 +147,22 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		}));
 		
 		LOG.info("Setting clone urls");
-		repository.ifPresent(r -> {
+		repository.ifPresentOrElse(r -> {
 			resource.getStatus().setCloneUrl(r.getCloneUrl());
+			if (StringUtil.isNullOrEmpty(resource.getStatus().getRepositoryCreated())) {
+				resource.getStatus().emitRepositoryCreated();
+			}
 			determineInternalCloneUrl(r.getCloneUrl(), g)
 				.ifPresent(url -> resource.getStatus().setInternalCloneUrl(url));
 			
+		},() -> {
+			LOG.warn("Repository not yet present");
 		});
+		return repository;
 	}
 
 	private UpdateControl<GiteaRepository> assureGiteaLabelsSet(GiteaRepository resource, Gitea g) {
+		LOG.info("Assure labels set");
 		Map<String, String> labels = resource.getMetadata().getLabels();
 		if (!labels.containsKey(LABEL_GITEA_NAME)) {
 			labels.put(LABEL_GITEA_NAME,
@@ -199,14 +221,20 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	
 	@Override
 	public ErrorStatusUpdateControl<GiteaRepository> updateErrorStatus(GiteaRepository gitea, Context<GiteaRepository> context, Exception e) {
-		if (e instanceof ServiceException) {
-			ServiceException serviceException = (ServiceException) e;
+		LOG.info("Error of type {}", e.getClass());
+		if (e.getCause() instanceof ServiceException) {
+			ServiceException serviceException = (ServiceException) e.getCause();
+			String additionalInfo = "";
+			if(serviceException.getCause() instanceof WebApplicationException) {
+				WebApplicationException webException = (WebApplicationException) serviceException.getCause();
+				additionalInfo = ".Caused by http error " + webException.getResponse().getStatus();
+			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(serviceException.getErrorConditionType().toString())
 					.withMessage("Error")
 					.withLastTransitionTime(LocalDateTime.now().toString())
-					.withReason(serviceException.getMessage())
+					.withReason(serviceException.getMessage() + additionalInfo)
 					.withStatus("false")
 					.build());
 		}
@@ -229,7 +257,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	
 	private Optional<String> determineInternalCloneUrl(String externalCloneUrl, Gitea gitea) {
 		try {
-			URL url = new URL(externalCloneUrl);
+			URL url = URI.create(externalCloneUrl).toURL();
 			Optional<Service> giteaService = Optional
 					.ofNullable(GiteaServiceDependentResource.getResource(gitea, client).get());
 			return giteaService.map(s -> String.format("http://%s.%s.svc.cluster.local:%d%s", s.getMetadata().getName(),
