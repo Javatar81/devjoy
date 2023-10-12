@@ -3,16 +3,15 @@ package io.devjoy.operator.environment.k8s.init;
 import java.util.HashMap;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.Task;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = QuarkusTaskDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = QuarkusTaskDiscriminator.class,labelSelector = QuarkusTaskDependentResource.LABEL_SELECTOR)
 public class QuarkusTaskDependentResource extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/task.type";
 	private static final String LABEL_VALUE = "quarkus";
@@ -36,7 +35,7 @@ public class QuarkusTaskDependentResource extends CRUDKubernetesDependentResourc
 		Task task = tektonClient.v1beta1()
 				.tasks()
 				.load(getClass().getClassLoader().getResourceAsStream("init/quarkus-create-task.yaml"))
-				.get();
+				.item();
 		task.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (task.getMetadata().getLabels() == null) {
 			task.getMetadata().setLabels(new HashMap<>());

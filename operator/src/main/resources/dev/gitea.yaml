@@ -1,18 +1,16 @@
-apiVersion: gpte.opentlc.com/v1
+apiVersion: devjoy.io/v1alpha1
 kind: Gitea
 metadata:
   name: devjoy-
 spec:
-  giteaAdminPasswordLength: 32
-  giteaMigrateRepositories: true
-  postgresqlCpuLimit: 1000m
-  giteaVolumeSize: 4Gi
-  giteaAdminUser: devjoyadmin
-  giteaImageTag: latest
-  postgresqlVolumeSize: 4Gi
-  giteaCpuRequest: 10m
-  giteaAdminEmail: admin@example.com
-  postgresqlCpuRequest: 10m
-  giteaAdminPassword: ''
-  giteaCreateUsers: false
-  giteaSsl: true
+  resourceRequirementsEnabled: false
+  logLevel: INFO
+  disableRegistration: false
+  adminPasswordLength: 12
+  migrateRepositories: false
+  registerEmailConfirm: false
+  adminUser: devjoyadmin
+  enableCaptcha: false
+  allowCreateOrganization: false
+  adminEmail: devjoyadmin@example.com
+  ssl: false

@@ -31,7 +31,7 @@ public class GiteaDependentResource extends CRUDKubernetesDependentResource<Gite
 	protected Gitea desired(DevEnvironment primary, Context<DevEnvironment> context) {
 		if (enabledAndManaged(primary)) {
 			Gitea gitea = client.resources(Gitea.class)
-					.load(getClass().getClassLoader().getResourceAsStream("dev/gitea.yaml")).get();
+					.load(getClass().getClassLoader().getResourceAsStream("dev/gitea.yaml")).item();
 			gitea.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 			gitea.getMetadata().setName(generateGiteaName(primary));
 			return gitea;

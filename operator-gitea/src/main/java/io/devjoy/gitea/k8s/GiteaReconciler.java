@@ -42,6 +42,7 @@ import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.openshift.api.model.OAuthClient;
 import io.fabric8.openshift.api.model.Route;
@@ -201,8 +202,8 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 				userService.changeUserPasswordViaExec(resource, resource.getSpec().getAdminUser(), resource.getSpec().getAdminPassword());
 			}
 			
-			
-			LOG.info("Removing admin password because it is stored in secret {}", GiteaAdminSecretDependentResource.getResource(resource, client).get().getMetadata().getName());
+			Optional<Secret> adminSecretResource = Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(resource, client).get());
+			adminSecretResource.ifPresent(r -> LOG.info("Removing admin password because it is stored in secret {}", r.getMetadata().getName()));
 			resource.getSpec().setAdminPassword(null);
 			updateCtrl = UpdateControl.updateResourceAndStatus(resource);
 		} 

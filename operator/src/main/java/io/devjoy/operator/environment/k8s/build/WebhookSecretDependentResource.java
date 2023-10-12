@@ -1,19 +1,19 @@
 package io.devjoy.operator.environment.k8s.build;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
-import javax.inject.Inject;
 
 import io.devjoy.gitea.domain.PasswordService;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.Base64;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent(labelSelector = WebhookSecretDependentResource.LABEL_TYPE_SELECTOR)
 public class WebhookSecretDependentResource extends CRUDKubernetesDependentResource<Secret, DevEnvironment>{
@@ -32,7 +32,7 @@ public class WebhookSecretDependentResource extends CRUDKubernetesDependentResou
 	@Override
 	protected Secret desired(DevEnvironment primary, Context<DevEnvironment> context) {
 		Secret desired = client.resources(Secret.class)
-				.load(getClass().getClassLoader().getResourceAsStream("build/webhook-secret.yaml")).get();
+				.load(getClass().getClassLoader().getResourceAsStream("build/webhook-secret.yaml")).item();
 		desired.getMetadata().setName(getName(primary));
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		HashMap<String, String> labels = new HashMap<>();
@@ -42,8 +42,8 @@ public class WebhookSecretDependentResource extends CRUDKubernetesDependentResou
 			.map(s -> s.getData().get(KEY_WEBHOOK_SECRET))
 			.ifPresentOrElse(pw -> desired.getData().put(KEY_WEBHOOK_SECRET, pw),
 				() -> 
-					desired.getData().put(KEY_WEBHOOK_SECRET, Base64.encodeBytes(
-							passwordService.generateNewPassword(12).getBytes()))
+					desired.getData().put(KEY_WEBHOOK_SECRET, new String(Base64.getEncoder().encode(
+							passwordService.generateNewPassword(12).getBytes())))
 			);
 		return desired;
 	}

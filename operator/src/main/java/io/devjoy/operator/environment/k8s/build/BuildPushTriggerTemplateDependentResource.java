@@ -2,7 +2,6 @@ package io.devjoy.operator.environment.k8s.build;
 
 import java.util.Optional;
 
-import javax.inject.Inject;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
@@ -12,6 +11,7 @@ import io.fabric8.tekton.triggers.v1alpha1.TriggerTemplate;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class BuildPushTriggerTemplateDependentResource extends CRUDKubernetesDependentResource<TriggerTemplate, DevEnvironment>{
@@ -27,7 +27,7 @@ public class BuildPushTriggerTemplateDependentResource extends CRUDKubernetesDep
 		TriggerTemplate triggerTemplate = tektonClient.v1alpha1()
 				.triggerTemplates()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-push-trigger-template.yaml"))
-				.get();
+				.item();
 		triggerTemplate.getMetadata().setName(getName(primary));
 		triggerTemplate.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		

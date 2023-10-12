@@ -2,16 +2,15 @@ package io.devjoy.operator.environment.k8s.build;
 
 import java.util.HashMap;
 
-import javax.inject.Inject;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.Pipeline;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = BuildPipelineDependentResource.LABEL_TYPE_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = BuildPipelineDiscriminator.class, labelSelector = BuildPipelineDependentResource.LABEL_TYPE_SELECTOR)
 public class BuildPipelineDependentResource extends CRUDKubernetesDependentResource<Pipeline, DevEnvironment>{
 	public static final String LABEL_KEY = "devjoy.io/pipeline.type";
 	public static final String LABEL_VALUE = "build";
@@ -29,7 +28,7 @@ public class BuildPipelineDependentResource extends CRUDKubernetesDependentResou
 		Pipeline pipeline = tektonClient.v1beta1()
 				.pipelines()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-pipe.yaml"))
-				.get();
+				.item();
 		String name = pipeline.getMetadata().getName() + primary.getMetadata().getName();
 		pipeline.getMetadata().setName(name);
 		pipeline.getMetadata().setNamespace(primary.getMetadata().getNamespace());

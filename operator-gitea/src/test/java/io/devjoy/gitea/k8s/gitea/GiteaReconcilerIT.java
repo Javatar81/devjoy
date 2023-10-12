@@ -5,6 +5,7 @@ import static org.hamcrest.CoreMatchers.*;
 
 import java.util.concurrent.TimeUnit;
 
+import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.domain.TokenService;
@@ -88,8 +89,7 @@ class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
-			KeycloakDependentResource.getResource(gitea, client).waitUntilCondition(k -> k != null && k.getStatus().getReady() == true, 0, null);
+			assertThat(KeycloakDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
 		});
 	}
 

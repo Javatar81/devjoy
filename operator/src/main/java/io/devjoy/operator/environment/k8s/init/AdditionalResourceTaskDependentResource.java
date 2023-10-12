@@ -3,16 +3,15 @@ package io.devjoy.operator.environment.k8s.init;
 import java.util.HashMap;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.Task;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = AdditionalResourceTaskDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = AdditionalResourceTaskDiscriminator.class, labelSelector = AdditionalResourceTaskDependentResource.LABEL_SELECTOR)
 public class AdditionalResourceTaskDependentResource extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/task.type";
 	private static final String LABEL_VALUE = "additionalresources";
@@ -36,7 +35,7 @@ public class AdditionalResourceTaskDependentResource extends CRUDKubernetesDepen
 		Task task = tektonClient.v1beta1()
 				.tasks()
 				.load(getClass().getClassLoader().getResourceAsStream("init/additional-resources-task.yaml"))
-				.get();
+				.item();
 		task.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (task.getMetadata().getLabels() == null) {
 			task.getMetadata().setLabels(new HashMap<>());

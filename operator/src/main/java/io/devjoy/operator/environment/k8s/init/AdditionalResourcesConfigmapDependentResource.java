@@ -33,7 +33,7 @@ public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernete
 		ConfigMap cm = client
 				.configMaps()
 				.load(getClass().getClassLoader().getResourceAsStream("init/additional-resources-cm.yaml"))
-				.get();
+				.item();
 		
 		String name = cm.getMetadata().getName() + primary.getMetadata().getName();
 		cm.getMetadata().setName(name);

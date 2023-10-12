@@ -1,0 +1,27 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: bookinfo2
+  labels:
+    app: bookinfo2
+    app.kubernetes.io/component: bookinfo2
+    app.kubernetes.io/instance: bookinfo2
+    app.kubernetes.io/name: bookinfo2
+  annotations:
+    openshift.io/generated-by: OpenShiftWebConsole
+spec:
+  ports:
+    - name: 8080-tcp
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+    - name: 8443-tcp
+      protocol: TCP
+      port: 8443
+      targetPort: 8443
+  internalTrafficPolicy: Cluster
+  type: ClusterIP
+  selector:
+    app: bookinfo2
+    deployment: bookinfo2
+

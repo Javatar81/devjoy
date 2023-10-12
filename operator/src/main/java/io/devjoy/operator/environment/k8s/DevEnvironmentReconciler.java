@@ -1,5 +1,7 @@
 package io.devjoy.operator.environment.k8s;
 
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentRe
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
 import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.init.QuarkusTaskDependentResource;
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -25,6 +28,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 	        @Dependent(type = BuildPushTriggerTemplateDependentResource.class),
 	        @Dependent(type = BuildEventListenerDependentResource.class),
 	        @Dependent(type = WebhookSecretDependentResource.class),
+			@Dependent(type = GiteaDependentResource.class),
 	        @Dependent(type = GiteaPushTriggerBindingDependentResource.class),
 	        @Dependent(type = AdditionalResourcesConfigmapDependentResource.class),
 	        @Dependent(type = InitPipelineDependentResource.class),
@@ -44,7 +48,8 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> {
 	LOG.info("Reconciling");
 	if (resource.getStatus() == null) {
 	  resource.setStatus(new DevEnvironmentStatus());
-  	}
+  	} 
+	String status = resource.getStatus().toString();
 	resource.getStatus().setGiteaSubscription(
 			GiteaSubscriptionDependentResource.getResource(client) == null ? "Error: Gitea subscription not found"
 					: "Gitea subscription available");
@@ -54,7 +59,13 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> {
 	resource.getStatus().setGiteaResource(
 			GiteaDependentResource.getResource(client, resource).get() == null ? "Error: Gitea resource not found"
 					: "Gitea resource available");
-	return UpdateControl.patchStatus(resource);
+	if (!status.equals(resource.getStatus().toString())) {
+		return UpdateControl.patchStatus(resource);
+	} else {
+		UpdateControl<DevEnvironment> noUpdate = UpdateControl.noUpdate();
+		return noUpdate.rescheduleAfter(30, TimeUnit.SECONDS);
+	}
+	
   }
 }
 

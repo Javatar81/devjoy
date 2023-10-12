@@ -1,13 +1,12 @@
 package io.devjoy.operator.environment.k8s.build;
 
-import javax.inject.Inject;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.triggers.v1alpha1.TriggerBinding;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class GiteaPushTriggerBindingDependentResource extends CRUDKubernetesDependentResource<TriggerBinding, DevEnvironment>{
@@ -23,7 +22,7 @@ public class GiteaPushTriggerBindingDependentResource extends CRUDKubernetesDepe
 		TriggerBinding triggerBinding = tektonClient.v1alpha1()
 				.triggerBindings()
 				.load(getClass().getClassLoader().getResourceAsStream("build/gitea-trigger-binding.yaml"))
-				.get();
+				.item();
 		triggerBinding.getMetadata().setName(getName(primary, triggerBinding));
 		triggerBinding.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		return triggerBinding;

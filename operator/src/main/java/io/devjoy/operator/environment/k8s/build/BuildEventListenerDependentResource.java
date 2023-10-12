@@ -3,8 +3,6 @@ package io.devjoy.operator.environment.k8s.build;
 import java.util.Map;
 import java.util.Optional;
 
-import javax.inject.Inject;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -14,6 +12,7 @@ import io.fabric8.tekton.triggers.v1alpha1.EventListenerTrigger;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class BuildEventListenerDependentResource extends CRUDKubernetesDependentResource<EventListener, DevEnvironment>{
@@ -30,7 +29,7 @@ public class BuildEventListenerDependentResource extends CRUDKubernetesDependent
 		EventListener eventListener = tektonClient.v1alpha1()
 				.eventListeners()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-event-listener.yaml"))
-				.get();
+				.item();
 		eventListener.getMetadata().setName(getName(primary));
 		eventListener.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		Optional<EventListenerTrigger> trigger = eventListener.getSpec().getTriggers().stream().findFirst();

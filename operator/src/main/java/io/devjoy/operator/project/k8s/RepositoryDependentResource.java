@@ -17,6 +17,7 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -40,7 +41,7 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 			.withName(primary.getMetadata().getName())
 			.withNamespace(primary.getMetadata().getNamespace());
 		repository.setMetadata(metaBuilder.build());
-		DevEnvironment env = getOwningEnvironment(primary).get();
+		DevEnvironment env = getOwningEnvironment(primary).waitUntilCondition(c -> c != null, 120, TimeUnit.SECONDS);
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());
 		labels.put(ENVIRONMENT_NAME_LABEL_KEY, primary.getSpec().getEnvironmentName());
@@ -82,9 +83,9 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 				.getStatus().getAddress().getUrl();
 	}
 	
-	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {
-		return Optional.ofNullable(
+	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject) {
+		return 
 				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
-						.withName(owningProject.getSpec().getEnvironmentName()).get());
+						.withName(owningProject.getSpec().getEnvironmentName());
 	}
 }

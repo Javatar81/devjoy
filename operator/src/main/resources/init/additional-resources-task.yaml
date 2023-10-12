@@ -1,0 +1,32 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: additional-resources
+spec:
+  params:
+    - default: ''
+      description: The project variable
+      name: PROJECT
+      type: string
+    - default: ''
+      description: The repository variable
+      name: REPOSITORY
+      type: string
+    - description: The file with vars to substitute
+      name: FILE
+      type: string
+  steps:
+    - env:
+        - name: PROJECT
+          value: $(params.PROJECT)
+        - name: REPOSITORY
+          value: $(params.REPOSITORY)
+      image: 'quay.io/devjoy/gettext:latest'
+      name: substitutevars
+      resources: {}
+      script: |-
+        echo "copying and substituting from $(workspaces.source.path)/$(params.FILE) to $(workspaces.target.path)/$(params.PROJECT)/$(params.FILE)" && envsubst < $(workspaces.source.path)/$(params.FILE) > $(workspaces.target.path)/$(params.PROJECT)/$(params.FILE)
+      workingDir: $(workspaces.target.path)
+  workspaces:
+    - name: source
+    - name: target
