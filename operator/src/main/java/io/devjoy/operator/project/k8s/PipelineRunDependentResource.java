@@ -101,7 +101,7 @@ public class PipelineRunDependentResource extends KubernetesDependentResource<Pi
 		return tektonClient.v1beta1()
 				.pipelineRuns()
 				.load(PipelineRunDependentResource.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
-				.get();
+				.item();
 	}
 	
 	public static Resource<PipelineRun> getResource(TektonClient tektonClient, Project primary) {

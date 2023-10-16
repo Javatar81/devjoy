@@ -29,13 +29,17 @@ public class InitPipelineDependentResource extends CRUDKubernetesDependentResour
 				.pipelines()
 				.load(getClass().getClassLoader().getResourceAsStream("init/init-project-pipe.yaml"))
 				.item();
-		String name = pipeline.getMetadata().getName() + primary.getMetadata().getName();
+		String name = getName(primary);
 		pipeline.getMetadata().setName(name);
 		pipeline.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		pipeline.getMetadata().setLabels(labels);
 		return pipeline;
+	}
+
+	static String getName(DevEnvironment primary) {
+		return "init-project-" + primary.getMetadata().getName();
 	}
 
 }

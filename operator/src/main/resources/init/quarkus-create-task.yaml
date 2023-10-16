@@ -19,13 +19,25 @@ spec:
   steps:
     - command:
         - quarkus
-        - create
+        - '--version'
+        - '-e'
+        - '--verbose'
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
-      image: 'quay.io/devjoy/quarkuscli:latest'
+      image: 'quay.io/devjoy/quarkuscli:3.4.3'
+      name: version-info
+      resources: {}
+      workingDir: $(workspaces.source.path)
+    - command:
+        - quarkus
+        - create
+        - '-B'
+        - '-e'
+        - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
+      image: 'quay.io/devjoy/quarkuscli:3.4.3'
       name: create
       resources: {}
       workingDir: $(workspaces.source.path)
-    - image: 'quay.io/devjoy/quarkuscli:latest'
+    - image: 'quay.io/devjoy/quarkuscli:3.4.3'
       name: add-extensions
       resources: {}
       script: >-

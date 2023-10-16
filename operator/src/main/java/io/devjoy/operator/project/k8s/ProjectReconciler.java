@@ -13,6 +13,7 @@ import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
+import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -50,9 +51,9 @@ public class ProjectReconciler implements Reconciler<Project> {
 				resource.getStatus().setRepository(repositoryStatus);
 				if (resource.getStatus().getWorkspace() == null || StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) {
 					LOG.info("Setting workspace factory url");
-					PipelineRunDependentResource.getResource(tektonClient, resource)
+					PipelineRun pipelineRun = PipelineRunDependentResource.getResource(tektonClient, resource)
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
-					onPipelineRunComplete(resource, context);
+					onPipelineRunComplete(pipelineRun, resource, context);
 				}
 				
 				return UpdateControl.patchStatus(resource);
@@ -60,8 +61,11 @@ public class ProjectReconciler implements Reconciler<Project> {
 		}).orElseGet(UpdateControl::noUpdate);
 	}
 
-	private void onPipelineRunComplete(Project resource, Context<Project> context) {
+	private void onPipelineRunComplete(PipelineRun pipelineRun, Project resource, Context<Project> context) {
 		WorkspaceStatus status = new WorkspaceStatus();
+		InitStatus initStatus = new InitStatus();
+		initStatus.setPipelineRunConditions(pipelineRun.getStatus().getConditions());
+		status.setInitStatus(initStatus);
 		Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class);
 		repository.ifPresent(r -> {
 			String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");

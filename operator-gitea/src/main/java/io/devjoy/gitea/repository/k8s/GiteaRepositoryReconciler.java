@@ -199,14 +199,18 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	private Optional<Gitea> associatedGitea(GiteaRepository resource) {
+		LOG.info("Looking for Gitea resource");
 		Map<String, String> labels = resource.getMetadata().getLabels();
-		if (labels.containsKey(LABEL_GITEA_NAME) && labels.containsKey(LABEL_GITEA_NAMESPACE)) {
+		String giteaName = labels.get(LABEL_GITEA_NAME);
+		String giteaNamespace = labels.get(LABEL_GITEA_NAMESPACE);
+		if (!StringUtil.isNullOrEmpty(giteaName) && !StringUtil.isNullOrEmpty(giteaNamespace)) {
+			LOG.info("Selecting gitea via label {}={}", LABEL_GITEA_NAME, giteaName);
 			return Optional
-					.ofNullable(client.resources(Gitea.class).inNamespace(labels.get(LABEL_GITEA_NAMESPACE))
-							.withName(labels.get(LABEL_GITEA_NAME)).get());
+					.ofNullable(client.resources(Gitea.class).inNamespace(giteaNamespace)
+							.withName(giteaName).get());
 		} else {
-			String giteaNamespace = labels.containsKey(LABEL_GITEA_NAMESPACE)
-					? labels.get(LABEL_GITEA_NAMESPACE)
+			giteaNamespace = !StringUtil.isNullOrEmpty(giteaNamespace)
+					? giteaNamespace
 					: resource.getMetadata().getNamespace();
 			List<Gitea> giteasInSameNamespace = client.resources(Gitea.class).inNamespace(giteaNamespace).list()
 					.getItems();

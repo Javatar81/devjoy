@@ -16,6 +16,6 @@ public class InitPipelineDiscriminator implements ResourceDiscriminator<Pipeline
     @Override
     public Optional<Pipeline> distinguish(Class<Pipeline> resource, DevEnvironment primary, Context<DevEnvironment> context) {
         return Optional.ofNullable(tektonClient.v1beta1()
-            .pipelines().inNamespace(primary.getMetadata().getNamespace()).withName("init-project-" + primary.getMetadata().getName()).get());
+            .pipelines().inNamespace(primary.getMetadata().getNamespace()).withName(InitPipelineDependentResource.getName(primary)).get());
     }
 }

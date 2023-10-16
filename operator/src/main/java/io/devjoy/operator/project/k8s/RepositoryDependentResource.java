@@ -78,7 +78,7 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 	
 	private String getEventListenerUrl(DevEnvironment env) {
 		return BuildEventListenerDependentResource.getResource(env, client)
-				.waitUntilCondition(el -> el != null && !StringUtil.isNullOrEmpty(el.getStatus().getAddress().getUrl()),
+				.waitUntilCondition(el -> el != null && el.getStatus() != null && !StringUtil.isNullOrEmpty(el.getStatus().getAddress().getUrl()),
 						10, TimeUnit.SECONDS)
 				.getStatus().getAddress().getUrl();
 	}

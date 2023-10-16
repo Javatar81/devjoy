@@ -21,6 +21,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(
 	    dependents = {
@@ -50,16 +51,26 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> {
 	  resource.setStatus(new DevEnvironmentStatus());
   	} 
 	String status = resource.getStatus().toString();
+
 	resource.getStatus().setGiteaSubscription(
 			GiteaSubscriptionDependentResource.getResource(client) == null ? "Error: Gitea subscription not found"
 					: "Gitea subscription available");
 	resource.getStatus().setGiteaCatalogSource(
 			GiteaCatalogSourceDependentResource.getResource(client) == null ? "Error: Gitea catalog source not found"
 					: "Gitea catalog source available");
+	var gitea = GiteaDependentResource.getResource(client, resource).get();
 	resource.getStatus().setGiteaResource(
-			GiteaDependentResource.getResource(client, resource).get() == null ? "Error: Gitea resource not found"
+			gitea == null ? "Error: Gitea resource not found"
 					: "Gitea resource available");
-	if (!status.equals(resource.getStatus().toString())) {
+
+	if(resource.getSpec().getGitea() != null 
+		&& resource.getSpec().getGitea().isEnabled() 
+		&& StringUtil.isNullOrEmpty(resource.getSpec().getGitea().getResourceName())
+		&& gitea != null
+		) {
+		resource.getSpec().getGitea().setResourceName(gitea.getMetadata().getName());
+		return UpdateControl.updateResourceAndStatus(resource);
+	} else if (!status.equals(resource.getStatus().toString())) {
 		return UpdateControl.patchStatus(resource);
 	} else {
 		UpdateControl<DevEnvironment> noUpdate = UpdateControl.noUpdate();
