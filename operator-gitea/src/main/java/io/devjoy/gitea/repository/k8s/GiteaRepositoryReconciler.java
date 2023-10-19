@@ -82,10 +82,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			assureUserCreated(resource, g);
 			Optional<Repository> repo = assureRepositoryExists(resource, context, g);
 			UpdateControl<GiteaRepository> ctrl = assureGiteaLabelsSet(resource, g);
-			if (!repo.isPresent()) {
-				ctrl.rescheduleAfter(10, TimeUnit.SECONDS);
-			}
-			return ctrl;
+			return ctrl.rescheduleAfter(!repo.isPresent() ? 10 : 60, TimeUnit.SECONDS);
 		}).orElse(noUpdate);
 		
 	}

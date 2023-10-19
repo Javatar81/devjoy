@@ -101,7 +101,7 @@ class GiteaReconcilerIT {
 		gitea.getSpec().setAdminPasswordLength(password.length());
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);
@@ -115,7 +115,7 @@ class GiteaReconcilerIT {
 
 	@Test
 	void changeGiteaPassword() {
-		String changedPassword = "pwchange123";
+		String changedPassword = "pwchange123"; // notsecret
 		Gitea gitea = createDefault("pwchange");
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();

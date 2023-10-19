@@ -15,12 +15,18 @@ spec:
     - description: The file with vars to substitute
       name: FILE
       type: string
+    - description: Java Home for the workspace. One of $JAVA_HOME_17, $JAVA_HOME_11, or $JAVA_HOME_8.
+      name: JAVA_HOME
+      type: string
+      default: $JAVA_HOME_17
   steps:
     - env:
         - name: PROJECT
           value: $(params.PROJECT)
         - name: REPOSITORY
           value: $(params.REPOSITORY)
+        - name: JAVA_HOME
+          value: $(params.JAVA_HOME)
       image: 'quay.io/devjoy/gettext:latest'
       name: substitutevars
       resources: {}
