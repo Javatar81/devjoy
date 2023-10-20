@@ -1,0 +1,178 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: release-pipe
+  namespace: bschmeli-devjoy
+spec:
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: 'https://github.com/Javatar81/devjoy.git'
+        - name: revision
+          value: ''
+        - name: refspec
+          value: ''
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: crtFileName
+          value: ca-bundle.crt
+        - name: subdirectory
+          value: ''
+        - name: sparseCheckoutDirectories
+          value: ''
+        - name: deleteExisting
+          value: 'true'
+        - name: httpProxy
+          value: ''
+        - name: httpsProxy
+          value: ''
+        - name: noProxy
+          value: ''
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:16b8e98aa03a874dfc0fd16cd4aaaeea193dc60882c61653e768f8f503fe33e3
+        - name: userHome
+          value: /home/git
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+    - name: create-operator
+      params:
+        - name: MAVEN_IMAGE
+          value: >-
+            registry.redhat.io/ubi8/openjdk-17@sha256:7942acf43a41b8fd202de7c5f7745d9732fae00a401b3da06e1ac988ac26ba4d
+        - name: GOALS
+          value:
+            - package
+            - '-Dquarkus.container-image.build=true'
+            - '-Dquarkus.container-image.push=true'
+        - name: MAVEN_MIRROR_URL
+          value: ''
+        - name: SERVER_USER
+          value: ''
+        - name: SERVER_PASSWORD
+          value: ''
+        - name: PROXY_USER
+          value: ''
+        - name: PROXY_PASSWORD
+          value: ''
+        - name: PROXY_PORT
+          value: ''
+        - name: PROXY_HOST
+          value: ''
+        - name: PROXY_NON_PROXY_HOSTS
+          value: ''
+        - name: PROXY_PROTOCOL
+          value: http
+        - name: CONTEXT_DIR
+          value: ./operator-gitea
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      workspaces:
+        - name: maven-settings
+          workspace: settings
+        - name: source
+          workspace: source
+    - name: create-bundle
+      params:
+        - name: IMAGE
+          value: quay.io/devjoy/gitea-operator-bundle
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./bundle.Dockerfile
+        - name: CONTEXT
+          value: ./operator-gitea/target/bundle/gitea-operator-bundle/
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+        - name: BUILD_EXTRA_ARGS
+          value: ''
+        - name: PUSH_EXTRA_ARGS
+          value: ''
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - create-operator
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+    - name: opm
+      params:
+        - name: ARGS
+          value:
+            - index
+            - add
+            - '-t'
+            - 'quay.io/devjoy/gitea-operator-catalog '
+            - '-u'
+            - podman
+            - '-b'
+            - 'quay.io/devjoy/gitea-operator-bundle:latest'
+            - '--generate'
+            - '-d'
+            - ./target/bundle/gitea-operator-bundle/catalog.Dockerfile
+        - name: CONTEXT_DIR
+          value: ./operator-gitea
+      runAfter:
+        - create-bundle
+      taskRef:
+        kind: Task
+        name: opm
+      workspaces:
+        - name: source
+          workspace: source
+    - name: create-catalog
+      params:
+        - name: IMAGE
+          value: quay.io/devjoy/gitea-operator-catalog
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./target/bundle/gitea-operator-bundle/catalog.Dockerfile
+        - name: CONTEXT
+          value: ./operator-gitea/
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+        - name: BUILD_EXTRA_ARGS
+          value: ''
+        - name: PUSH_EXTRA_ARGS
+          value: ''
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - opm
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+  workspaces:
+    - name: source
+    - name: settings

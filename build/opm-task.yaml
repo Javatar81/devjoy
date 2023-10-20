@@ -1,0 +1,22 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: opm
+spec:
+  params:
+    - name: ARGS
+      type: array
+    - default: .
+      name: CONTEXT_DIR
+      type: string
+  steps:
+    - args:
+        - $(params.ARGS)
+      command:
+        - opm
+      image: quay.io/operator-framework/opm
+      name: 'opm'
+      resources: {}
+      workingDir: $(workspaces.source.path)/$(params.CONTEXT_DIR)
+  workspaces:
+    - name: source
