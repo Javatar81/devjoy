@@ -1,0 +1,224 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: giteareconciler-cluster-role
+rules:
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - create
+      - delete
+      - deletecollection
+    apiGroups:
+      - devjoy.io
+    resources:
+      - giteas
+      - giteas/status
+      - giteas/finalizers
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - oauth.openshift.io
+    resources:
+      - oauthclients
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - secrets
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - persistentvolumeclaims
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - keycloak.org
+    resources:
+      - keycloaks
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - serviceaccounts
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - apps
+    resources:
+      - deployments
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - route.openshift.io
+    resources:
+      - routes
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - operators.coreos.com
+    resources:
+      - operatorgroups
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - keycloak.org
+    resources:
+      - keycloakclients
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - services
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - persistentvolumeclaims
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - secrets
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - keycloak.org
+    resources:
+      - keycloakrealms
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - secrets
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - ''
+    resources:
+      - services
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - apps
+    resources:
+      - deployments
+  - verbs:
+      - get
+      - list
+      - watch
+      - patch
+      - update
+      - delete
+      - create
+    apiGroups:
+      - operators.coreos.com
+    resources:
+      - subscriptions

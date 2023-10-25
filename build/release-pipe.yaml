@@ -46,16 +46,15 @@ spec:
       workspaces:
         - name: output
           workspace: source
-    - name: create-operator
+    - name: test
       params:
         - name: MAVEN_IMAGE
           value: >-
             registry.redhat.io/ubi8/openjdk-17@sha256:7942acf43a41b8fd202de7c5f7745d9732fae00a401b3da06e1ac988ac26ba4d
         - name: GOALS
           value:
-            - package
-            - '-Dquarkus.container-image.build=true'
-            - '-Dquarkus.container-image.push=true'
+            - clean verify
+            - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
         - name: MAVEN_MIRROR_URL
           value: ''
         - name: SERVER_USER
@@ -173,6 +172,30 @@ spec:
       workspaces:
         - name: source
           workspace: source
+    - name: create-operator
+      params:
+        - name: GOALS
+          value:
+            - install
+            - '-Pnative'
+            - >-
+              -Dquarkus.native.additional-build-args=--initialize-at-run-time=org.apache.commons.lang3.RandomStringUtils
+            - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
+            - '-Dquarkus.container-image.build=true'
+            - '-Dquarkus.container-image.push=true'
+            - '-DskipTests'
+        - name: CONTEXT_DIR
+          value: ./operator-gitea
+      runAfter:
+        - test
+      taskRef:
+        kind: Task
+        name: build-native
+      workspaces:
+        - name: source
+          workspace: source
+        - name: maven-settings
+          workspace: settings
   workspaces:
     - name: source
     - name: settings

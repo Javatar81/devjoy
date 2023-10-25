@@ -1,0 +1,29 @@
+apiVersion: tekton.dev/v1beta1
+kind: Task
+metadata:
+  name: build-native
+spec:
+  params:
+    - name: GOALS
+      type: array
+    - default: .
+      name: CONTEXT_DIR
+      type: string
+  steps:
+    - args:
+        - '-s'
+        - $(workspaces.maven-settings.path)/settings.xml
+        - $(params.GOALS)
+      command:
+        - ./mvnw
+      image: 'quay.io/quarkus/ubi-quarkus-mandrel-builder-image:23.0-jdk-17'
+      name: opm
+      resources: {}
+      workingDir: $(workspaces.source.path)/$(params.CONTEXT_DIR)
+  workspaces:
+    - description: The workspace consisting of maven project.
+      name: source
+    - description: >-
+        The workspace consisting of the custom maven settings provided by the
+        user.
+      name: maven-settings
