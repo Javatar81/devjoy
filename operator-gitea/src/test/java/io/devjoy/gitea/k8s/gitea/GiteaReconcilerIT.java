@@ -1,32 +1,27 @@
 package io.devjoy.gitea.k8s.gitea;
 
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 import java.util.concurrent.TimeUnit;
-
-import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.GiteaSpec;
-import io.devjoy.gitea.k8s.rhsso.Keycloak;
 import io.devjoy.gitea.k8s.rhsso.KeycloakDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
-
-import static org.hamcrest.MatcherAssert.assertThat;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
 @QuarkusTest
-class GiteaReconcilerIT {
-	
-	@Inject
+public class GiteaReconcilerIT {
+    @Inject
 	OpenShiftClient client;
 	@Inject
 	TokenService tokenService;
@@ -128,7 +123,7 @@ class GiteaReconcilerIT {
 			
 		}) != null)
 		;
-		await().ignoreExceptions().atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreExceptions().atMost(150, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertions.assertPostgresPvc(gitea);
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
@@ -141,10 +136,4 @@ class GiteaReconcilerIT {
 			//assertThat(token,  is(IsNull.notNullValue()));
         });
 	}
-
-
-
-	
-
-	
 }

@@ -1,7 +1,7 @@
 package io.devjoy.gitea.k8s.gitea;
 
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.awaitility.Awaitility.await;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +24,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 
 @QuarkusTest
-class GiteaRepositoryReconcilerIT {
+public class GiteaRepositoryReconcilerIT {
     @Inject
 	OpenShiftClient client;
     @Inject
