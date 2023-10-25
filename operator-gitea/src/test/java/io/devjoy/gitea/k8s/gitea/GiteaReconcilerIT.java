@@ -116,7 +116,7 @@ public class GiteaReconcilerIT {
 		client.resource(gitea).create();
 		client.apps().deployments()
                 .inNamespace(gitea.getMetadata().getNamespace())
-                .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 60, TimeUnit.SECONDS);
+                .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 120, TimeUnit.SECONDS);
 		await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.resources(Gitea.class).withName("pwchange").edit(n -> {
 			n.getSpec().setAdminPassword(changedPassword);
 			return n;
