@@ -15,8 +15,16 @@ public class TestEnvironment {
     @ConfigProperty(name = "test.quarkus.kubernetes-client.devservices.flavor")
 	Optional<String> devServiceFlavor;
 
-    @Inject
-	OpenShiftClient client;
+	private OpenShiftClient client;
+
+	@Inject
+	public TestEnvironment(OpenShiftClient client) {
+		this.client = client;
+	}
+
+	public TestEnvironment(OpenShiftClient client, Optional<String> devServiceFlavor) {
+		this.devServiceFlavor = devServiceFlavor;
+	}
     
     void createStaticPVsIfRequired() {
 		devServiceFlavor.filter(f -> "k3s".equalsIgnoreCase(f)).ifPresent(f -> {

@@ -5,8 +5,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.hamcrest.core.IsNull;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -18,6 +21,7 @@ import io.devjoy.gitea.repository.k8s.GiteaRepositorySpec;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,20 +29,19 @@ import jakarta.inject.Inject;
 
 @QuarkusTest
 public class GiteaRepositoryReconcilerIT {
-    @Inject
-	OpenShiftClient client;
-    @Inject
-	TestEnvironment env;
 
-    @BeforeEach
-	void beforeAllTests() {
+	static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
+	static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
+
+    @BeforeAll
+	static void beforeAllTests() {
 		Gitea gitea = createDefault("mygiteait-" + System.currentTimeMillis());
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 	}
 
-    @AfterEach
-	void tearDown() {
+    @AfterAll
+	static void tearDown() {
         client.resources(Gitea.class).delete();
 		client.resources(GiteaRepository.class).delete();
 	}
@@ -80,7 +83,7 @@ public class GiteaRepositoryReconcilerIT {
         return repo;
     }
 
-    Gitea createDefault(String name) {
+    static Gitea createDefault(String name) {
 		Gitea gitea = new Gitea();
         gitea.setMetadata(new ObjectMetaBuilder()
                 .withName(name)

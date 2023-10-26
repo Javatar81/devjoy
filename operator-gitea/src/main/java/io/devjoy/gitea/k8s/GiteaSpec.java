@@ -1,7 +1,5 @@
 package io.devjoy.gitea.k8s;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 public class GiteaSpec {
@@ -12,7 +10,7 @@ public class GiteaSpec {
 	@JsonPropertyDescription("The optional admin password. If not set it will be generated. Once set the value will be moved to a secret.")
 	private String adminPassword;
 	@JsonPropertyDescription("The length of the generated admin password. Value is ignored if adminPassword is set. Min length is 10.")
-	private int adminPasswordLength;
+	private int adminPasswordLength = 10; 
 	@JsonPropertyDescription("Size of the storage request of the persistent volume claim. Default value is 4Gi.")
 	private String volumeSize;
 	@JsonPropertyDescription("Storage class of the persistent volume claim.")
@@ -21,15 +19,23 @@ public class GiteaSpec {
 	private String image;
 	@JsonPropertyDescription("The image tag to use for Gitea. Default is latest")
 	private String imageTag;
+	@JsonPropertyDescription("The cpu resource limits for the Gitea deployment")
 	private String cpuLimit;
+	@JsonPropertyDescription("The cpu resource requests for the Gitea deployment")
 	private String cpuRequest;
+	@JsonPropertyDescription("The memory resource limits for the Gitea deployment")
 	private String memoryLimit;
+	@JsonPropertyDescription("The memory resource requests for the Gitea deployment")
 	private String memoryRequest;
 	@JsonPropertyDescription("Enables resource requirements such as cpuLimit, cpuRequest, memoryLimit, and memoryRequest. Default value is true.")
 	private boolean resourceRequirementsEnabled;
+	@JsonPropertyDescription("Enable this to ask for mail confirmation of registration. Requires Mailer to be enabled.. Default value is false.")
 	private boolean registerEmailConfirm;
+	@JsonPropertyDescription("Disable registration, after which only admin can create accounts for users. Default value is false.")
 	private boolean disableRegistration;
+	@JsonPropertyDescription("Enable this to use captcha validation for registration. Default value is false.")
 	private boolean enableCaptcha;
+	@JsonPropertyDescription("Allow new users to create organizations by default. Default is false.")
 	private boolean allowCreateOrganization;
 	@JsonPropertyDescription("Create a route / ingress to access for Gitea.")
 	private boolean ingressEnabled = true;
@@ -41,10 +47,11 @@ public class GiteaSpec {
 	private String route;
 	@JsonPropertyDescription("The log level for Gitea. Default is Warn.")
 	private GiteaLogLevel logLevel;
-	private boolean migrateRepositories;
-	private List<GiteaRepositoryItem> repositoriesList;
+	@JsonPropertyDescription("The specification for the postgres database.")
 	private GiteaPostgresSpec postgres = new GiteaPostgresSpec();
+	@JsonPropertyDescription("The specification for the mailer.")
 	private GiteaMailerSpec mailer = new GiteaMailerSpec();
+	@JsonPropertyDescription("Allows to override arbitrary config properties in the app.ini.")
 	private GiteaConfigOverrides configOverrides = new GiteaConfigOverrides(); 
 	
 	public String getAdminUser() {
@@ -172,18 +179,6 @@ public class GiteaSpec {
 	}
 	public void setLogLevel(GiteaLogLevel logLevel) {
 		this.logLevel = logLevel;
-	}
-	public boolean isMigrateRepositories() {
-		return migrateRepositories;
-	}
-	public void setMigrateRepositories(boolean giteaMigrateRepositories) {
-		this.migrateRepositories = giteaMigrateRepositories;
-	}
-	public List<GiteaRepositoryItem> getRepositoriesList() {
-		return repositoriesList;
-	}
-	public void setRepositoriesList(List<GiteaRepositoryItem> giteaRepositoriesList) {
-		this.repositoriesList = giteaRepositoriesList;
 	}
 	public GiteaPostgresSpec getPostgres() {
 		return postgres;
