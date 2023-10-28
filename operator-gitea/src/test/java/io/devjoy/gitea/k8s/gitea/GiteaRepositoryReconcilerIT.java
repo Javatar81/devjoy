@@ -8,9 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import io.devjoy.gitea.k8s.Gitea;
@@ -25,7 +23,7 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+
 
 @QuarkusTest
 public class GiteaRepositoryReconcilerIT {
@@ -42,8 +40,8 @@ public class GiteaRepositoryReconcilerIT {
 
     @AfterAll
 	static void tearDown() {
-        client.resources(Gitea.class).delete();
 		client.resources(GiteaRepository.class).delete();
+        client.resources(Gitea.class).delete();
 	}
 
     @Test

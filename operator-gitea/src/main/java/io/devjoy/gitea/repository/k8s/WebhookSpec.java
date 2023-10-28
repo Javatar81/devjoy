@@ -14,9 +14,13 @@ public class WebhookSpec {
 	private String targetUrl;
 	@JsonPropertyDescription("The http method of the webhook. Either POST or GET")
 	private String httpMethod = "POST";
+	@JsonPropertyDescription("The list of events to trigger the webhook, e.g. push")
 	private List<String> events;
+	@JsonPropertyDescription("The branch to trigger the webhook, e.g. main or * for all branches")
 	private String branchFilter;
+	@JsonPropertyDescription("The type of the webhook. One of dingtalk, discord, gitea, gogs, msteams, slack, telegram, feishu, wechatwork, packagist.")
 	private String type;
+	@JsonPropertyDescription("Wether this webhook is active. Default is true.")
 	private boolean active = true;
 	@JsonPropertyDescription("A secret containing the secret of the webhook. By default the user secret is referred.")
 	private SecretReferenceSpec secretRef;
