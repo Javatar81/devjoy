@@ -5,15 +5,22 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
 import io.fabric8.kubernetes.api.model.Condition;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 
 public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
 	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
+	@JsonPropertyDescription("Date when repository has been created.")
 	private String repositoryCreated;
+	@JsonPropertyDescription("If the repository already exists.")
     private String repositoryExists;
+	@JsonPropertyDescription("The external clone url if a rout exists. Otherwise this will be the internal clone url.")
     private String cloneUrl;
+	@JsonPropertyDescription("The internal clone url.")
     private String internalCloneUrl;
+	@JsonPropertyDescription("The conditions representing the repository status.")
     private List<Condition> conditions = new ArrayList<>();
 
 	public List<Condition> getConditions() {
@@ -23,8 +30,6 @@ public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
 	public void setConditions(List<Condition> conditions) {
 		this.conditions = conditions;
 	}
-    
-   
     
 	public String getRepositoryCreated() {
 		return repositoryCreated;
