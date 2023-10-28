@@ -5,7 +5,6 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -13,8 +12,6 @@ import org.apache.commons.configuration2.INIConfiguration;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.GiteaConfigOverrides;
@@ -50,6 +47,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	private static final String SECTION_CORS = "cors";
 	private static final String SECTION_UI = "ui";
 	private static final String SECTION_UI_ADMIN = "ui.admin";
+	private static final String SECTION_UI_USER = "ui.user";
 	private static final String SECTION_UI_META = "ui.meta";
 	private static final String SECTION_UI_NOTIFICATION = "ui.notification";
 	private static final String SECTION_UI_SVG = "ui.svg";
@@ -199,7 +197,8 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
         configOverrides.getCors().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CORS).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getUi().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getUiAdmin().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_ADMIN).setProperty(e.getKey().toUpperCase(), e.getValue()));
-        configOverrides.getUiMeta().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_META).setProperty(e.getKey().toUpperCase(), e.getValue()));
+        configOverrides.getUiUser().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_USER).setProperty(e.getKey().toUpperCase(), e.getValue()));
+		configOverrides.getUiMeta().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_META).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getUiNotification().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_NOTIFICATION).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getUiSvg().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_SVG).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getUiCsv().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_UI_CSV).setProperty(e.getKey().toUpperCase(), e.getValue()));

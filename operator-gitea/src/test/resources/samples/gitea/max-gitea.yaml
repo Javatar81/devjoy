@@ -27,7 +27,6 @@ spec:
     registerEmailConfirm: true
     type:  SMTP
     user: devjoymailer
-  migrateRepositories: true
   sso: false
   configOverrides:
     default:
