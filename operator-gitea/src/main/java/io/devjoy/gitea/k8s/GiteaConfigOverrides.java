@@ -15,151 +15,223 @@ public class GiteaConfigOverrides {
      @JsonPropertyDescription("More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---pull-request-repositorypull-request")
     private Map<String, String> repositoryPullRequest = new HashMap<>();
     @JsonProperty("default")
-    @JsonPropertyDescription("Overrides properties in the default section of app.ini. These values are environment-dependent but form the basis of a lot of values. They will be reported as part of the default configuration when running gitea --help or on start-up. The order they are emitted there is slightly different but we will list them here in the order they are set-up. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#overall-default")
+    @JsonPropertyDescription("Overrides properties in the [default] section of app.ini. These values are environment-dependent but form the basis of a lot of values. They will be reported as part of the default configuration when running gitea --help or on start-up. The order they are emitted there is slightly different but we will list them here in the order they are set-up. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#overall-default")
     private Map<String, String> defaults = new HashMap<>();
+    @JsonProperty("repository")
     @JsonPropertyDescription("Overrides properties in the [repository] section of app.ini. These values are environment-dependent but form the basis of a lot of values. They will be reported as part of the default configuration when running gitea --help or on start-up. The order they are emitted there is slightly different but we will list them here in the order they are set-up. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository-repository")
     private Map<String, String> repository = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.issue] section of app.ini. More details can be found here: repository.issuehttps://docs.gitea.com/administration/config-cheat-sheet#repository---issue-repositoryissue")
+    @JsonProperty("repository.issue")
+    @JsonPropertyDescription("Overrides properties in the [repository.issue] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---issue-repositoryissue")
     private Map<String, String> repositoryIssue = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.upload] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---upload-repositoryupload")
+    @JsonProperty("repository.upload")
+    @JsonPropertyDescription("Overrides properties in the [repository.upload] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---upload-repositoryupload")
     private Map<String, String> repositoryUpload = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.release] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---release-repositoryrelease")
+    @JsonProperty("repository.release")
+    @JsonPropertyDescription("Overrides properties in the [repository.release] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---release-repositoryrelease")
     private Map<String, String> repositoryRelease = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.signing] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---signing-repositorysigning")
+    @JsonProperty("repository.signing")
+    @JsonPropertyDescription("Overrides properties in the [repository.signing] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---signing-repositorysigning")
     private Map<String, String> repositorySigning = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.local] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---local-repositorylocal")
+    @JsonProperty("repository.local")
+    @JsonPropertyDescription("Overrides properties in the [repository.local] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---local-repositorylocal")
     private Map<String, String> repositoryLocal = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repository.mimetype_mapping] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository----mime-type-mapping-repositorymimetype_mapping")
+    @JsonProperty("repository.mimetype_mapping")
+    @JsonPropertyDescription("Overrides properties in the [repository.mimetype_mapping] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository----mime-type-mapping-repositorymimetype_mapping")
     private Map<String, String> repositoryMimeTypeMapping = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cors] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cors-cors")
+    @JsonProperty("cors")
+    @JsonPropertyDescription("Overrides properties in the [cors] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cors-cors")
     private Map<String, String> cors = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui-ui")
+    @JsonProperty("ui")
+    @JsonPropertyDescription("Overrides properties in the [ui] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui-ui")
     private Map<String, String> ui = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.admin] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---admin-uiadmin")
+    @JsonProperty("ui.admin")
+    @JsonPropertyDescription("Overrides properties in the [ui.admin] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---admin-uiadmin")
     private Map<String, String> uiAdmin = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.user] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---user-uiuser")
+    @JsonProperty("ui.user")
+    @JsonPropertyDescription("Overrides properties in the [ui.user] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---user-uiuser")
     private Map<String, String> uiUser = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.meta] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---metadata-uimeta")
+    @JsonProperty("ui.meta")
+    @JsonPropertyDescription("Overrides properties in the [ui.meta] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---metadata-uimeta")
     private Map<String, String> uiMeta = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.notification] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---notification-uinotification")
+    @JsonProperty("ui.notification")
+    @JsonPropertyDescription("Overrides properties in the [ui.notification] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---notification-uinotification")
     private Map<String, String> uiNotification = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.svg] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---svg-images-uisvg")
+    @JsonProperty("ui.svg")
+    @JsonPropertyDescription("Overrides properties in the [ui.svg] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---svg-images-uisvg")
     private Map<String, String> uiSvg = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ui.csv] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---csv-files-uicsv")
+    @JsonProperty("ui.csv")
+    @JsonPropertyDescription("Overrides properties in the [ui.csv] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ui---csv-files-uicsv")
     private Map<String, String> uiCsv = new HashMap<>();
-    @JsonProperty("Overrides properties in the [markdown] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#markdown-markdown")
+    @JsonProperty("markdown")
+    @JsonPropertyDescription("Overrides properties in the [markdown] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#markdown-markdown")
     private Map<String, String> markdown = new HashMap<>();
-    @JsonProperty("Overrides properties in the [server] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#server-server")
+    @JsonProperty("server")
+    @JsonPropertyDescription("Overrides properties in the [server] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#server-server")
     private Map<String, String> server = new HashMap<>();
-    @JsonProperty("Overrides properties in the [database] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#database-database")
+    @JsonProperty("database")
+    @JsonPropertyDescription("Overrides properties in the [database] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#database-database")
     private Map<String, String> database = new HashMap<>();
-    @JsonProperty("Overrides properties in the [indexer] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#indexer-indexer")
+    @JsonProperty("indexer")
+    @JsonPropertyDescription("Overrides properties in the [indexer] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#indexer-indexer")
     private Map<String, String> indexer = new HashMap<>();
-    @JsonProperty("Overrides properties in the [queue] section of app.ini. Configuration at [queue] will set defaults for queues with overrides for individual queues at [queue.*]. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#queue-queue-and-queue")
+    @JsonProperty("queue")
+    @JsonPropertyDescription("Overrides properties in the [queue] section of app.ini. Configuration at [queue] will set defaults for queues with overrides for individual queues at [queue.*]. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#queue-queue-and-queue")
     private Map<String, String> queue = new HashMap<>();
-    @JsonProperty("Overrides properties in the [admin] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#admin-admin")
+    @JsonProperty("admin")
+    @JsonPropertyDescription("Overrides properties in the [admin] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#admin-admin")
     private Map<String, String> admin = new HashMap<>();
-    @JsonProperty("Overrides properties in the [security] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#security-security")
+    @JsonProperty("security")
+    @JsonPropertyDescription("Overrides properties in the [security] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#security-security")
     private Map<String, String> security = new HashMap<>();
-    @JsonProperty("Overrides properties in the [camo] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#camo-camo")
+    @JsonProperty("camo")
+    @JsonPropertyDescription("Overrides properties in the [camo] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#camo-camo")
     private Map<String, String> camo = new HashMap<>();
-    @JsonProperty("Overrides properties in the [openid] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#openid-openid")
+    @JsonProperty("openid")
+    @JsonPropertyDescription("Overrides properties in the [openid] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#openid-openid")
     private Map<String, String> openid = new HashMap<>();
-    @JsonProperty("Overrides properties in the [oauth2_client] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#oauth2-client-oauth2_client")
+    @JsonProperty("oauth2_client")
+    @JsonPropertyDescription("Overrides properties in the [oauth2_client] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#oauth2-client-oauth2_client")
     private Map<String, String> oauth2Client = new HashMap<>();
-    @JsonProperty("Overrides properties in the [service] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#service-service")
+    @JsonProperty("service")
+    @JsonPropertyDescription("Overrides properties in the [service] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#service-service")
     private Map<String, String> service = new HashMap<>();
-    @JsonProperty("Overrides properties in the [service.explore] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#service---explore-serviceexplore")
+    @JsonProperty("service.explore")
+    @JsonPropertyDescription("Overrides properties in the [service.explore] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#service---explore-serviceexplore")
     private Map<String, String> serviceExplore = new HashMap<>();
-    @JsonProperty("Overrides properties in the [ssh.minimum_key_sizes] section of app.ini. Define allowed algorithms and their minimum key length (use -1 to disable a type): ED25519: 256, ECDSA: 256, RSA: 2047, DSA: -1. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ssh-minimum-key-sizes-sshminimum_key_sizes")
+    @JsonProperty("ssh.minimum_key_sizes")
+    @JsonPropertyDescription("Overrides properties in the [ssh.minimum_key_sizes] section of app.ini. Define allowed algorithms and their minimum key length (use -1 to disable a type): ED25519: 256, ECDSA: 256, RSA: 2047, DSA: -1. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#ssh-minimum-key-sizes-sshminimum_key_sizes")
     private Map<String, String> sshMinimumKeySizes = new HashMap<>();
-    @JsonProperty("Overrides properties in the [webhook] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#webhook-webhook")
+    @JsonProperty("webhook")
+    @JsonPropertyDescription("Overrides properties in the [webhook] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#webhook-webhook")
     private Map<String, String> webhook = new HashMap<>();
-    @JsonProperty("Overrides properties in the [mailer] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#mailer-mailer")
+    @JsonProperty("mailer")
+    @JsonPropertyDescription("Overrides properties in the [mailer] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#mailer-mailer")
     private Map<String, String> mailer = new HashMap<>();
-    @JsonProperty("Overrides properties in the [email.incoming] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#incoming-email-emailincoming")
+    @JsonProperty("email.incoming")
+    @JsonPropertyDescription("Overrides properties in the [email.incoming] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#incoming-email-emailincoming")
     private Map<String, String> emailIncoming = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cache] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cache-cache")
+    @JsonProperty("cache")
+    @JsonPropertyDescription("Overrides properties in the [cache] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cache-cache")
     private Map<String, String> cache = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cache.last_commit] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cache---lastcommitcache-settings-cachelast_commit")
+    @JsonProperty("cache.last_commit")
+    @JsonPropertyDescription("Overrides properties in the [cache.last_commit] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cache---lastcommitcache-settings-cachelast_commit")
     private Map<String, String> cacheLastCommit = new HashMap<>();
-    @JsonProperty("Overrides properties in the [session] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#session-session")
+    @JsonProperty("session")
+    @JsonPropertyDescription("Overrides properties in the [session] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#session-session")
     private Map<String, String> session = new HashMap<>();
-    @JsonProperty("Overrides properties in the [picture] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#picture-picture")
+    @JsonProperty("picture")
+    @JsonPropertyDescription("Overrides properties in the [picture] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#picture-picture")
     private Map<String, String> picture = new HashMap<>();
-    @JsonProperty("Overrides properties in the [project] section of app.ini. Default templates for project boards. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#project-project")
+    @JsonProperty("project")
+    @JsonPropertyDescription("Overrides properties in the [project] section of app.ini. Default templates for project boards. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#project-project")
     private Map<String, String> project = new HashMap<>();
-    @JsonProperty("Overrides properties in the [attachment] section of app.ini. Issue and pull request attachments. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#issue-and-pull-request-attachments-attachment")
+    @JsonProperty("attachment")
+    @JsonPropertyDescription("Overrides properties in the [attachment] section of app.ini. Issue and pull request attachments. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#issue-and-pull-request-attachments-attachment")
     private Map<String, String> attachment = new HashMap<>();
-    @JsonProperty("Overrides properties in the [log] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#log-log")
+    @JsonProperty("log")
+    @JsonPropertyDescription("Overrides properties in the [log] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#log-log")
     private Map<String, String> log = new HashMap<>();
-    @JsonProperty("Overrides properties in the [log.console] section of app.ini. Console log mode. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#console-log-mode-logconsole-or-modeconsole")
+    @JsonProperty("log.console")
+    @JsonPropertyDescription("Overrides properties in the [log.console] section of app.ini. Console log mode. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#console-log-mode-logconsole-or-modeconsole")
     private Map<String, String> logConsole = new HashMap<>();
-    @JsonProperty("Overrides properties in the [log.file] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#file-log-mode-logfile-or-modefile")
+    @JsonProperty("log.file")
+    @JsonPropertyDescription("Overrides properties in the [log.file] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#file-log-mode-logfile-or-modefile")
     private Map<String, String> logFile = new HashMap<>();
-    @JsonProperty("Overrides properties in the [log.conn] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#conn-log-mode-logconn-or-modeconn")
+    @JsonProperty("log.conn")
+    @JsonPropertyDescription("Overrides properties in the [log.conn] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#conn-log-mode-logconn-or-modeconn")
     private Map<String, String> logConn = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cron-cron")
+    @JsonProperty("cron")
+    @JsonPropertyDescription("Overrides properties in the [cron] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cron-cron")
     private Map<String, String> cron = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.archive_cleanup] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.archive_cleanup")
+    @JsonPropertyDescription("Overrides properties in the [cron.archive_cleanup] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronArchiveCleanup = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.update_mirrors] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.update_mirrors")
+    @JsonPropertyDescription("Overrides properties in the [cron.update_mirrors] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronUpdateMirrors = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.repo_health_check] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.repo_health_check")
+    @JsonPropertyDescription("Overrides properties in the [cron.repo_health_check] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronRepoHealthCheck = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.check_repo_stats] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.check_repo_stats")
+    @JsonPropertyDescription("Overrides properties in the [cron.check_repo_stats] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronCheckRepoStats = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.cleanup_hook_task_table] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.cleanup_hook_task_table")
+    @JsonPropertyDescription("Overrides properties in the [cron.cleanup_hook_task_table] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronCleanupHookTaskTable = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.cleanup_packages] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.cleanup_packages")
+    @JsonPropertyDescription("Overrides properties in the [cron.cleanup_packages] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronCleanupPackages = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.update_migration_poster_id] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.update_migration_poster_id")
+    @JsonPropertyDescription("Overrides properties in the [cron.update_migration_poster_id] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronUpdateMigrationPosterId = new HashMap<>();
-    @JsonProperty("Overrides properties in the [cron.sync_external_users] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
+    @JsonProperty("cron.sync_external_users")
+    @JsonPropertyDescription("Overrides properties in the [cron.sync_external_users] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#basic-cron-tasks---enabled-by-default")
     private Map<String, String> cronSyncExternalUsers = new HashMap<>();
-    @JsonProperty("Overrides properties in the [git] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git-git")
+    @JsonProperty("git")
+    @JsonPropertyDescription("Overrides properties in the [git] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git-git")
     private Map<String, String> git = new HashMap<>();
-    @JsonProperty("Overrides properties in the [git.timeout] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git---timeout-settings-gittimeout")
+    @JsonProperty("git.timeout")
+    @JsonPropertyDescription("Overrides properties in the [git.timeout] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git---timeout-settings-gittimeout")
     private Map<String, String> gitTimeout = new HashMap<>();
-    @JsonProperty("Overrides properties in the [git.config] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git---config-options-gitconfign")
+    @JsonProperty("git.config")
+    @JsonPropertyDescription("Overrides properties in the [git.config] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#git---config-options-gitconfign")
     private Map<String, String> gitConfig = new HashMap<>();
-    @JsonProperty("Overrides properties in the [metrics] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#metrics-metrics")
+    @JsonProperty("metrics")
+    @JsonPropertyDescription("Overrides properties in the [metrics] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#metrics-metrics")
     private Map<String, String> metrics = new HashMap<>();
-    @JsonProperty("Overrides properties in the [api] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#api-api")
+    @JsonProperty("api")
+    @JsonPropertyDescription("Overrides properties in the [api] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#api-api")
     private Map<String, String> api = new HashMap<>();
-    @JsonProperty("Overrides properties in the [oauth2] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#oauth2-oauth2")
+    @JsonProperty("oauth2")
+    @JsonPropertyDescription("Overrides properties in the [oauth2] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#oauth2-oauth2")
     private Map<String, String> oauth2 = new HashMap<>();
-    @JsonProperty("Overrides properties in the [i18n] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#i18n-i18n")
+    @JsonProperty("i18n")
+    @JsonPropertyDescription("Overrides properties in the [i18n] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#i18n-i18n")
     private Map<String, String> i18n = new HashMap<>();
-    @JsonProperty("Overrides properties in the [markup] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#markup-markup")
+    @JsonProperty("markup")
+    @JsonPropertyDescription("Overrides properties in the [markup] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#markup-markup")
     private Map<String, String> markup = new HashMap<>();
-    @JsonProperty("Overrides properties in the [highlight.mapping] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#highlight-mappings-highlightmapping")
+    @JsonProperty("highlight.mapping")
+    @JsonPropertyDescription("Overrides properties in the [highlight.mapping] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#highlight-mappings-highlightmapping")
     private Map<String, String> highlightMapping = new HashMap<>();
-    @JsonProperty("Overrides properties in the [time] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#time-time")
+    @JsonProperty("time")
+    @JsonPropertyDescription("Overrides properties in the [time] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#time-time")
     private Map<String, String> time = new HashMap<>();
-    @JsonProperty("Overrides properties in the [task] section of app.ini. Task queue configuration has been moved to queue.task. However, the  configuration values are kept for backwards compatibility. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#task-task")
+    @JsonProperty("task")
+    @JsonPropertyDescription("Overrides properties in the [task] section of app.ini. Task queue configuration has been moved to queue.task. However, the  configuration values are kept for backwards compatibility. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#task-task")
     private Map<String, String> task = new HashMap<>();
-    @JsonProperty("Overrides properties in the [migrations] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#migrations-migrations")
+    @JsonProperty("migrations")
+    @JsonPropertyDescription("Overrides properties in the [migrations] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#migrations-migrations")
     private Map<String, String> migrations = new HashMap<>();
-    @JsonProperty("Overrides properties in the [federation] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#federation-federation")
+    @JsonProperty("federation")
+    @JsonPropertyDescription("Overrides properties in the [federation] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#federation-federation")
     private Map<String, String> federation = new HashMap<>();
-    @JsonProperty("Overrides properties in the [packages] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#packages-packages")
+    @JsonProperty("packages")
+    @JsonPropertyDescription("Overrides properties in the [packages] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#packages-packages")
     private Map<String, String> packages = new HashMap<>();
-    @JsonProperty("Overrides properties in the [mirror] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#mirror-mirror")
+    @JsonProperty("mirror")
+    @JsonPropertyDescription("Overrides properties in the [mirror] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#mirror-mirror")
     private Map<String, String> mirror = new HashMap<>();
-    @JsonProperty("Overrides properties in the [lfs] section of app.ini. Storage configuration for lfs data. It will be derived from default [storage] or [storage.xxx] when set STORAGE_TYPE to xxx. When derived, the default of PATH is data/lfs and the default of MINIO_BASE_PATH is lfs/. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#lfs-lfs")
+    @JsonProperty("lfs")
+    @JsonPropertyDescription("Overrides properties in the [lfs] section of app.ini. Storage configuration for lfs data. It will be derived from default [storage] or [storage.xxx] when set STORAGE_TYPE to xxx. When derived, the default of PATH is data/lfs and the default of MINIO_BASE_PATH is lfs/. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#lfs-lfs")
     private Map<String, String> lfs = new HashMap<>();
-    @JsonProperty("Overrides properties in the [storage] section of app.ini. Default storage configuration for attachments, lfs, avatars, repo-avatars, repo-archive, packages, actions_log, actions_artifact. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#storage-storage")
+    @JsonProperty("storage")
+    @JsonPropertyDescription("Overrides properties in the [storage] section of app.ini. Default storage configuration for attachments, lfs, avatars, repo-avatars, repo-archive, packages, actions_log, actions_artifact. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#storage-storage")
     private Map<String, String> storage = new HashMap<>();
-    @JsonProperty("Overrides properties in the [storage.repo-archive] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cron-cron")
+    @JsonProperty("storage.repo-archive")
+    @JsonPropertyDescription("Overrides properties in the [storage.repo-archive] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#cron-cron")
     private Map<String, String> storageRepoArchive = new HashMap<>();
-    @JsonProperty("Overrides properties in the [repo-archive] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository-archives-repo-archive")
+    @JsonProperty("repo-archive")
+    @JsonPropertyDescription("Overrides properties in the [repo-archive] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository-archives-repo-archive")
     private Map<String, String> repoArchive = new HashMap<>();
-    @JsonProperty("Overrides properties in the [proxy] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#proxy-proxy")
+    @JsonProperty("proxy")
+    @JsonPropertyDescription("Overrides properties in the [proxy] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#proxy-proxy")
     private Map<String, String> proxy = new HashMap<>();
-    @JsonProperty("Overrides properties in the [actions] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#actions-actions")
+    @JsonProperty("actions")
+    @JsonPropertyDescription("Overrides properties in the [actions] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#actions-actions")
     private Map<String, String> actions = new HashMap<>();
-    @JsonProperty("Overrides properties in the [other] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#other-other")
+    @JsonProperty("other")
+    @JsonPropertyDescription("Overrides properties in the [other] section of app.ini. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#other-other")
     private Map<String, String> other = new HashMap<>();
 
     public Map<String, String> getRepository() {
