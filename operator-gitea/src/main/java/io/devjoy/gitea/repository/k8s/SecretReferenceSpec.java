@@ -1,10 +1,17 @@
 package io.devjoy.gitea.repository.k8s;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
 import jakarta.annotation.Generated;
 
 public class SecretReferenceSpec {
+	@JsonPropertyDescription("The namespace of the referenced secret. If empty, it points to the same namespace as the repository resource.")
 	private String namespace;
+	@JsonPropertyDescription("The name of the referenced secret.")
+	@JsonProperty(required = true)
 	private String name;
+	@JsonPropertyDescription("The key storing the password as value.")
 	private String key;
 
 	public SecretReferenceSpec() {

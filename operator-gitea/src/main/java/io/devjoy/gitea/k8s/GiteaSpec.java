@@ -54,6 +54,7 @@ public class GiteaSpec {
 	@JsonPropertyDescription("Allows to override arbitrary config properties in the app.ini.")
 	private GiteaConfigOverrides configOverrides = new GiteaConfigOverrides(); 
 	
+	
 	public String getAdminUser() {
 		return adminUser;
 	}
