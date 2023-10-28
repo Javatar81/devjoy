@@ -273,7 +273,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.getSection(SECTION_MAILER).setProperty("ENABLED", mailer.isEnabled());
 		if (mailer.isEnabled()) {
 			iniConfiguration.getSection(SECTION_MAILER).setProperty("FROM", mailer.getFrom());
-			iniConfiguration.getSection(SECTION_MAILER).setProperty("PROTOCOL", mailer.getType());
+			iniConfiguration.getSection(SECTION_MAILER).setProperty("PROTOCOL", mailer.getProtocol());
 			iniConfiguration.getSection(SECTION_MAILER).setProperty("SMTP_ADDR", mailer.getHost());
 			iniConfiguration.getSection(SECTION_MAILER).setProperty("USER", mailer.getUser());
 			iniConfiguration.getSection(SECTION_MAILER).setProperty("PASSWD", mailer.getPassword());

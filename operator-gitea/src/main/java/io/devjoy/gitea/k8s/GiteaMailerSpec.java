@@ -8,7 +8,7 @@ public class GiteaMailerSpec {
 	@JsonPropertyDescription("Mail from address, RFC 5322. This can be just an email address, or the \"Name\" \\email@example.com\\ format.")
 	private String from;
 	@JsonPropertyDescription("Mail server protocol. One of \"smtp\", \"smtps\", \"smtp+starttls\", \"smtp+unix\", \"sendmail\", \"dummy\"")
-	private String type;
+	private String protocol;
 	@JsonPropertyDescription("Mail server address + port. e.g. smtp.gmail.com. For smtp+unix, this should be a path to a unix socket instead. Mail server port. If no protocol is specified, it will be inferred by this setting")
 	private String host;
 	@JsonPropertyDescription("Username of mailing user (usually the sender's e-mail address).")
@@ -31,11 +31,11 @@ public class GiteaMailerSpec {
 	public void setFrom(String from) {
 		this.from = from;
 	}
-	public String getType() {
-		return type;
+	public String getProtocol() {
+		return protocol;
 	}
-	public void setType(String type) {
-		this.type = type;
+	public void setProtocol(String protocol) {
+		this.protocol = protocol;
 	}
 	public String getHost() {
 		return host;
