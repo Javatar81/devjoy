@@ -141,7 +141,7 @@ public class GiteaReconcilerIT {
 
 	@Test
 	void createGiteaWitAllFields() {
-		Gitea gitea = createDefault("mygiteait");
+		Gitea gitea = createDefault("allfields");
 		GiteaSpec spec = gitea.getSpec();
 		spec.setSso(false);
 		spec.setAdminPassword("test12345"); // notsecret
@@ -183,12 +183,28 @@ public class GiteaReconcilerIT {
 		over.getCache().put("INTERVAL", "120");
 		over.getCacheLastCommit().put("ITEM_TTL", "-1");
 		over.getCamo().put("SERVER_URL", "example.com");
+		over.getCors().put("ENABLED","true");
+		over.getCron().put("ENABLED", "true");
+		over.getCronArchiveCleanup().put("ENABLED", "false");
+		over.getCronCheckRepoStats().put("RUN_AT_START", "false");
+		over.getCronCleanupHookTaskTable().put("ENABLED", "false");
+		over.getCronCleanupPackages().put("ENABLED", "false");
+		over.getCronRepoHealthCheck().put("TIMEOUT", "45s");
+		over.getCronSyncExternalUsers().put("UPDATE_EXISTING", "false");
+		over.getCronUpdateMigrationPosterId().put("SCHEDULE", "@midnight");
+		over.getCronUpdateMirrors().put("PULL_LIMIT", "30");
+		over.getDatabase().put("DB_RETRIES","11");
+		over.getDefaults().put("APP_NAME","Gitea: Git with a cup of tea under test");
+		over.getEmailIncoming().put("USERNAME","devjoyusr");
+		over.getFederation().put("MAX_SIZE","5");
+		over.getGit().put("DISABLE_PARTIAL_CLONE","true");
+		//TODO Leads to https://github.com/Javatar81/devjoy/issues/22 over.getGitConfig().put("core\\.logAllRefUpdates","false");
 
 		env.createStaticPVsIfRequired();
 		
 		
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);

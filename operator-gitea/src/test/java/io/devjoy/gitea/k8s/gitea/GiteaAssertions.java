@@ -166,6 +166,7 @@ public class GiteaAssertions {
 			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("SMTP_ADDR"), is(mailer.getHost()));
 			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("USER"), is(mailer.getUser()));
 			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("PASSWD"), is(mailer.getPassword()));
+           
         }
     }
 
@@ -182,6 +183,22 @@ public class GiteaAssertions {
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CACHE).getProperty("INTERVAL"), is(desired.getSpec().getConfigOverrides().getCache().get("INTERVAL")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CACHE_LAST_COMMIT).getProperty("ITEM_TTL"), is(desired.getSpec().getConfigOverrides().getCacheLastCommit().get("ITEM_TTL")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CAMO).getProperty("SERVER_URL"), is(desired.getSpec().getConfigOverrides().getCamo().get("SERVER_URL")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CORS).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getCors().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getCron().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_ARCHIVE_CLEANUP).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getCronArchiveCleanup().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_CHECK_REPO_STATS).getProperty("RUN_AT_START"), is(desired.getSpec().getConfigOverrides().getCronCheckRepoStats().get("RUN_AT_START")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_CLEANUP_HOOK_TASK_TABLE).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getCronCleanupHookTaskTable().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_CLEANUP_PACKAGES).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getCronCleanupPackages().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_REPO_HEALTH_CHECK).getProperty("TIMEOUT"), is(desired.getSpec().getConfigOverrides().getCronRepoHealthCheck().get("TIMEOUT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_SYNC_EXTERNAL_USERS).getProperty("UPDATE_EXISTING"), is(desired.getSpec().getConfigOverrides().getCronSyncExternalUsers().get("UPDATE_EXISTING")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_UPDATE_MIGRATION_POSTER_ID).getProperty("SCHEDULE"), is(desired.getSpec().getConfigOverrides().getCronUpdateMigrationPosterId().get("SCHEDULE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CRON_UPDATE_MIRRORS).getProperty("PULL_LIMIT"), is(desired.getSpec().getConfigOverrides().getCronUpdateMirrors().get("PULL_LIMIT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_DATABASE).getProperty("DB_RETRIES"), is(desired.getSpec().getConfigOverrides().getDatabase().get("DB_RETRIES")));
+            assertThat(iniConfiguration.getProperty("APP_NAME"), is(desired.getSpec().getConfigOverrides().getDefaults().get("APP_NAME")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_EMAIL_INCOMING).getProperty("USERNAME"), is(desired.getSpec().getConfigOverrides().getEmailIncoming().get("USERNAME")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_FEDERATION).getProperty("MAX_SIZE"), is(desired.getSpec().getConfigOverrides().getFederation().get("MAX_SIZE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT).getProperty("DISABLE_PARTIAL_CLONE"), is(desired.getSpec().getConfigOverrides().getGit().get("DISABLE_PARTIAL_CLONE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT_CONFIG).getProperty("core.logAllRefUpdates"), is(desired.getSpec().getConfigOverrides().getGitConfig().get("core.logAllRefUpdates")));
         }
     }
 }

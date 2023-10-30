@@ -82,7 +82,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
     static final String SECTION_CRON_CHECK_REPO_STATS = "cron.check_repo_stats";
     static final String SECTION_CRON_CLEANUP_HOOK_TASK_TABLE = "cron.cleanup_hook_task_table";
     static final String SECTION_CRON_CLEANUP_PACKAGES = "cron.cron.cleanup_packages";
-    static final String SECTION_CRON_MIGRATION_POSTER_ID = "cron.update_migration_poster_id";
+    static final String SECTION_CRON_UPDATE_MIGRATION_POSTER_ID = "cron.update_migration_poster_id";
     static final String SECTION_CRON_SYNC_EXTERNAL_USERS = "cron.sync_external_users";
     static final String SECTION_GIT = "git";
     static final String SECTION_GIT_TIMEOUT = "git.timeout";
@@ -238,10 +238,10 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
         configOverrides.getCronCheckRepoStats().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_CHECK_REPO_STATS).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getCronCleanupHookTaskTable().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_CLEANUP_HOOK_TASK_TABLE).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getCronCleanupPackages().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_CLEANUP_PACKAGES).setProperty(e.getKey().toUpperCase(), e.getValue()));
-        configOverrides.getCronUpdateMigrationPosterId().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_MIGRATION_POSTER_ID).setProperty(e.getKey().toUpperCase(), e.getValue()));
+        configOverrides.getCronUpdateMigrationPosterId().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_UPDATE_MIGRATION_POSTER_ID).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getCronSyncExternalUsers().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_CRON_SYNC_EXTERNAL_USERS).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getGit().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_GIT).setProperty(e.getKey().toUpperCase(), e.getValue()));
-        configOverrides.getGitConfig().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_GIT_CONFIG).setProperty(e.getKey().toUpperCase(), e.getValue()));
+        configOverrides.getGitConfig().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_GIT_CONFIG).setProperty(e.getKey(), e.getValue()));
         configOverrides.getGitTimeout().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_GIT_TIMEOUT).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getMetrics().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_METRICS).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getApi().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_API).setProperty(e.getKey().toUpperCase(), e.getValue()));
