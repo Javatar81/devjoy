@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
-@KubernetesDependent
+@KubernetesDependent(resourceDiscriminator = GiteaRouteDiscriminator.class)
 public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource<Route, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRouteDependentResource.class);
 	@Inject
@@ -31,22 +31,25 @@ public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource
 		Route route = ocpClient.routes()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/route.yaml"))
 				.item();
-		String name = primary.getMetadata().getName();
-		route.getMetadata().setName(name);
+		route.getMetadata().setName(getName(primary));
 		route.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		if (StringUtil.isNullOrEmpty(primary.getSpec().getRoute())) {
+		if (!StringUtil.isNullOrEmpty(primary.getSpec().getRoute())) {
 			route.getSpec().setHost(primary.getSpec().getRoute());
 		}
 		if (primary.getSpec().isSsl()) {
 			route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect")
 					.withTermination("edge").build());
 		}
-		route.getSpec().setTo(new RouteTargetReferenceBuilder().withName(name).build());
+		route.getSpec().setTo(new RouteTargetReferenceBuilder().withName(getName(primary)).build());
 		return route;
 	}
 	
 	public static Resource<Route> getResource(Gitea primary, OpenShiftClient client) {
-		return client.routes().inNamespace(primary.getMetadata().getNamespace()).withName(primary.getMetadata().getName());
+		return client.routes().inNamespace(primary.getMetadata().getNamespace()).withName(getName(primary));
+	}
+
+	public static String getName(Gitea primary) {
+		return primary.getMetadata().getName();
 	}
 
 }

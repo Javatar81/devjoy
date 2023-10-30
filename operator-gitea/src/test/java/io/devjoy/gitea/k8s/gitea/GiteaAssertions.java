@@ -3,17 +3,28 @@ package io.devjoy.gitea.k8s.gitea;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Base64;
 import java.util.Comparator;
 import java.util.Optional;
 
+import org.apache.commons.configuration2.INIConfiguration;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.hamcrest.core.IsNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.k8s.GiteaMailerSpec;
 import io.devjoy.gitea.k8s.postgres.PostgresDeploymentDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresPvcDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresSecretDependentResource;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.ReplicaSet;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -21,6 +32,7 @@ import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class GiteaAssertions {
+    private static final Logger LOG = LoggerFactory.getLogger(GiteaAssertions.class);
     @Inject
     OpenShiftClient client;
 
@@ -49,9 +61,11 @@ public class GiteaAssertions {
     }
 
     public void assertAdminSecret(Gitea desired) {
+        LOG.debug("Assert admin secret");
         final var adminSecret = GiteaAdminSecretDependentResource.getResource(desired, client);
         assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("user"))), is(desired.getSpec().getAdminUser()));
         assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(IsNull.notNullValue()));
+        LOG.debug("Asserted admin secret for Postgres");
     }
 
     public void assertGitea(Gitea desired) {
@@ -63,6 +77,7 @@ public class GiteaAssertions {
     }
 
     public void assertGiteaDeployment(Gitea desired) {
+        LOG.debug("Assert Gitea Deployment");
         final var postgresDeployment = client.apps().deployments()
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(PostgresDeploymentDependentResource.getName(desired)).get();
@@ -76,10 +91,20 @@ public class GiteaAssertions {
         assertThat(postgresDeployment, is(IsNull.notNullValue()));
         assertThat(postgresSecret, is(IsNull.notNullValue()));
         assertThat(postgresPvc, is(IsNull.notNullValue()));
-        assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
-        assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
-        assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
+        if (!desired.getSpec().isResourceRequirementsEnabled()) {
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
+            LOG.debug("Asserted resources is empty for Postgres");
+        } else {
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getMemoryRequest())));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getCpuRequest())));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getMemoryLimit())));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getCpuLimit())));
+            LOG.debug("Asserted Resources for Postgres");
+        }
         
+
         assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
             .filter(e -> "POSTGRESQL_PASSWORD".equals(e.getName())).findAny().get().getValueFrom().getSecretKeyRef().getName(), is(postgresSecret.getMetadata().getName()));
         assertThat(postgresDeployment.getStatus().getReadyReplicas(), is(1));
@@ -106,8 +131,57 @@ public class GiteaAssertions {
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(desired.getMetadata().getName()).get();
         assertThat(giteaDeployment, is(IsNull.notNullValue()));
-        assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
-        assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
-        assertThat(giteaDeployment.getStatus().getReadyReplicas(), is(1));
+        if (!desired.getSpec().isResourceRequirementsEnabled()) {
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
+            assertThat(giteaDeployment.getStatus().getReadyReplicas(), is(1));
+            LOG.debug("Asserted resources is empty for Gitea");
+        } else {
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("memory"), is(Quantity.parse(desired.getSpec().getMemoryRequest())));
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("cpu"), is(Quantity.parse(desired.getSpec().getCpuRequest())));
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("memory"), is(Quantity.parse(desired.getSpec().getMemoryLimit())));
+            assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("cpu"), is(Quantity.parse(desired.getSpec().getCpuLimit())));
+            LOG.debug("Asserted Resources for Postgres");
+        }
+       
+        LOG.debug("Asserted deployment for Gitea");
+    }
+
+    public void assertGiteaRoute(Gitea desired) {
+         if (desired.getSpec().isIngressEnabled() && !StringUtil.isNullOrEmpty(desired.getSpec().getRoute())) {
+            assertThat(client.routes().inNamespace(desired.getMetadata().getNamespace()).withName(GiteaRouteDependentResource.getName(desired)).get().getSpec().getHost(), is(desired.getSpec().getRoute()));
+            LOG.debug("Asserted route for Gitea");
+        }
+    }
+
+    public void assertMailerConfig(Gitea desired) throws ConfigurationException, IOException {
+        Resource<Secret> config = GiteaConfigSecretDependentResource.getResource(desired, client);
+        String iniData = new String(Base64.getDecoder().decode(config.get().getData().get(GiteaConfigSecretDependentResource.KEY_APP_INI)));
+        INIConfiguration iniConfiguration = new INIConfiguration();
+		try (StringReader fileReader = new StringReader(iniData)) {
+		    iniConfiguration.read(fileReader);
+            GiteaMailerSpec mailer = desired.getSpec().getMailer();
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("FROM"), is(mailer.getFrom()));
+			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("PROTOCOL"), is(mailer.getProtocol()));
+			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("SMTP_ADDR"), is(mailer.getHost()));
+			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("USER"), is(mailer.getUser()));
+			assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("PASSWD"), is(mailer.getPassword()));
+        }
+    }
+
+    public void assertOverrides(Gitea desired) throws ConfigurationException, IOException {
+        Resource<Secret> config = GiteaConfigSecretDependentResource.getResource(desired, client);
+        String iniData = new String(Base64.getDecoder().decode(config.get().getData().get(GiteaConfigSecretDependentResource.KEY_APP_INI)));
+        INIConfiguration iniConfiguration = new INIConfiguration();
+		try (StringReader fileReader = new StringReader(iniData)) {
+		    iniConfiguration.read(fileReader);
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_ACTIONS).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getActions().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_ADMIN).getProperty("DEFAULT_EMAIL_NOTIFICATIONS"), is(desired.getSpec().getConfigOverrides().getAdmin().get("DEFAULT_EMAIL_NOTIFICATIONS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_API).getProperty("MAX_RESPONSE_ITEMS"), is(desired.getSpec().getConfigOverrides().getApi().get("MAX_RESPONSE_ITEMS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_ATTACHMENT).getProperty("MAX_SIZE"), is(desired.getSpec().getConfigOverrides().getAttachment().get("MAX_SIZE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CACHE).getProperty("INTERVAL"), is(desired.getSpec().getConfigOverrides().getCache().get("INTERVAL")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CACHE_LAST_COMMIT).getProperty("ITEM_TTL"), is(desired.getSpec().getConfigOverrides().getCacheLastCommit().get("ITEM_TTL")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_CAMO).getProperty("SERVER_URL"), is(desired.getSpec().getConfigOverrides().getCamo().get("SERVER_URL")));
+        }
     }
 }

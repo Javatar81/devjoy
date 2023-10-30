@@ -9,6 +9,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.k8s.GiteaConfigOverrides;
+import io.devjoy.gitea.k8s.GiteaLogLevel;
 import io.devjoy.gitea.k8s.GiteaSpec;
 import io.devjoy.gitea.k8s.rhsso.KeycloakDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -135,5 +137,67 @@ public class GiteaReconcilerIT {
 			//AccessToken token = tokenService.createUserToken("http://" + host, gitea.getSpec().getAdminUser(), changedPassword);
 			//assertThat(token,  is(IsNull.notNullValue()));
         });
+	}
+
+	@Test
+	void createGiteaWitAllFields() {
+		Gitea gitea = createDefault("mygiteait");
+		GiteaSpec spec = gitea.getSpec();
+		spec.setSso(false);
+		spec.setAdminPassword("test12345"); // notsecret
+		spec.setAllowCreateOrganization(true);
+		spec.setCpuLimit("750m");
+		spec.setCpuRequest("250m");
+		spec.setMemoryLimit("4Gi");
+		spec.setMemoryRequest("1Gi");
+		spec.setDisableRegistration(true);
+		spec.setEnableCaptcha(true);
+		spec.setImage("quay.io/gpte-devops-automation/gitea");
+		spec.setImageTag("latest");
+		spec.setLogLevel(GiteaLogLevel.ERROR);
+		spec.setRegisterEmailConfirm(false);
+		spec.setResourceRequirementsEnabled(true);
+		spec.setSsl(true);
+		spec.setVolumeSize("2Gi");
+		spec.setRoute("gitea");
+		spec.getMailer().setEnabled(true);
+		spec.getMailer().setFrom("gitea-devjoy@example.com");
+		spec.getMailer().setHeloHostname("gitea");
+		spec.getMailer().setHost("example.com");
+		spec.getMailer().setPassword("test12345"); // notsecretnull);
+		spec.getMailer().setProtocol("smpt");
+		spec.getMailer().setUser("giteadm");
+		spec.getPostgres().setMemoryLimit("1Gi");
+		spec.getPostgres().setMemoryRequest("800Mi");
+		spec.getPostgres().setCpuLimit("800m");
+		spec.getPostgres().setCpuRequest("250m");
+		spec.getPostgres().setImage("registry.redhat.io/rhel8/postgresql-12");
+		spec.getPostgres().setImageTag("latest");
+		spec.getPostgres().setVolumeSize("8Gi");
+		//TODO Overrides
+		GiteaConfigOverrides over = spec.getConfigOverrides();
+		over.getActions().put("ENABLED", "true");
+		over.getAdmin().put("DEFAULT_EMAIL_NOTIFICATIONS", "onmention");
+		over.getApi().put("MAX_RESPONSE_ITEMS", "20");
+		over.getAttachment().put("MAX_SIZE", "8");
+		over.getCache().put("INTERVAL", "120");
+		over.getCacheLastCommit().put("ITEM_TTL", "-1");
+		over.getCamo().put("SERVER_URL", "example.com");
+
+		env.createStaticPVsIfRequired();
+		
+		
+		client.resource(gitea).create();
+		await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+            // check that we create the deployment
+            // Postgres PVC
+			assertions.assertPostgresPvc(gitea);
+			assertions.assertGiteaPvc(gitea);
+			assertions.assertGiteaDeployment(gitea);
+			assertions.assertAdminSecret(gitea);
+			assertions.assertGiteaRoute(gitea);
+			assertions.assertMailerConfig(gitea);
+			assertions.assertOverrides(gitea);
+		});
 	}
 }

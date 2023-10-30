@@ -18,6 +18,8 @@ import io.devjoy.gitea.k8s.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.GiteaMailerSpec;
 import io.devjoy.gitea.k8s.postgres.PostgresConfig;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -29,84 +31,86 @@ import jakarta.inject.Inject;
 
 @KubernetesDependent(resourceDiscriminator = GiteaConfigSecretDiscriminator.class, labelSelector = GiteaConfigSecretDependentResource.LABEL_SELECTOR)
 public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea>{
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaConfigSecretDependentResource.class);
-	private static final String SECTION_DATABASE = "database";
-	private static final String SECTION_MIGRATIONS = "migrations";
-	private static final String SECTION_SERVER = "server";
-	private static final String SECTION_MAILER = "mailer";
-	private static final String SECTION_SERVICE = "service";
-	private static final String SECTION_REPOSITORY = "repository";
-	private static final String SECTION_REPOSITORY_EDITOR = "repository.editor";
-	private static final String SECTION_REPOSITORY_PULL_REQUEST = "repository.pull-request";
-	private static final String SECTION_REPOSITORY_ISSUE = "repository.issue";
-	private static final String SECTION_REPOSITORY_UPLOAD= "repository.upload";
-	private static final String SECTION_REPOSITORY_RELEASE = "repository.release";
-	private static final String SECTION_REPOSITORY_SIGNING = "repository.signing";
-	private static final String SECTION_REPOSITORY_LOCAL = "repository.local";
-	private static final String SECTION_REPOSITORY_MIME_TYPE_MAPPING = "repository.mimetype_mapping";
-	private static final String SECTION_CORS = "cors";
-	private static final String SECTION_UI = "ui";
-	private static final String SECTION_UI_ADMIN = "ui.admin";
-	private static final String SECTION_UI_USER = "ui.user";
-	private static final String SECTION_UI_META = "ui.meta";
-	private static final String SECTION_UI_NOTIFICATION = "ui.notification";
-	private static final String SECTION_UI_SVG = "ui.svg";
-	private static final String SECTION_UI_CSV = "ui.csv";
-	private static final String SECTION_MARKDOWN = "markdown";
-	private static final String SECTION_INDEX = "index";
-	private static final String SECTION_QUEUE = "queue";
-	private static final String SECTION_ADMIN = "admin";
-	private static final String SECTION_SECURITY = "security";
-	private static final String SECTION_CAMO = "camo";
-	private static final String SECTION_OPENID = "openid";
-	private static final String SECTION_OAUTH2_CLIENT = "oauth2_client";
-	private static final String SECTION_SERVICE_EXPLORE = "service.explore";
-	private static final String SECTION_SSH_MINIMUM_KEY_SIZES= "ssh.minimum_key_sizes";
-	private static final String SECTION_WEBHOOK = "webhook";
-	private static final String SECTION_EMAIL_INCOMING = "email.incoming";
-	private static final String SECTION_CACHE = "cache";
-	private static final String SECTION_CACHE_LAST_COMMIT = "cache.last_commit";
-	private static final String SECTION_SESSION = "session";
-	private static final String SECTION_PICTURE= "picture";
-	private static final String SECTION_PROJECT = "project";
-	private static final String SECTION_ATTACHMENT = "attachment";
-	private static final String SECTION_LOG_CONSOLE = "log.console";
-	private static final String SECTION_LOG_FILE = "log.file";
-	private static final String SECTION_LOG_CONN = "log.conn";
-    private static final String SECTION_CRON = "cron";
-    private static final String SECTION_CRON_ARCHIVE_CLEANUP = "cron.archive_cleanup";
-    private static final String SECTION_CRON_UPDATE_MIRRORS = "cron.update_mirrors";
-    private static final String SECTION_CRON_REPO_HEALTH_CHECK = "cron.repo_health_check";
-    private static final String SECTION_CRON_CHECK_REPO_STATS = "cron.check_repo_stats";
-    private static final String SECTION_CRON_CLEANUP_HOOK_TASK_TABLE = "cron.cleanup_hook_task_table";
-    private static final String SECTION_CRON_CLEANUP_PACKAGES = "cron.cron.cleanup_packages";
-    private static final String SECTION_CRON_MIGRATION_POSTER_ID = "cron.update_migration_poster_id";
-    private static final String SECTION_CRON_SYNC_EXTERNAL_USERS = "cron.sync_external_users";
-    private static final String SECTION_GIT = "git";
-    private static final String SECTION_GIT_TIMEOUT = "git.timeout";
-    private static final String SECTION_GIT_CONFIG = "git.config";
-    private static final String SECTION_METRICS = "metrics";
-    private static final String SECTION_API = "api";
-    private static final String SECTION_OAUTH2 = "oauth2";
-    private static final String SECTION_I18N= "i18n";
-    private static final String SECTION_MARKUP = "markup";
-    private static final String SECTION_HIGHLIGHT_MAPPING = "highlight.mapping";
-    private static final String SECTION_TIME = "time";
-    private static final String SECTION_TASK = "task";
-    private static final String SECTION_FEDERATION = "federation";
-    private static final String SECTION_PACKAGES = "packages";
-    private static final String SECTION_MIRROR = "mirror";
-    private static final String SECTION_LFS = "lfs";
-    private static final String SECTION_STORAGE = "storage";
-    private static final String SECTION_STORAGE_REPO_ARCHIVE = "storage.repo-archive";
-    private static final String SECTION_REPO_ARCHIVE = "repo-archive";
-    private static final String SECTION_PROXY = "proxy";
-    private static final String SECTION_ACTIONS = "actions";
-    private static final String SECTION_OTHER = "other";
-	private static final String SECTION_LOG = "log";
-	private static final String LABEL_KEY = "devjoy.io/configsecret.target";
-	private static final String LABEL_VALUE = "gitea";
+	static final Logger LOG = LoggerFactory.getLogger(GiteaConfigSecretDependentResource.class);
+	static final String SECTION_DATABASE = "database";
+	static final String SECTION_MIGRATIONS = "migrations";
+	static final String SECTION_SERVER = "server";
+	static final String SECTION_MAILER = "mailer";
+	static final String SECTION_SERVICE = "service";
+	static final String SECTION_REPOSITORY = "repository";
+	static final String SECTION_REPOSITORY_EDITOR = "repository.editor";
+	static final String SECTION_REPOSITORY_PULL_REQUEST = "repository.pull-request";
+	static final String SECTION_REPOSITORY_ISSUE = "repository.issue";
+	static final String SECTION_REPOSITORY_UPLOAD= "repository.upload";
+	static final String SECTION_REPOSITORY_RELEASE = "repository.release";
+	static final String SECTION_REPOSITORY_SIGNING = "repository.signing";
+	static final String SECTION_REPOSITORY_LOCAL = "repository.local";
+	static final String SECTION_REPOSITORY_MIME_TYPE_MAPPING = "repository.mimetype_mapping";
+	static final String SECTION_CORS = "cors";
+	static final String SECTION_UI = "ui";
+	static final String SECTION_UI_ADMIN = "ui.admin";
+	static final String SECTION_UI_USER = "ui.user";
+	static final String SECTION_UI_META = "ui.meta";
+	static final String SECTION_UI_NOTIFICATION = "ui.notification";
+	static final String SECTION_UI_SVG = "ui.svg";
+	static final String SECTION_UI_CSV = "ui.csv";
+	static final String SECTION_MARKDOWN = "markdown";
+	static final String SECTION_INDEX = "index";
+	static final String SECTION_QUEUE = "queue";
+	static final String SECTION_ADMIN = "admin";
+	static final String SECTION_SECURITY = "security";
+	static final String SECTION_CAMO = "camo";
+	static final String SECTION_OPENID = "openid";
+	static final String SECTION_OAUTH2_CLIENT = "oauth2_client";
+	static final String SECTION_SERVICE_EXPLORE = "service.explore";
+	static final String SECTION_SSH_MINIMUM_KEY_SIZES= "ssh.minimum_key_sizes";
+	static final String SECTION_WEBHOOK = "webhook";
+	static final String SECTION_EMAIL_INCOMING = "email.incoming";
+	static final String SECTION_CACHE = "cache";
+	static final String SECTION_CACHE_LAST_COMMIT = "cache.last_commit";
+	static final String SECTION_SESSION = "session";
+	static final String SECTION_PICTURE= "picture";
+	static final String SECTION_PROJECT = "project";
+	static final String SECTION_ATTACHMENT = "attachment";
+	static final String SECTION_LOG_CONSOLE = "log.console";
+	static final String SECTION_LOG_FILE = "log.file";
+	static final String SECTION_LOG_CONN = "log.conn";
+    static final String SECTION_CRON = "cron";
+    static final String SECTION_CRON_ARCHIVE_CLEANUP = "cron.archive_cleanup";
+    static final String SECTION_CRON_UPDATE_MIRRORS = "cron.update_mirrors";
+    static final String SECTION_CRON_REPO_HEALTH_CHECK = "cron.repo_health_check";
+    static final String SECTION_CRON_CHECK_REPO_STATS = "cron.check_repo_stats";
+    static final String SECTION_CRON_CLEANUP_HOOK_TASK_TABLE = "cron.cleanup_hook_task_table";
+    static final String SECTION_CRON_CLEANUP_PACKAGES = "cron.cron.cleanup_packages";
+    static final String SECTION_CRON_MIGRATION_POSTER_ID = "cron.update_migration_poster_id";
+    static final String SECTION_CRON_SYNC_EXTERNAL_USERS = "cron.sync_external_users";
+    static final String SECTION_GIT = "git";
+    static final String SECTION_GIT_TIMEOUT = "git.timeout";
+    static final String SECTION_GIT_CONFIG = "git.config";
+    static final String SECTION_METRICS = "metrics";
+    static final String SECTION_API = "api";
+    static final String SECTION_OAUTH2 = "oauth2";
+    static final String SECTION_I18N= "i18n";
+    static final String SECTION_MARKUP = "markup";
+    static final String SECTION_HIGHLIGHT_MAPPING = "highlight.mapping";
+    static final String SECTION_TIME = "time";
+    static final String SECTION_TASK = "task";
+    static final String SECTION_FEDERATION = "federation";
+    static final String SECTION_PACKAGES = "packages";
+    static final String SECTION_MIRROR = "mirror";
+    static final String SECTION_LFS = "lfs";
+    static final String SECTION_STORAGE = "storage";
+    static final String SECTION_STORAGE_REPO_ARCHIVE = "storage.repo-archive";
+    static final String SECTION_REPO_ARCHIVE = "repo-archive";
+    static final String SECTION_PROXY = "proxy";
+    static final String SECTION_ACTIONS = "actions";
+    static final String SECTION_OTHER = "other";
+	static final String SECTION_LOG = "log";
+	static final String LABEL_KEY = "devjoy.io/configsecret.target";
+	static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
+	static final String KEY_APP_INI = "app.ini";
+
 	@Inject
 	PostgresConfig config;
 	@Inject
@@ -133,7 +137,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/config-secret.yaml"))
 				.item();
 		
-		String name = primary.getMetadata().getName() + "-config";
+		String name = getName(primary);
 		cm.getMetadata().setName(name);
 		cm.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (cm.getMetadata().getLabels() == null) {
@@ -143,7 +147,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		if (cm.getMetadata().getAnnotations() == null) {
 			cm.getMetadata().setAnnotations(new HashMap<>());
 		}
-		String iniData = cm.getStringData().get("app.ini");
+		String iniData = cm.getStringData().get(KEY_APP_INI);
 		INIConfiguration iniConfiguration = new INIConfiguration();
 		LOG.debug("Reading app.ini initial data {}", iniData);
 		try (StringReader fileReader = new StringReader(iniData)) {
@@ -299,5 +303,14 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
+	}
+
+	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {
+		return client.resources(Secret.class).inNamespace(primary.getMetadata().getNamespace()).withName(
+				getName(primary));
+	}
+
+	public static String getName(Gitea primary) {
+		return primary.getMetadata().getName() + "-config";
 	}
 }
