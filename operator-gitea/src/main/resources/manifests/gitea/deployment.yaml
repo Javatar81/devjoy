@@ -17,7 +17,7 @@ spec:
       serviceAccountName: "gitea"
       containers:
       - name: gitea
-        image: "quay.io/gpte-devops-automation/gitea:latest"
+        image: "quay.io/gpte-devops-automation/gitea:1.20"
         imagePullPolicy: Always
         env:
         - name: SSL_CERT_FILE
