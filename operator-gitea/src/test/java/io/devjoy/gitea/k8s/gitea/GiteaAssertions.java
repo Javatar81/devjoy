@@ -198,7 +198,24 @@ public class GiteaAssertions {
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_EMAIL_INCOMING).getProperty("USERNAME"), is(desired.getSpec().getConfigOverrides().getEmailIncoming().get("USERNAME")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_FEDERATION).getProperty("MAX_SIZE"), is(desired.getSpec().getConfigOverrides().getFederation().get("MAX_SIZE")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT).getProperty("DISABLE_PARTIAL_CLONE"), is(desired.getSpec().getConfigOverrides().getGit().get("DISABLE_PARTIAL_CLONE")));
-            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT_CONFIG).getProperty("core.logAllRefUpdates"), is(desired.getSpec().getConfigOverrides().getGitConfig().get("core.logAllRefUpdates")));
+            //assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT_CONFIG).getProperty("core.logAllRefUpdates"), is(desired.getSpec().getConfigOverrides().getGitConfig().get("core.logAllRefUpdates")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_GIT_TIMEOUT).getProperty("DEFAULT"), is(desired.getSpec().getConfigOverrides().getGitTimeout().get("DEFAULT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_HIGHLIGHT_MAPPING).getProperty("file_extension"), is(desired.getSpec().getConfigOverrides().getHighlightMapping().get("file_extension")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_I18N).getProperty("LANGS"), is(desired.getSpec().getConfigOverrides().getI18n().get("LANGS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_INDEXER).getProperty("REPO_INDEXER_TYPE"), is(desired.getSpec().getConfigOverrides().getIndexer().get("REPO_INDEXER_TYPE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_LFS).getProperty("MINIO_INSECURE_SKIP_VERIFY"), is(desired.getSpec().getConfigOverrides().getLfs().get("MINIO_INSECURE_SKIP_VERIFY")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_LOG).getProperty("ENABLE_SSH_LOG"), is(desired.getSpec().getConfigOverrides().getLog().get("ENABLE_SSH_LOG")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_LOG_CONN).getProperty("RECONNECT"), is(desired.getSpec().getConfigOverrides().getLogConn().get("RECONNECT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_LOG_CONSOLE).getProperty("STDERR"), is(desired.getSpec().getConfigOverrides().getLogConsole().get("STDERR")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_LOG_FILE).getProperty("FILE_NAME"), is(desired.getSpec().getConfigOverrides().getLogFile().get("FILE_NAME")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MAILER).getProperty("SUBJECT_PREFIX"), is(desired.getSpec().getConfigOverrides().getMailer().get("SUBJECT_PREFIX")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MARKDOWN).getProperty("ENABLE_MATH"), is(desired.getSpec().getConfigOverrides().getMarkdown().get("ENABLE_MATH")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_METRICS).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getMetrics().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MIGRATIONS).getProperty("MAX_ATTEMPTS"), is(desired.getSpec().getConfigOverrides().getMigrations().get("MAX_ATTEMPTS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MIRROR).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getMirror().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OAUTH2).getProperty("INVALIDATE_REFRESH_TOKENS"), is(desired.getSpec().getConfigOverrides().getOauth2().get("INVALIDATE_REFRESH_TOKENS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OAUTH2_CLIENT).getProperty("USERNAME"), is(desired.getSpec().getConfigOverrides().getOauth2Client().get("USERNAME")));
+
         }
     }
 }

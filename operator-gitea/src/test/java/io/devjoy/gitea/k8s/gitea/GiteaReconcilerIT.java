@@ -199,6 +199,24 @@ public class GiteaReconcilerIT {
 		over.getFederation().put("MAX_SIZE","5");
 		over.getGit().put("DISABLE_PARTIAL_CLONE","true");
 		//TODO Leads to https://github.com/Javatar81/devjoy/issues/22 over.getGitConfig().put("core\\.logAllRefUpdates","false");
+		over.getGitTimeout().put("DEFAULT", "400");
+		over.getHighlightMapping().put("file_extension", "TOML");
+		over.getI18n().put("LANGS", "en-US,de-DE,fr-FR");
+		over.getI18n().put("NAMES", "English,Deutsch,Français");
+		/*over.getIndexer().put("REPO_INDEXER_TYPE", "elasticsearch");
+		over.getLfs().put("MINIO_INSECURE_SKIP_VERIFY", "true");
+		over.getLog().put("ENABLE_SSH_LOG", "true");
+		over.getLogConn().put("RECONNECT", "true");
+		over.getLogConsole().put("STDERR", "true");
+		over.getLogFile().put("FILE_NAME", "gitea-devjoy.log");
+		over.getMailer().put("SUBJECT_PREFIX", "devjoy:");
+		over.getMarkdown().put("ENABLE_MATH", "false");
+		over.getMetrics().put("ENABLED", "true");
+		over.getMigrations().put("MAX_ATTEMPTS", "5");
+		over.getMirror().put("ENABLED", "false");
+		over.getOauth2().put("INVALIDATE_REFRESH_TOKENS", "true");
+		over.getOauth2Client().put("USERNAME", "email");*/
+
 
 		env.createStaticPVsIfRequired();
 		

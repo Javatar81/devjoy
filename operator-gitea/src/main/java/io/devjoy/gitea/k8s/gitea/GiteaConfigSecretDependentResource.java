@@ -55,7 +55,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	static final String SECTION_UI_SVG = "ui.svg";
 	static final String SECTION_UI_CSV = "ui.csv";
 	static final String SECTION_MARKDOWN = "markdown";
-	static final String SECTION_INDEX = "index";
+	static final String SECTION_INDEXER = "indexer";
 	static final String SECTION_QUEUE = "queue";
 	static final String SECTION_ADMIN = "admin";
 	static final String SECTION_SECURITY = "security";
@@ -209,7 +209,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
         configOverrides.getMarkdown().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_MARKDOWN).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getServer().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_SERVER).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getDatabase().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_DATABASE).setProperty(e.getKey().toUpperCase(), e.getValue()));
-        configOverrides.getIndexer().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_INDEX).setProperty(e.getKey().toUpperCase(), e.getValue()));
+        configOverrides.getIndexer().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_INDEXER).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getQueue().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_QUEUE).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getAdmin().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_ADMIN).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getSecurity().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_SECURITY).setProperty(e.getKey().toUpperCase(), e.getValue()));
@@ -248,7 +248,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
         configOverrides.getOauth2().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_OAUTH2).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getI18n().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_I18N).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getMarkup().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_MARKUP).setProperty(e.getKey().toUpperCase(), e.getValue()));
-        configOverrides.getHighlightMapping().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_HIGHLIGHT_MAPPING).setProperty(e.getKey().toUpperCase(), e.getValue()));
+        configOverrides.getHighlightMapping().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_HIGHLIGHT_MAPPING).setProperty(e.getKey(), e.getValue()));
         configOverrides.getTime().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_TIME).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getTask().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_TASK).setProperty(e.getKey().toUpperCase(), e.getValue()));
         configOverrides.getMigrations().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty(e.getKey().toUpperCase(), e.getValue()));
