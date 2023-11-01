@@ -215,7 +215,26 @@ public class GiteaAssertions {
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_MIRROR).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getMirror().get("ENABLED")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OAUTH2).getProperty("INVALIDATE_REFRESH_TOKENS"), is(desired.getSpec().getConfigOverrides().getOauth2().get("INVALIDATE_REFRESH_TOKENS")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OAUTH2_CLIENT).getProperty("USERNAME"), is(desired.getSpec().getConfigOverrides().getOauth2Client().get("USERNAME")));
-
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OPENID).getProperty("ENABLE_AUTO_REGISTRATION"), is(desired.getSpec().getConfigOverrides().getOpenid().get("ENABLE_AUTO_REGISTRATION")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_OTHER).getProperty("ENABLE_FEED"), is(desired.getSpec().getConfigOverrides().getOther().get("ENABLE_FEED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_PACKAGES).getProperty("LIMIT_TOTAL_OWNER_SIZE"), is(desired.getSpec().getConfigOverrides().getPackages().get("LIMIT_TOTAL_OWNER_SIZE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_PICTURE).getProperty("GRAVATAR_SOURCE"), is(desired.getSpec().getConfigOverrides().getPicture().get("GRAVATAR_SOURCE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_PROJECT).getProperty("PROJECT_BOARD_BASIC_KANBAN_TYPE"), is(desired.getSpec().getConfigOverrides().getProject().get("PROJECT_BOARD_BASIC_KANBAN_TYPE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_PROXY).getProperty("PROXY_HOSTS"), is(desired.getSpec().getConfigOverrides().getProxy().get("PROXY_HOSTS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_QUEUE).getProperty("LENGTH"), is(desired.getSpec().getConfigOverrides().getQueue().get("LENGTH")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPO_ARCHIVE).getProperty("STORAGE_TYPE"), is(desired.getSpec().getConfigOverrides().getRepoArchive().get("STORAGE_TYPE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY).getProperty("DEFAULT_PRIVATE"), is(desired.getSpec().getConfigOverrides().getRepository().get("DEFAULT_PRIVATE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_EDITOR).getProperty("LINE_WRAP_EXTENSIONS"), is(desired.getSpec().getConfigOverrides().getRepositoryEditor().get("LINE_WRAP_EXTENSIONS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_ISSUE).getProperty("ENABLED"), is(desired.getSpec().getConfigOverrides().getRepositoryIssue().get("ENABLED")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_LOCAL).getProperty("LOCAL_COPY_PATH"), is(desired.getSpec().getConfigOverrides().getRepositoryLocal().get("LOCAL_COPY_PATH")));
+		    //TODO Leads to https://github.com/Javatar81/devjoy/issues/22 over.getRepositoryMimeTypeMapping().put("","");
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_PULL_REQUEST).getProperty("WORK_IN_PROGRESS_PREFIXES"), is(desired.getSpec().getConfigOverrides().getRepositoryPullRequest().get("WORK_IN_PROGRESS_PREFIXES")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_RELEASE).getProperty("ALLOWED_TYPES"), is(desired.getSpec().getConfigOverrides().getRepositoryRelease().get("ALLOWED_TYPES")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_SIGNING).getProperty("INITIAL_COMMIT"), is(desired.getSpec().getConfigOverrides().getRepositorySigning().get("INITIAL_COMMIT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_REPOSITORY_UPLOAD).getProperty("ALLOWED_TYPES"), is(desired.getSpec().getConfigOverrides().getRepositoryUpload().get("ALLOWED_TYPES")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SECURITY).getProperty("LOGIN_REMEMBER_DAYS"), is(desired.getSpec().getConfigOverrides().getSecurity().get("LOGIN_REMEMBER_DAYS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SERVER).getProperty("ALLOW_GRACEFUL_RESTARTS"), is(desired.getSpec().getConfigOverrides().getServer().get("ALLOW_GRACEFUL_RESTARTS")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SERVICE).getProperty("ENABLE_BASIC_AUTHENTICATION"), is(desired.getSpec().getConfigOverrides().getService().get("ENABLE_BASIC_AUTHENTICATION")));
         }
     }
 }

@@ -203,7 +203,7 @@ public class GiteaReconcilerIT {
 		over.getHighlightMapping().put("file_extension", "TOML");
 		over.getI18n().put("LANGS", "en-US,de-DE,fr-FR");
 		over.getI18n().put("NAMES", "English,Deutsch,Français");
-		/*over.getIndexer().put("REPO_INDEXER_TYPE", "elasticsearch");
+		over.getIndexer().put("REPO_INDEXER_TYPE", "elasticsearch");
 		over.getLfs().put("MINIO_INSECURE_SKIP_VERIFY", "true");
 		over.getLog().put("ENABLE_SSH_LOG", "true");
 		over.getLogConn().put("RECONNECT", "true");
@@ -215,8 +215,28 @@ public class GiteaReconcilerIT {
 		over.getMigrations().put("MAX_ATTEMPTS", "5");
 		over.getMirror().put("ENABLED", "false");
 		over.getOauth2().put("INVALIDATE_REFRESH_TOKENS", "true");
-		over.getOauth2Client().put("USERNAME", "email");*/
-
+		over.getOauth2Client().put("USERNAME", "email");
+		// TODO Assertions
+		over.getOpenid().put("ENABLE_AUTO_REGISTRATION","true");
+		over.getOther().put("ENABLE_FEED","");
+		over.getPackages().put("LIMIT_TOTAL_OWNER_SIZE","500 M");
+		over.getPicture().put("GRAVATAR_SOURCE","duoshuo");
+		over.getProject().put("PROJECT_BOARD_BASIC_KANBAN_TYPE","To Do, In Progress, Done, Cancel");
+		over.getProxy().put("PROXY_HOSTS","*.example.com");
+		over.getQueue().put("LENGTH","150");
+		over.getRepoArchive().put("STORAGE_TYPE","local");
+		over.getRepository().put("DEFAULT_PRIVATE","public");
+		over.getRepositoryEditor().put("LINE_WRAP_EXTENSIONS",".txt,.md,.markdown,.mdown,.mkd");
+		over.getRepositoryIssue().put("ENABLED","false");
+		over.getRepositoryLocal().put("LOCAL_COPY_PATH","tmp/local-repo");
+		//TODO Leads to https://github.com/Javatar81/devjoy/issues/22 over.getRepositoryMimeTypeMapping().put("","");
+		over.getRepositoryPullRequest().put("WORK_IN_PROGRESS_PREFIXES","WIP:,[WIP]:,WIPT:");
+		over.getRepositoryRelease().put("ALLOWED_TYPES",".zip");
+		over.getRepositorySigning().put("INITIAL_COMMIT","never");
+		over.getRepositoryUpload().put("ALLOWED_TYPES",".zip");
+		over.getSecurity().put("LOGIN_REMEMBER_DAYS","5");
+		over.getServer().put("ALLOW_GRACEFUL_RESTARTS","false");
+		over.getService().put("ENABLE_BASIC_AUTHENTICATION","true");
 
 		env.createStaticPVsIfRequired();
 		
