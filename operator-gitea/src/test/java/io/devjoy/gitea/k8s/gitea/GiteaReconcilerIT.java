@@ -6,6 +6,8 @@ import static org.hamcrest.CoreMatchers.*;
 
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.Gitea;
@@ -31,6 +33,12 @@ public class GiteaReconcilerIT {
 	TestEnvironment env;
 	@Inject
 	GiteaAssertions assertions;
+	static GiteaPrereqs prereqs = new GiteaPrereqs();
+
+	@BeforeAll
+	static void setUp() {
+		prereqs.assureKeycloakCrdsInstalled();
+	}
 
 	@AfterEach
 	void tearDown() {
@@ -143,13 +151,13 @@ public class GiteaReconcilerIT {
 	void createGiteaWitAllFields() {
 		Gitea gitea = createDefault("allfields");
 		GiteaSpec spec = gitea.getSpec();
-		spec.setSso(false);
+		spec.setSso(true);
 		spec.setAdminPassword("test12345"); // notsecret
 		spec.setAllowCreateOrganization(true);
 		spec.setCpuLimit("750m");
 		spec.setCpuRequest("250m");
 		spec.setMemoryLimit("4Gi");
-		spec.setMemoryRequest("1Gi");
+		spec.setMemoryRequest("256Mi");
 		spec.setDisableRegistration(true);
 		spec.setEnableCaptcha(true);
 		spec.setImage("quay.io/gpte-devops-automation/gitea");
@@ -168,7 +176,7 @@ public class GiteaReconcilerIT {
 		spec.getMailer().setProtocol("smpt");
 		spec.getMailer().setUser("giteadm");
 		spec.getPostgres().setMemoryLimit("1Gi");
-		spec.getPostgres().setMemoryRequest("800Mi");
+		spec.getPostgres().setMemoryRequest("256Mi");
 		spec.getPostgres().setCpuLimit("800m");
 		spec.getPostgres().setCpuRequest("250m");
 		spec.getPostgres().setImage("registry.redhat.io/rhel8/postgresql-12");
@@ -237,6 +245,23 @@ public class GiteaReconcilerIT {
 		over.getSecurity().put("LOGIN_REMEMBER_DAYS","5");
 		over.getServer().put("ALLOW_GRACEFUL_RESTARTS","false");
 		over.getService().put("ENABLE_BASIC_AUTHENTICATION","true");
+
+
+		over.getServiceExplore().put("REQUIRE_SIGNIN_VIEW", "true");
+		over.getSession().put("COOKIE_NAME", "i_like_gitea_devjoy");
+		over.getSshMinimumKeySizes().put("DSA", "1024");
+		over.getStorage().put("SERVE_DIRECT", "true");
+		over.getStorageRepoArchive().put("SERVE_DIRECT", "true");
+		over.getTask().put("QUEUE_LENGTH", "1024");
+		over.getTime().put("DEFAULT_UI_LOCATION", "Europe/Berlin");
+		over.getUi().put("EXPLORE_PAGING_NUM", "30");
+		over.getUiAdmin().put("USER_PAGING_NUM", "60");
+		over.getUiCsv().put("MAX_FILE_SIZE", "524289");
+		over.getUiMeta().put("AUTHOR", "Gitea - Git with a cup of tea with devjoy");
+		over.getUiNotification().put("MIN_TIMEOUT", "11s");
+		over.getUiSvg().put("ENABLE_RENDER", "false");
+		over.getUiUser().put("REPO_PAGING_NUM", "20");
+		over.getWebhook().put("QUEUE_LENGTH", "1001");
 
 		env.createStaticPVsIfRequired();
 		

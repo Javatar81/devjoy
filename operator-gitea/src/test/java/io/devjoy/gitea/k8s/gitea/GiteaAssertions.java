@@ -235,6 +235,21 @@ public class GiteaAssertions {
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SECURITY).getProperty("LOGIN_REMEMBER_DAYS"), is(desired.getSpec().getConfigOverrides().getSecurity().get("LOGIN_REMEMBER_DAYS")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SERVER).getProperty("ALLOW_GRACEFUL_RESTARTS"), is(desired.getSpec().getConfigOverrides().getServer().get("ALLOW_GRACEFUL_RESTARTS")));
             assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SERVICE).getProperty("ENABLE_BASIC_AUTHENTICATION"), is(desired.getSpec().getConfigOverrides().getService().get("ENABLE_BASIC_AUTHENTICATION")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SERVICE_EXPLORE).getProperty("REQUIRE_SIGNIN_VIEW"), is(desired.getSpec().getConfigOverrides().getServiceExplore().get("REQUIRE_SIGNIN_VIEW")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SESSION).getProperty("COOKIE_NAME"), is(desired.getSpec().getConfigOverrides().getSession().get("COOKIE_NAME")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_SSH_MINIMUM_KEY_SIZES).getProperty("DSA"), is(desired.getSpec().getConfigOverrides().getSshMinimumKeySizes().get("DSA")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_STORAGE).getProperty("SERVE_DIRECT"), is(desired.getSpec().getConfigOverrides().getStorage().get("SERVE_DIRECT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_STORAGE_REPO_ARCHIVE).getProperty("ENABLE_BASIC_AUTHENTICATION"), is(desired.getSpec().getConfigOverrides().getStorageRepoArchive().get("ENABLE_BASIC_AUTHENTICATION")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_TASK).getProperty("QUEUE_LENGTH"), is(desired.getSpec().getConfigOverrides().getTask().get("QUEUE_LENGTH")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_TIME).getProperty("DEFAULT_UI_LOCATION"), is(desired.getSpec().getConfigOverrides().getTime().get("DEFAULT_UI_LOCATION")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI).getProperty("EXPLORE_PAGING_NUM"), is(desired.getSpec().getConfigOverrides().getUi().get("EXPLORE_PAGING_NUM")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_ADMIN).getProperty("USER_PAGING_NUM"), is(desired.getSpec().getConfigOverrides().getUiAdmin().get("USER_PAGING_NUM")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_CSV).getProperty("MAX_FILE_SIZE"), is(desired.getSpec().getConfigOverrides().getUiCsv().get("MAX_FILE_SIZE")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_META).getProperty("AUTHOR"), is(desired.getSpec().getConfigOverrides().getUiMeta().get("AUTHOR")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_NOTIFICATION).getProperty("MIN_TIMEOUT"), is(desired.getSpec().getConfigOverrides().getUiNotification().get("MIN_TIMEOUT")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_SVG).getProperty("ENABLE_RENDER"), is(desired.getSpec().getConfigOverrides().getUiSvg().get("ENABLE_RENDER")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_UI_USER).getProperty("REPO_PAGING_NUM"), is(desired.getSpec().getConfigOverrides().getUiUser().get("REPO_PAGING_NUM")));
+            assertThat(iniConfiguration.getSection(GiteaConfigSecretDependentResource.SECTION_WEBHOOK).getProperty("QUEUE_LENGTH"), is(desired.getSpec().getConfigOverrides().getWebhook().get("QUEUE_LENGTH")));
         }
     }
 }
