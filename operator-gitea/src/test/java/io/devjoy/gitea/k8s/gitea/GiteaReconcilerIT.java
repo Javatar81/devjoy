@@ -65,6 +65,27 @@ public class GiteaReconcilerIT {
 	}
 
 	@Test
+	void createGiteaWithoutSpec() {
+		Gitea gitea = new Gitea();
+		gitea.setMetadata(new ObjectMetaBuilder()
+						.withName("giteawithoutspec")
+						.withNamespace(client.getNamespace())
+						.build()); 
+		env.createStaticPVsIfRequired();
+		client.resource(gitea).create();
+		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
+            // check that we create the deployment
+            // Postgres PVC
+			assertions.assertPostgresPvc(gitea);
+			assertions.assertGiteaPvc(gitea);
+			assertions.assertGiteaDeployment(gitea);
+			assertions.assertAdminSecret(gitea);
+			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
+			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
+        });
+	}
+
+	@Test
 	void createMinimalGitea() {
 		Gitea gitea = createDefault("mygiteait");
 		env.createStaticPVsIfRequired();
@@ -245,8 +266,6 @@ public class GiteaReconcilerIT {
 		over.getSecurity().put("LOGIN_REMEMBER_DAYS","5");
 		over.getServer().put("ALLOW_GRACEFUL_RESTARTS","false");
 		over.getService().put("ENABLE_BASIC_AUTHENTICATION","true");
-
-
 		over.getServiceExplore().put("REQUIRE_SIGNIN_VIEW", "true");
 		over.getSession().put("COOKIE_NAME", "i_like_gitea_devjoy");
 		over.getSshMinimumKeySizes().put("DSA", "1024");

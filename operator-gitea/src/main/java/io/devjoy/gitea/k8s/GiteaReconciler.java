@@ -62,6 +62,8 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
 import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependentResource.class),
@@ -83,6 +85,7 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
 		
 })
+@CSVMetadata(displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), name = "gitea-operator", keywords = "Git,Repository,Gitea")
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea> { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";

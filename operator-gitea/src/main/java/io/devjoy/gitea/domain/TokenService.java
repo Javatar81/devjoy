@@ -24,7 +24,7 @@ public class TokenService {
 	private static final Logger LOG = LoggerFactory.getLogger(TokenService.class);
 	private static final String TOKEN_NAME = "devjoy";
 	/** See https://docs.gitea.com/development/oauth2-provider#scopes **/
-	private static final String ACCESS_TOKEN_SCOPE = "write:repository,write:user";
+	private static final String ACCESS_TOKEN_SCOPES = "write:repository,write:user";
 	private final GiteaPodExecService execService;
 	
 	public TokenService(GiteaPodExecService execService) {
@@ -39,7 +39,7 @@ public class TokenService {
 				.withArgs(List.of("admin", "user", "generate-access-token"))
 				.addOption(new Option("username", userName))
 				.addOption(new Option("token-name", tokenName))
-				.addOption(new Option("scopes", ACCESS_TOKEN_SCOPE))
+				.addOption(new Option("scopes", ACCESS_TOKEN_SCOPES))
 				.build();
 		Pattern pattern = Pattern.compile("created:\\s+([a-f0-9_\\-]+)");
 		

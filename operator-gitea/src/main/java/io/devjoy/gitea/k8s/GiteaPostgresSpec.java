@@ -1,14 +1,28 @@
 package io.devjoy.gitea.k8s;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
 public class GiteaPostgresSpec {
-	private String volumeSize;
-	private String memoryRequest;
-	private String memoryLimit;
-	private String cpuRequest;
+	@JsonPropertyDescription("The size of the volume to store Postgres data")
+	@JsonProperty(defaultValue = "4Gi")
+	private String volumeSize = "4Gi";
+	@JsonPropertyDescription("The cpu resource limits for the Postgres deployment")
 	private String cpuLimit;
+	@JsonPropertyDescription("The cpu resource requests for the Postgres deployment")
+	private String cpuRequest;
+	@JsonPropertyDescription("The memory resource limits for the Postgres deployment")
+	private String memoryLimit;
+	@JsonPropertyDescription("The memory resource requests for the Postgres deployment")
+	private String memoryRequest;
+	@JsonPropertyDescription("The storage class used to store the Postgres data")
 	private String storageClass;
-	private String image;
-	private String imageTag;
+	@JsonPropertyDescription("The image to be used for the Postgres pod")
+	@JsonProperty(defaultValue = "registry.redhat.io/rhel8/postgresql-12")
+	private String image = "registry.redhat.io/rhel8/postgresql-12";
+	@JsonPropertyDescription("The image tag to be used for the Postgres pod")
+	@JsonProperty(defaultValue = "latest")
+	private String imageTag = "latest";
 	
 	public String getVolumeSize() {
 		return volumeSize;
