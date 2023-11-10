@@ -85,7 +85,6 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
 		
 })
-@CSVMetadata(displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), name = "gitea-operator", keywords = "Git,Repository,Gitea")
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea> { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
