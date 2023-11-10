@@ -30,6 +30,7 @@ import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.WebhookSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.ws.rs.WebApplicationException;
 
 
@@ -87,7 +88,7 @@ public class RepositoryService {
 	
 	
 	
-	public Repository create(GiteaRepository repository, String token, String baseUri) {
+	public Repository create(GiteaRepository repository, @NotEmpty String token, @NotEmpty String baseUri) {
 		try {
 			LOG.info("Creating repository {}", repository);
 			CreateRepoOption repoOption = new CreateRepoOption();
