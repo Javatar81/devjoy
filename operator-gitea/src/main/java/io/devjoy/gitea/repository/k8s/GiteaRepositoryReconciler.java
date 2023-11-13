@@ -215,7 +215,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {
-				throw new IllegalArgumentException(String.format("Cannot determin unique Gitea in namespace %s", giteaNamespace));
+				throw new IllegalArgumentException(String.format("Cannot determin unique Gitea in namespace %s. Expected 1 but was %d.", giteaNamespace, giteasInSameNamespace.size()));
 			}
 		}
 	}

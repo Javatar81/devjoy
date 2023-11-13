@@ -52,7 +52,9 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations.Annotation;
 import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependentResource.class),
@@ -74,7 +76,7 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
 		
 })
-@CSVMetadata(name = "gitea-operator-bundle", version = "0.1.0", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea")
+@CSVMetadata(name = "gitea-operator-bundle", version = "0.1.0", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.1.0", others= {}))
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea>, SharedCSVMetadata { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
