@@ -4,9 +4,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 public class GiteaSpec {
-	@JsonPropertyDescription("The name of the admin user")
-	@JsonProperty(defaultValue = "admin")
-	private String adminUser = "admin";
+	@JsonPropertyDescription("The name of the admin user. Must not be 'admin' because it is reserved.")
+	@JsonProperty(defaultValue = "devjoyadmin")
+	private String adminUser = "devjoyadmin";
 	@JsonPropertyDescription("The email of the admin user")
 	@JsonProperty(defaultValue = "admin@example.com")
 	private String adminEmail = "admin@example.com";

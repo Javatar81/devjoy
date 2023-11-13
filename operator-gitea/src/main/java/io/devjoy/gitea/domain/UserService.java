@@ -29,12 +29,9 @@ public class UserService {
 	private static final String ADMIN_COMMAND = "/usr/bin/giteacmd";
 	private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
 	private final GiteaPodExecService execService;
-	private final PasswordService passwordService;
 
-	
-	public UserService(PasswordService passwordService, GiteaPodExecService execService) {
+	public UserService(GiteaPodExecService execService) {
 		this.execService = execService;
-		this.passwordService = passwordService;
 	}
 	
 	public boolean adminExists(String baseUri, String adminUser) {
@@ -102,19 +99,6 @@ public class UserService {
 	
 	public void createAdminUserViaExec(Gitea gitea) {
 		try {
-			if (StringUtil.isNullOrEmpty(gitea.getSpec().getAdminPassword())) {
-				int length = gitea.getSpec().getAdminPasswordLength() < 10 ? 10 : gitea.getSpec().getAdminPasswordLength();
-				gitea.getSpec().setAdminPassword(passwordService.generateNewPassword(length));  
-				gitea.getSpec().setAdminPasswordLength(length);
-				gitea.getStatus().getConditions().add(new ConditionBuilder()
-						.withObservedGeneration(gitea.getStatus().getObservedGeneration())
-						.withType(GiteaConditionType.GITEA_ADMIN_PW_GENERATED.toString())
-						.withMessage(String.format("Password for admin %s has been generated", gitea.getSpec().getAdminUser()))
-						.withLastTransitionTime(LocalDateTime.now().toString())
-						.withReason("No admin password given in Gitea resource.")
-						.withStatus("True")
-						.build()); 
-			}
 			LOG.info("Waiting up to {} seconds for replicas to become ready....", 180);
 			Command cmd = Command.builder()
 					.withExecutable(ADMIN_COMMAND)

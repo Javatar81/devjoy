@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.AuthenticationService;
+import io.devjoy.gitea.domain.PasswordService;
 import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.domain.UserService;
 import io.devjoy.gitea.k8s.gitea.GiteaAdminSecretDependentResource;
@@ -85,6 +86,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	private final UserService userService;
 	private final AuthenticationService authService;
 	private final GiteaStatusUpdater updater;
+	private final PasswordService passwordService;
 	/*private KubernetesDependentResource<Keycloak, Gitea> keycloakDR;
 	private KubernetesDependentResource<KeycloakClient, Gitea> keycloakClientDR;
 	private KubernetesDependentResource<KeycloakRealm, Gitea> keycloakRealmDR;
@@ -95,11 +97,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 
 	private static String KEYCLOAK_API_VERSION = "v1alpha1";
 	
-	public GiteaReconciler(OpenShiftClient client, UserService userService, AuthenticationService authService, GiteaStatusUpdater updater) {
+	public GiteaReconciler(OpenShiftClient client, UserService userService, AuthenticationService authService, GiteaStatusUpdater updater, PasswordService pwService) {
 		this.client = client;
 		this.userService = userService;
 		this.authService = authService;
 		this.updater = updater;
+		this.passwordService = pwService;
 		createKeycloakDependents();
 	}
 
@@ -165,6 +168,23 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	}
 
 
+	private void addGeneratedPasswordToSpecIfEmpty(Gitea gitea) {
+		if (StringUtil.isNullOrEmpty(gitea.getSpec().getAdminPassword())) {
+			LOG.info("Admin password is empty. Generating new one.");
+			int length = gitea.getSpec().getAdminPasswordLength() < 10 ? 10 : gitea.getSpec().getAdminPasswordLength();
+			gitea.getSpec().setAdminPassword(passwordService.generateNewPassword(length));  
+			gitea.getSpec().setAdminPasswordLength(length);
+			gitea.getStatus().getConditions().add(new ConditionBuilder()
+					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
+					.withType(GiteaConditionType.GITEA_ADMIN_PW_GENERATED.toString())
+					.withMessage(String.format("Password for admin %s has been generated", gitea.getSpec().getAdminUser()))
+					.withLastTransitionTime(LocalDateTime.now().toString())
+					.withReason("No admin password given in Gitea resource.")
+					.withStatus("True")
+					.build()); 
+		}
+	}
+
 	@Override
 	public UpdateControl<Gitea> reconcile(Gitea resource, Context<Gitea> context) {
 		LOG.info("Reconciling");
@@ -177,15 +197,25 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		//	LOG.info("Route is disabled");
 		//}
 		LOG.info("Waiting for Gitea pod to be ready...");
-		if(!userService.getAdminId(resource).isPresent()) {
-			userService.createAdminUserViaExec(resource);
-			LOG.info("Admin user created");
-		} else {
-			LOG.info("Admin exists");
-		}
+		Optional<String> adminSecretPasswordInSecret = Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(resource, client).get())
+				.map(s -> new String(Base64.getDecoder().decode(s.getData().get("password")))).filter(p -> !StringUtil.isNullOrEmpty(p));
+		//admin user exists by default, no need to create
+		if("admin".equals(resource.getSpec().getAdminUser()) && adminSecretPasswordInSecret.isEmpty()) {
+			//addGeneratedPasswordToSpecIfEmpty(resource);
+			//LOG.info("Default admin exists. Only need to change the password.");
+			//userService.changeUserPasswordViaExec(resource, resource.getSpec().getAdminUser(), resource.getSpec().getAdminPassword());
+			throw new ServiceException("User 'admin' is reserved and cannot be used for spec.adminUser");
+		} else if(!"admin".equals(resource.getSpec().getAdminUser())){
+			if(!userService.getAdminId(resource).isPresent()) {
+				addGeneratedPasswordToSpecIfEmpty(resource);
+				userService.createAdminUserViaExec(resource);
+				LOG.info("Admin user created");
+			} else {
+				LOG.info("Admin exists");
+			}
+		} 
+		
 		if (!StringUtil.isNullOrEmpty(resource.getSpec().getAdminPassword())) {
-			Optional<String> adminSecretPasswordInSecret = Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(resource, client).get())
-				.map(s -> new String(Base64.getDecoder().decode(s.getData().get("password"))));
 			
 			if (adminSecretPasswordInSecret.isEmpty() || !resource.getSpec().getAdminPassword().equals(adminSecretPasswordInSecret.get())) {
 				LOG.info("Updating admin password in secret");
@@ -200,7 +230,9 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			adminSecretResource.ifPresent(r -> LOG.info("Removing admin password because it is stored in secret {}", r.getMetadata().getName()));
 			resource.getSpec().setAdminPassword(null);
 			updateCtrl = UpdateControl.updateResourceAndStatus(resource);
-		} 
+		} else {
+			LOG.info("Admin password has not been changed.");
+		}
 		reconcileTrustMap(resource);
 		/*if(keycloakApiAvailable()){
 			reconcileSsoResources(resource, context);
