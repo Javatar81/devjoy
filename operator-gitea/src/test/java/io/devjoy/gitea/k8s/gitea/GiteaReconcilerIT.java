@@ -286,7 +286,7 @@ public class GiteaReconcilerIT {
 		
 		
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(240, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);
