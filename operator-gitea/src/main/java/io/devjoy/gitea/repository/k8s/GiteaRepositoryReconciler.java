@@ -44,7 +44,11 @@ import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
 
-@RBACRule(apiGroups = "apps", resources = "ReplicaSet", verbs = "get,list,watch")
+@RBACRule(apiGroups = "apps", resources = {"replicasets"}, verbs = {"get","list","watch"})
+@RBACRule(apiGroups = "", resources = {"pods"}, verbs = {"get","list","watch"})
+@RBACRule(apiGroups = "", resources = {"configmaps"}, verbs = {"get","list","watch","create"})
+@RBACRule(apiGroups = "", resources = {"pods/exec"}, verbs = {"get"})
+
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	public static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
 	public static final String LABEL_GITEA_NAME = "devjoy.io/gitea.name";
