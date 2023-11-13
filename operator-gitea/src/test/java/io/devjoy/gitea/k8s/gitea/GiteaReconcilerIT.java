@@ -272,7 +272,7 @@ public class GiteaReconcilerIT {
 		over.getStorage().put("SERVE_DIRECT", "true");
 		over.getStorageRepoArchive().put("SERVE_DIRECT", "true");
 		over.getTask().put("QUEUE_LENGTH", "1024");
-		over.getTime().put("DEFAULT_UI_LOCATION", "Europe/Berlin");
+		over.getTime().put("DEFAULT_UI_LOCATION", "Asia/Shanghai");
 		over.getUi().put("EXPLORE_PAGING_NUM", "30");
 		over.getUiAdmin().put("USER_PAGING_NUM", "60");
 		over.getUiCsv().put("MAX_FILE_SIZE", "524289");
