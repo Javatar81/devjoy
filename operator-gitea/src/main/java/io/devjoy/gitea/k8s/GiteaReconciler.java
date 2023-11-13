@@ -2,9 +2,7 @@ package io.devjoy.gitea.k8s;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -28,13 +26,10 @@ import io.devjoy.gitea.k8s.postgres.PostgresDeploymentDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresPvcDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresSecretDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresServiceDependentResource;
-import io.devjoy.gitea.k8s.rhsso.Keycloak;
-import io.devjoy.gitea.k8s.rhsso.KeycloakClient;
 import io.devjoy.gitea.k8s.rhsso.KeycloakClientDependentResource;
 import io.devjoy.gitea.k8s.rhsso.KeycloakDependentResource;
 import io.devjoy.gitea.k8s.rhsso.KeycloakOperatorGroupDependentResource;
 import io.devjoy.gitea.k8s.rhsso.KeycloakOperatorReconcileCondition;
-import io.devjoy.gitea.k8s.rhsso.KeycloakRealm;
 import io.devjoy.gitea.k8s.rhsso.KeycloakRealmDependentResource;
 import io.devjoy.gitea.k8s.rhsso.KeycloakReconcileCondition;
 import io.devjoy.gitea.k8s.rhsso.KeycloakSubscriptionDependentResource;
@@ -44,11 +39,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.openshift.api.model.OAuthClient;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
-import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
-import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -59,10 +49,9 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResourceConfig;
 import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
 import io.quarkus.runtime.util.StringUtil;
 
@@ -85,7 +74,8 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
 		
 })
-public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea> { 
+@CSVMetadata(name = "gitea-operator-bundle", version = "0.1.0", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea")
+public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea>, SharedCSVMetadata { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
