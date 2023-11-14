@@ -57,6 +57,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations.Annotation;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.ws.rs.WebApplicationException;
 
 @ControllerConfiguration(dependents = { @Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependentResource.class),
 		@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependentResource.class),
@@ -313,14 +314,20 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 
 	@Override
 	public ErrorStatusUpdateControl<Gitea> updateErrorStatus(Gitea gitea, Context<Gitea> context, Exception e) {
-		if (e instanceof ServiceException) {
-			ServiceException serviceException = (ServiceException) e;
+		LOG.info("Error of type {}", e.getClass());
+		if (e.getCause() instanceof ServiceException) {
+			ServiceException serviceException = (ServiceException) e.getCause();
+			String additionalInfo = "";
+			if(serviceException.getCause() instanceof WebApplicationException) {
+				WebApplicationException webException = (WebApplicationException) serviceException.getCause();
+				additionalInfo = ".Caused by http error " + webException.getResponse().getStatus();
+			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(serviceException.getErrorConditionType().toString())
 					.withMessage("Error")
 					.withLastTransitionTime(LocalDateTime.now().toString())
-					.withReason(serviceException.getMessage())
+					.withReason(serviceException.getMessage() + additionalInfo)
 					.withStatus("false")
 					.build());
 		}

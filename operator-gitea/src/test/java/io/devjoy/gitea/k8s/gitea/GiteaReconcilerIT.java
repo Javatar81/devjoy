@@ -71,6 +71,7 @@ public class GiteaReconcilerIT {
 						.withName("giteawithoutspec")
 						.withNamespace(client.getNamespace())
 						.build()); 
+		gitea.getSpec().setAdminUser("admin");
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
