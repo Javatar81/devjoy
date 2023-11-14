@@ -5,6 +5,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.*;
 
 import java.util.concurrent.TimeUnit;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,7 +72,6 @@ public class GiteaReconcilerIT {
 						.withName("giteawithoutspec")
 						.withNamespace(client.getNamespace())
 						.build()); 
-		gitea.getSpec().setAdminUser("admin");
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
