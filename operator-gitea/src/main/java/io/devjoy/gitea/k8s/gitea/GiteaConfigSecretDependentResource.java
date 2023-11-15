@@ -7,9 +7,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.commons.configuration2.INIConfiguration;
-import org.apache.commons.configuration2.ex.ConfigurationException;
+import io.devjoy.gitea.domain.GiteaAppIni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -148,44 +146,38 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 			cm.getMetadata().setAnnotations(new HashMap<>());
 		}
 		String iniData = cm.getStringData().get(KEY_APP_INI);
-		INIConfiguration iniConfiguration = new INIConfiguration();
+		GiteaAppIni iniConfiguration = new GiteaAppIni(iniData);
 		LOG.debug("Reading app.ini initial data {}", iniData);
-		try (StringReader fileReader = new StringReader(iniData)) {
-		    iniConfiguration.read(fileReader);
-		    LOG.info("Read app.ini. Adding configuration parameters based on Gitea resource.");
-		    iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
-		    configureDatabase(primary, iniConfiguration);
-		    if(primary.getSpec().isIngressEnabled() && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
-				Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
-					.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
-				route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec().isSsl()));
-			}
-		    configureServer(iniConfiguration);
-		    iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty("ALLOW_LOCALNETWORKS", "false");
-		    if (primary.getSpec().getLogLevel() != null) {
-		    	iniConfiguration.getSection(SECTION_LOG).setProperty("LEVEL", primary.getSpec().getLogLevel());
-		    }
-		    if (primary.getSpec().getMailer() != null) {
-		    	configureMailer(iniConfiguration, primary.getSpec().getMailer());
-		    }
-		    configureService(primary, iniConfiguration);
-			addOverrides(primary, iniConfiguration);
-		    StringWriter iniWriter = new StringWriter();
-		    iniConfiguration.write(iniWriter);
-		    String finalAppIni = iniWriter.toString();
-		    LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
-		    //cm.getStringData().put("app.ini", finalAppIni);
-			cm.getStringData().clear();
-			cm.setData(new HashMap<>());
-			cm.getData().put("app.ini", new String(Base64.getEncoder().encode(
-				finalAppIni.getBytes())));
-		} catch (ConfigurationException | IOException e) {
-			throw new RuntimeException(e);
+		LOG.info("Read app.ini. Adding configuration parameters based on Gitea resource.");
+		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
+		configureDatabase(primary, iniConfiguration);
+		if(primary.getSpec().isIngressEnabled() && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
+			Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
+				.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
+			route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec().isSsl()));
 		}
+		configureServer(iniConfiguration);
+		iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty("ALLOW_LOCALNETWORKS", "false");
+		if (primary.getSpec().getLogLevel() != null) {
+			iniConfiguration.getSection(SECTION_LOG).setProperty("LEVEL", primary.getSpec().getLogLevel());
+		}
+		if (primary.getSpec().getMailer() != null) {
+			configureMailer(iniConfiguration, primary.getSpec().getMailer());
+		}
+		configureService(primary, iniConfiguration);
+		addOverrides(primary, iniConfiguration);
+		String finalAppIni = iniConfiguration.toString();
+		LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
+		//cm.getStringData().put("app.ini", finalAppIni);
+		cm.getStringData().clear();
+		cm.setData(new HashMap<>());
+		cm.getData().put("app.ini", new String(Base64.getEncoder().encode(
+			finalAppIni.getBytes())));
+		
 		return cm;
 	}
 
-	private void addOverrides(Gitea primary, INIConfiguration iniConfiguration) {
+	private void addOverrides(Gitea primary, GiteaAppIni iniConfiguration) {
         GiteaConfigOverrides configOverrides = primary.getSpec().getConfigOverrides();
 		configOverrides.getDefaults().entrySet().forEach( e -> iniConfiguration.setProperty(e.getKey().toUpperCase(), e.getValue()));
 		configOverrides.getRepository().entrySet().forEach( e -> iniConfiguration.getSection(SECTION_REPOSITORY).setProperty(e.getKey().toUpperCase(), e.getValue()));
@@ -265,14 +257,14 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	}
 
 
-	private void configureService(Gitea primary, INIConfiguration iniConfiguration) {
+	private void configureService(Gitea primary, GiteaAppIni iniConfiguration) {
 		iniConfiguration.getSection(SECTION_SERVICE).setProperty("REGISTER_EMAIL_CONFIRM", primary.getSpec().isRegisterEmailConfirm());
 		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_NOTIFY_MAIL", primary.getSpec().getMailer().isEnableNotifyMail());
 		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DISABLE_REGISTRATION", primary.getSpec().isDisableRegistration());
 		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_CAPTCHA", primary.getSpec().isEnableCaptcha());
 		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DEFAULT_ALLOW_CREATE_ORGANIZATION", primary.getSpec().isAllowCreateOrganization());
 	}
-	private void configureMailer(INIConfiguration iniConfiguration, GiteaMailerSpec mailer) {
+	private void configureMailer(GiteaAppIni iniConfiguration, GiteaMailerSpec mailer) {
 		iniConfiguration.getSection(SECTION_MAILER).setProperty("ENABLED", mailer.isEnabled());
 		if (mailer.isEnabled()) {
 			iniConfiguration.getSection(SECTION_MAILER).setProperty("FROM", mailer.getFrom());
@@ -285,20 +277,20 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 			}
 		}
 	}
-	private void configureServer(INIConfiguration iniConfiguration) {
+	private void configureServer(GiteaAppIni iniConfiguration) {
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("HTTP_PORT", "3000");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("SSH_PORT", "2022");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("SSH_PORT", "2022");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("DISABLE_SSH", "true");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("START_SSH_SERVER", "false");
 	}
-	private void configureRoute(INIConfiguration iniConfiguration, Route r, boolean ssl) {
+	private void configureRoute(GiteaAppIni iniConfiguration, Route r, boolean ssl) {
 		String protocol = "http" + (ssl ? "s://" : "://");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("ROOT_URL", protocol + r.getSpec().getHost() + "/");
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("SSH_DOMAIN", r.getSpec().getHost());
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("DOMAIN", r.getSpec().getHost());
 	}
-	private void configureDatabase(Gitea primary, INIConfiguration iniConfiguration) {
+	private void configureDatabase(Gitea primary, GiteaAppIni iniConfiguration) {
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", "postgresql-" + primary.getMetadata().getName() +":5432");
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
