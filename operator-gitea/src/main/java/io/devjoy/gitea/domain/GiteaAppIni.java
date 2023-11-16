@@ -51,7 +51,7 @@ public class GiteaAppIni {
         }
     }
     private static final Logger LOG = LoggerFactory.getLogger(AuthenticationService.class);
-    private static final Pattern PATTERN_SECTION = Pattern.compile("\\[.*\\]\n[^\\[]*");
+    private static final Pattern PATTERN_SECTION = Pattern.compile("\\[.*\\]\n.*[^\\[]*");
     private static final Pattern PATTERN_DEFAULT = Pattern.compile("\\[.*\\]");
     private final Map<String, GiteaIniSection> sections = new LinkedHashMap<>();
    
