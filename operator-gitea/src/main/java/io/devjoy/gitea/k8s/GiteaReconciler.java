@@ -23,6 +23,7 @@ import io.devjoy.gitea.k8s.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.k8s.gitea.GiteaRouteReconcileCondition;
 import io.devjoy.gitea.k8s.gitea.GiteaServiceAccountDependentResource;
 import io.devjoy.gitea.k8s.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.postgres.PostgresConfigMapDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresDeploymentDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresPvcDependentResource;
 import io.devjoy.gitea.k8s.postgres.PostgresSecretDependentResource;
@@ -70,6 +71,7 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(name = "postgresSecret", type = PostgresSecretDependentResource.class), 
 		@Dependent(name = "postgresPvc", type = PostgresPvcDependentResource.class),
 		@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependentResource.class), 
+		@Dependent(name = "postgresConfig", type = PostgresConfigMapDependentResource.class), 
 		@Dependent(reconcilePrecondition = GiteaOAuthClientReconcileCondition.class, type = GiteaOAuthClientDependentResource.class),
 		@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),

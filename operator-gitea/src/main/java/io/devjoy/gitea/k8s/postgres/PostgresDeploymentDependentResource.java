@@ -11,6 +11,8 @@ import io.devjoy.gitea.k8s.GiteaPostgresSpec;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -58,12 +60,35 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 					c.getResources().getLimits().clear();
 				}
 			}
+			if(primary.getSpec().getPostgres().isSsl()) {
+				c.getVolumeMounts().add(new VolumeMountBuilder().withName("tls-secret").withMountPath(PostgresConfigMapDependentResource.MOUNT_PATH_CERTS).build());
+				c.getVolumeMounts().add(new VolumeMountBuilder().withName("psql-config").withMountPath("/opt/app-root/src/postgresql-cfg").build());
+			}
 		});
 		template.getSpec().getVolumes().stream()
 			.filter(v -> "postgresql-data".equals(v.getName()))
 			.findAny().ifPresent(v -> v.getPersistentVolumeClaim().setClaimName(name + "-pvc"));
 		if (deployment.getMetadata().getLabels() == null) {
 			deployment.getMetadata().setLabels(new HashMap<>());
+		}
+		if (primary.getSpec().getPostgres().isSsl()) {
+			template.getSpec().getVolumes().add(
+				new VolumeBuilder()
+						.withName("tls-secret")
+						.withNewSecret()
+							.withSecretName(PostgresServiceDependentResource.getServiceCertSecretName(primary))
+						.withDefaultMode(0600)
+						.endSecret()
+					.build()
+				);
+			template.getSpec().getVolumes().add(
+				new VolumeBuilder()
+						.withName("psql-config")
+						.withNewConfigMap()
+							.withName(PostgresConfigMapDependentResource.getName(primary))
+						.endConfigMap()
+					.build()
+				);
 		}
 		deployment.getMetadata().getLabels().put(LABEL_KEY, LABEL_VALUE);
 		return deployment;

@@ -23,6 +23,9 @@ public class GiteaPostgresSpec {
 	@JsonPropertyDescription("The image tag to be used for the Postgres pod")
 	@JsonProperty(defaultValue = "latest")
 	private String imageTag = "latest";
+	@JsonPropertyDescription("Enables SSL for database connections.")
+	private boolean ssl = false;
+	
 	
 	public String getVolumeSize() {
 		return volumeSize;
@@ -71,5 +74,11 @@ public class GiteaPostgresSpec {
 	}
 	public void setImageTag(String imageTag) {
 		this.imageTag = imageTag;
+	}
+	public boolean isSsl() {
+		return ssl;
+	}
+	public void setSsl(boolean giteaSsl) {
+		this.ssl = giteaSsl;
 	}
 }

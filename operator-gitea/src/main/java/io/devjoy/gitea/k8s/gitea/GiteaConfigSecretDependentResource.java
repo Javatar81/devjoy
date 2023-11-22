@@ -295,6 +295,9 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
+		if (primary.getSpec().getPostgres().isSsl()) {
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "require");
+		}
 	}
 
 	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {

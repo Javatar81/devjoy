@@ -11,7 +11,7 @@ public class PostgresServiceDiscriminator implements ResourceDiscriminator<Servi
 
     @Override
     public Optional<Service> distinguish(Class<Service> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().services().inNamespace(primary.getMetadata().getNamespace()).withName("postgresql-" + primary.getMetadata().getName()).get());
+        return Optional.ofNullable(context.getClient().services().inNamespace(primary.getMetadata().getNamespace()).withName(PostgresServiceDependentResource.getName(primary)).get());
     }
 
 
