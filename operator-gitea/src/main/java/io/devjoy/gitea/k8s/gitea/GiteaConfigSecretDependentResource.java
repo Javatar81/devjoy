@@ -291,12 +291,12 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("DOMAIN", r.getSpec().getHost());
 	}
 	private void configureDatabase(Gitea primary, GiteaAppIni iniConfiguration) {
-		iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", "postgresql-" + primary.getMetadata().getName() +":5432");
+		iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", String.format("postgresql-%s.%s.svc:5432",primary.getMetadata().getName(), primary.getMetadata().getNamespace()));
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
 		if (primary.getSpec().getPostgres().isSsl()) {
-			iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "require");
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "verify-full");
 		}
 	}
 
