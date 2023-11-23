@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: devjoy-gitea
+  namespace: openshift-marketplace
+spec:
+  sourceType: grpc
+  image: quay.io/devjoy/gitea-operator-catalog:0.1.0
+  description:  Operator for Gitea
+  publisher: devjoy.io

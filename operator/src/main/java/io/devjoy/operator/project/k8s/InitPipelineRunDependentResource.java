@@ -27,13 +27,13 @@ import jakarta.inject.Inject;
  * This resource is not garbage collected and thus will not use an owner reference
  *
  */
-@KubernetesDependent
-public class PipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, Updater<PipelineRun, Project>{
-	private static final Logger LOG = LoggerFactory.getLogger(PipelineRunDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = InitPipelineRunDiscriminator.class)
+public class InitPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, Updater<PipelineRun, Project>{
+	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependentResource.class);
 	@Inject
 	TektonClient tektonClient;
 	
-	public PipelineRunDependentResource() {
+	public InitPipelineRunDependentResource() {
 		super(PipelineRun.class);
 	}
 	
@@ -41,7 +41,7 @@ public class PipelineRunDependentResource extends KubernetesDependentResource<Pi
 	protected PipelineRun desired(Project primary, Context<Project> context) {
 		LOG.info("Setting desired state for pipeline run");
 		PipelineRun pipelineRun = getPipelineRunFromYaml(tektonClient);
-		String name = getName(primary, pipelineRun);
+		String name = getName(primary);
 		pipelineRun.getMetadata().setName(name);
 		
 		DevEnvironment devEnvironment = getOwningEnvironment(primary).get();
@@ -70,7 +70,7 @@ public class PipelineRunDependentResource extends KubernetesDependentResource<Pi
 		
 		// E.g. quarkus-resteasy-reactive quarkus-reactive-routes
 		Optional.ofNullable(primary.getSpec().getQuarkus())
-			.map(q -> q.getExtensions().stream().collect(Collectors.joining(" ")))
+			.map(q -> q.getExtensions().stream().collect(Collectors.joining(",")))
 			.ifPresent(ext -> pipelineRun.getSpec().getParams()
 					.add(new ParamBuilder().withName("quarkus_extensions")
 							.withNewValue(ext)
@@ -93,23 +93,22 @@ public class PipelineRunDependentResource extends KubernetesDependentResource<Pi
 		}
 	}
 	
-	private static String getName(Project primary, PipelineRun pipelineRun) {
-		return pipelineRun.getMetadata().getName() + primary.getMetadata().getName();
+	static String getName(Project primary) {
+		return "init-project-" + primary.getMetadata().getName();
 	}
 
 	private static PipelineRun getPipelineRunFromYaml(TektonClient tektonClient) {
 		return tektonClient.v1beta1()
 				.pipelineRuns()
-				.load(PipelineRunDependentResource.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
+				.load(InitPipelineRunDependentResource.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
 				.item();
 	}
 	
 	public static Resource<PipelineRun> getResource(TektonClient tektonClient, Project primary) {
-		PipelineRun run = getPipelineRunFromYaml(tektonClient);
 		return tektonClient.v1beta1()
 				.pipelineRuns()
 				.inNamespace(primary.getMetadata().getNamespace())
-				.withName(getName(primary, run));
+				.withName(getName(primary));
 	}
 	
 	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {

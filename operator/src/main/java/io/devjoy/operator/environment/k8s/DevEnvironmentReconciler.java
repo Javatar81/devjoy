@@ -10,8 +10,11 @@ import io.devjoy.operator.environment.k8s.build.BuildPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependentResource;
 import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependentResource;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.AdditionalDeployResourcesConfigmapDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.InitDeployPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentResource;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
+import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependentResource;
 import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.init.QuarkusTaskDependentResource;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -33,8 +36,10 @@ import io.quarkus.runtime.util.StringUtil;
 	        @Dependent(type = GiteaPushTriggerBindingDependentResource.class),
 	        @Dependent(type = AdditionalResourcesConfigmapDependentResource.class),
 	        @Dependent(type = InitPipelineDependentResource.class),
+			@Dependent(type = InitDeployPipelineDependentResource.class),
 	        @Dependent(type = AdditionalResourceTaskDependentResource.class),
-	        @Dependent(type = QuarkusTaskDependentResource.class),
+			@Dependent(type = AdditionalDeployResourcesConfigmapDependentResource.class),
+	        @Dependent(type = HelmCreateTaskDependentResource.class),
 	    })
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> { 
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);

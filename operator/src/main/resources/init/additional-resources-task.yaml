@@ -9,11 +9,22 @@ spec:
       name: PROJECT
       type: string
     - default: ''
+      description: The project namespace variable
+      name: PROJECT_NAMESPACE
+      type: string
+    - default: ''
+      description: The port of the service
+      name: SERVICE_PORT
+      type: string
+    - default: ''
       description: The repository variable
       name: REPOSITORY
       type: string
     - description: The file with vars to substitute
       name: FILE
+      type: string
+    - description: The file with vars to substitute
+      name: TARGET_FOLDER
       type: string
     - description: Java Home for the workspace. One of $JAVA_HOME_17, $JAVA_HOME_11, or $JAVA_HOME_8.
       name: JAVA_HOME
@@ -25,13 +36,17 @@ spec:
           value: $(params.PROJECT)
         - name: REPOSITORY
           value: $(params.REPOSITORY)
+        - name: PROJECT_NAMESPACE
+          value: $(params.PROJECT_NAMESPACE)
+        - name: SERVICE_PORT
+          value: $(params.SERVICE_PORT)
         - name: JAVA_HOME
           value: $(params.JAVA_HOME)
       image: 'quay.io/devjoy/gettext:latest'
       name: substitutevars
       resources: {}
       script: |-
-        echo "copying and substituting from $(workspaces.source.path)/$(params.FILE) to $(workspaces.target.path)/$(params.PROJECT)/$(params.FILE)" && envsubst < $(workspaces.source.path)/$(params.FILE) > $(workspaces.target.path)/$(params.PROJECT)/$(params.FILE)
+        echo "copying and substituting from $(workspaces.source.path)/$(params.FILE) to $(workspaces.target.path)/$(params.TARGET_FOLDER)/$(params.FILE)" && mkdir -p $(params.TARGET_FOLDER) && envsubst < $(workspaces.source.path)/$(params.FILE) > $(workspaces.target.path)/$(params.TARGET_FOLDER)/$(params.FILE)
       workingDir: $(workspaces.target.path)
   workspaces:
     - name: source

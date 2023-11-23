@@ -25,8 +25,8 @@ public class ProjectReconcilerIT {
 
     @AfterEach
 	void tearDown() {
-		client.resources(DevEnvironment.class).delete();
-        client.resources(Project.class).delete();
+		//client.resources(DevEnvironment.class).delete();
+        //client.resources(Project.class).delete();
 	}
 
     @Test
@@ -37,14 +37,14 @@ public class ProjectReconcilerIT {
         project.getMetadata().setName("testproject");
         ProjectSpec spec = new ProjectSpec();
         spec.setEnvironmentName(devEnvironment.getMetadata().getName());
-        spec.setEnvironmentNamespace(devEnvironment.getMetadata().getNamespace());
+        spec.setEnvironmentNamespace(client.getNamespace());
         ProjectOwner owner = new ProjectOwner();
         owner.setUser("testuser");
         owner.setUserEmail("testuser@example.com");
         spec.setOwner(owner);
         QuarkusSpec quarkusSpec = new QuarkusSpec();
         quarkusSpec.setEnabled(true);
-        quarkusSpec.setExtensions(List.of("quarkus-resteasy-reactive-jackson"));
+        quarkusSpec.setExtensions(List.of("quarkus-resteasy-reactive-jackson", "quarkus-jdbc-postgresql"));
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();

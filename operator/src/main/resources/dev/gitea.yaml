@@ -7,7 +7,6 @@ spec:
   logLevel: WARN
   disableRegistration: false
   adminPasswordLength: 12
-  migrateRepositories: false
   registerEmailConfirm: false
   adminUser: devjoyadmin
   enableCaptcha: false

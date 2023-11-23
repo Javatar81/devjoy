@@ -21,8 +21,10 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@ControllerConfiguration(dependents = { @Dependent(type = RepositoryDependentResource.class),
-		@Dependent(type = PipelineRunDependentResource.class),
+@ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependentResource.class),
+		@Dependent(type = GitopsRepositoryDependentResource.class),
+		@Dependent(type = InitPipelineRunDependentResource.class),
+		@Dependent(type = InitDeployPipelineRunDependentResource.class)
 		})
 public class ProjectReconciler implements Reconciler<Project> {
 	private final OpenShiftClient client;
@@ -51,7 +53,7 @@ public class ProjectReconciler implements Reconciler<Project> {
 				resource.getStatus().setRepository(repositoryStatus);
 				if (resource.getStatus().getWorkspace() == null || StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) {
 					LOG.info("Setting workspace factory url");
-					PipelineRun pipelineRun = PipelineRunDependentResource.getResource(tektonClient, resource)
+					PipelineRun pipelineRun = InitPipelineRunDependentResource.getResource(tektonClient, resource)
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
 					onPipelineRunComplete(pipelineRun, resource, context);
 				}

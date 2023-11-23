@@ -1,10 +1,10 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: init-project-
+  name: init-deploy-
 spec:
   pipelineRef:
-    name: init-project-
+    name: init-deploy-
   serviceAccountName: pipeline
   timeout: 1h0m0s
   workspaces:
@@ -21,10 +21,10 @@ spec:
           volumeMode: Filesystem
     - name: auth
       secret:
-        secretName: -git-secret
+        secretName: -git-secret  
     - name: additional-resources
       configMap:
-        name: additional-resources-         
+        name: additional-resources-deploy-         
     - name: mvn-settings
       emptyDir: {}               
    

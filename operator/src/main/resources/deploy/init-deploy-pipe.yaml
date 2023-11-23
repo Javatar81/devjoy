@@ -1,7 +1,7 @@
 apiVersion: tekton.dev/v1beta1
 kind: Pipeline
 metadata:
-  name: init-project-
+  name: init-deploy-
 spec:
   params:
     - name: git_url
@@ -13,58 +13,68 @@ spec:
     - name: git_user_email
       type: string
       description: Git user
-    - name: quarkus_group_id
+    - name: project_name
       type: string
-      description: Maven group id for quarkus project
-      default: ""
-    - name: quarkus_artifact_id
+      description: Name of the project
+    - name: project_namespace
       type: string
-      description: Maven artifact id for quarkus project
-      default: ""
-    - name: quarkus_extensions
+      description: Name of the project namespace
+    - name: service_port
       type: string
-      description: The blank-separated list of quarkus extensions
-      default: ""
+      description: Port of the service
+    - name: repository
+      type: string
+      description: The image repository
+
   tasks:
-    - name: quarkus-create
-      params:
-        - name: MAVEN_IMAGE
-          value: >-
-            registry.redhat.io/ubi8/openjdk-17@sha256:aa53206031afff34f8c83b8cc491d853bc78d88a16bf19a3e09ed1841af4cdc7
-        - name: GOALS
-          value:
-            - io.quarkus.platform:quarkus-maven-plugin:3.5.2:create
-            - -DprojectGroupId=$(params.quarkus_group_id)
-            - -DprojectArtifactId=$(params.quarkus_artifact_id)
-            - -Dextensions=$(params.quarkus_extensions)
-        - name: MAVEN_MIRROR_URL
-          value: ''
-        - name: SERVER_USER
-          value: ''
-        - name: SERVER_PASSWORD
-          value: ''
-        - name: PROXY_USER
-          value: ''
-        - name: PROXY_PASSWORD
-          value: ''
-        - name: PROXY_PORT
-          value: ''
-        - name: PROXY_HOST
-          value: ''
-        - name: PROXY_NON_PROXY_HOSTS
-          value: ''
-        - name: PROXY_PROTOCOL
-          value: http
-        - name: CONTEXT_DIR
-          value: .
+    - name: helm-create
       taskRef:
-        kind: ClusterTask
-        name: maven
+        kind: Task
+        name: helm-create
+      params:
+        - name: chart_name
+          value: testproject
+        - name: path
+          value: apps
       workspaces:
         - name: source
           workspace: src
-        - name: maven-settings
-          workspace: mvn-settings
+    - name: git-additional-resources
+      params:
+        - name: PROJECT
+          value: $(params.project_name)
+        - name: PROJECT_NAMESPACE
+          value: $(params.project_namespace)
+        - name: SERVICE_PORT
+          value: $(params.service_port)
+        - name: REPOSITORY
+          value: $(params.repository)
+        - name: TARGET_FOLDER
+          value: bootstrap
+        - name: FILE
+          value: argo-application.yaml
+      taskRef:
+        kind: Task
+        name: additional-resources
+      workspaces:
+        - name: target
+          workspace: src
+        - name: source
+          workspace: additional-resources
+    - name: bootstrap
+      runAfter:
+        - git-additional-resources
+      taskRef:
+        kind: ClusterTask
+        name: openshift-client
+      params:
+        - name: SCRIPT
+          value: oc apply -f bootstrap
+        - name: VERSION
+          value: latest
+      workspaces:
+        - name: manifest-dir
+          workspace: src
     - name: git-init
       params:
         - name: BASE_IMAGE
@@ -72,7 +82,7 @@ spec:
             docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
-            git -C $(params.quarkus_artifact_id) init && git -C $(params.quarkus_artifact_id) config http.sslVerify false && git -C $(params.quarkus_artifact_id) checkout -b main
+            git init && git config http.sslVerify false && git checkout -b main
         - name: USER_HOME
           value: /root
         - name: VERBOSE
@@ -85,30 +95,11 @@ spec:
         kind: ClusterTask
         name: git-cli
       runAfter:
-        - quarkus-create
+        - helm-create
+        - bootstrap
       workspaces:
         - name: source
           workspace: src
-    - name: git-additional-resources
-      params:
-        - name: PROJECT
-          value: $(params.quarkus_artifact_id)
-        - name: REPOSITORY
-          value: $(params.git_url)
-        - name: TARGET_FOLDER
-          value: $(params.quarkus_artifact_id)
-        - name: FILE
-          value: devfile.yaml
-      runAfter:
-        - git-init
-      taskRef:
-        kind: Task
-        name: additional-resources
-      workspaces:
-        - name: target
-          workspace: src
-        - name: source
-          workspace: additional-resources
     - name: git-commit
       params:
         - name: BASE_IMAGE
@@ -116,7 +107,7 @@ spec:
             docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
-            git -C $(params.quarkus_artifact_id) add . && git -C $(params.quarkus_artifact_id) commit -m "quarkus project generated"
+            git add . && git commit -m "deployment artifacts generated"
         - name: USER_HOME
           value: /root
         - name: VERBOSE
@@ -126,7 +117,7 @@ spec:
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
       runAfter:
-        - git-additional-resources
+        - git-init
       taskRef:
         kind: ClusterTask
         name: git-cli
@@ -140,7 +131,7 @@ spec:
             docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
-            git -C $(params.quarkus_artifact_id) remote add origin $(params.git_url) && git -C $(params.quarkus_artifact_id) push -u origin main
+            git remote add origin $(params.git_url) && git push -u origin main
         - name: USER_HOME
           value: /root
         - name: VERBOSE

@@ -18,7 +18,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = AdditionalResourcesConfigmapDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = AdditionalResourcesConfigmapDiscriminator.class, labelSelector = AdditionalResourcesConfigmapDependentResource.LABEL_SELECTOR)
 public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/configmap.type";
 	private static final String LABEL_VALUE = "additionalresources";
@@ -35,7 +35,7 @@ public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernete
 				.load(getClass().getClassLoader().getResourceAsStream("init/additional-resources-cm.yaml"))
 				.item();
 		
-		String name = cm.getMetadata().getName() + primary.getMetadata().getName();
+		String name = getName(primary);
 		cm.getMetadata().setName(name);
 		cm.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (cm.getMetadata().getLabels() == null) {
@@ -53,6 +53,10 @@ public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernete
 			throw new RuntimeException(e);
 		}
 		return cm;
+	}
+
+	public static String getName(DevEnvironment primary) {
+		return "additional-resources-" + primary.getMetadata().getName();
 	}
 	
 	private Map<String, Object> addConfigParamsToDevFileYaml(DevEnvironment primary, String devFileContent)

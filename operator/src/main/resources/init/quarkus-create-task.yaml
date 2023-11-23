@@ -23,7 +23,7 @@ spec:
         - '-e'
         - '--verbose'
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
-      image: 'quay.io/devjoy/quarkuscli:3.4.3'
+      image: 'quay.io/devjoy/quarkuscli:latest'
       name: version-info
       resources: {}
       workingDir: $(workspaces.source.path)
@@ -33,11 +33,11 @@ spec:
         - '-B'
         - '-e'
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
-      image: 'quay.io/devjoy/quarkuscli:3.4.3'
+      image: 'quay.io/devjoy/quarkuscli:latest'
       name: create
       resources: {}
       workingDir: $(workspaces.source.path)
-    - image: 'quay.io/devjoy/quarkuscli:3.4.3'
+    - image: 'quay.io/devjoy/quarkuscli:latest'
       name: add-extensions
       resources: {}
       script: >-

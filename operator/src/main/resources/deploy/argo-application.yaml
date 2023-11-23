@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $PROJECT
+  namespace: openshift-gitops
+spec:
+  destination:
+    namespace: $PROJECT_NAMESPACE
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    helm:
+      parameters:
+        - name: service.port
+          value: '$SERVICE_PORT'
+        - name: image.repository
+          value: >-
+            image-registry.openshift-image-registry.svc:5000/$PROJECT_NAMESPACE/$PROJECT
+        - name: image.tag
+          value: latest
+    path: apps/$PROJECT
+    repoURL: $REPO_URL
+    targetRevision: HEAD
+  syncPolicy:
+    automated: {}

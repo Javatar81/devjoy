@@ -1,21 +1,13 @@
 package io.devjoy.operator.project.k8s;
 
 import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-
-import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
 
 import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaRepositoryReconciler;
 import io.devjoy.gitea.repository.k8s.GiteaRepositorySpec;
-import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
-import io.devjoy.gitea.repository.k8s.WebhookSpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
-import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
-import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -23,13 +15,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent
-public class RepositoryDependentResource extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
+@KubernetesDependent(resourceDiscriminator = GitopsRepositoryDiscriminator.class)
+public class GitopsRepositoryDependentResource extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
 
 	private static final String ENVIRONMENT_NAME_LABEL_KEY = "devjoy.io/environment.name";
 	private static final String ENVIRONMENT_NAMESPACE_LABEL_KEY = "devjoy.io/environment.namespace";
+    static final String REPO_POSTFIX = "-app";
 
-	public RepositoryDependentResource() {
+	public GitopsRepositoryDependentResource() {
 		super(GiteaRepository.class);
 		
 	}
@@ -38,7 +31,7 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 	protected GiteaRepository desired(Project primary, Context<Project> context) {
 		GiteaRepository repository = new GiteaRepository();
 		ObjectMetaBuilder metaBuilder = new ObjectMetaBuilder()
-			.withName(primary.getMetadata().getName())
+			.withName(getName(primary))
 			.withNamespace(primary.getMetadata().getNamespace());
 		repository.setMetadata(metaBuilder.build());
 		DevEnvironment env = getOwningEnvironment(primary).waitUntilCondition(c -> c != null, 120, TimeUnit.SECONDS);
@@ -54,33 +47,15 @@ public class RepositoryDependentResource extends CRUDKubernetesDependentResource
 			spec.setDeleteOnFinalize(true);
 			spec.setUser(primary.getSpec().getOwner().getUser());
 			spec.setVisibility(Visibility.PUBLIC);
-			
-			spec.setWebhooks(List.of(WebhookSpec.builder()
-					.withActive(true)
-					.withEvents(List.of("push"))
-					.withTargetUrl(getEventListenerUrl(env))
-					.withBranchFilter("*")
-					.withHttpMethod("POST")
-					.withType(TypeEnum.GITEA.toString().toUpperCase())
-					.withSecretRef(SecretReferenceSpec.builder()
-							.withKey("webhook-secret")
-							.withName(WebhookSecretDependentResource.getName(env))
-							.withNamespace(env.getMetadata().getNamespace())
-							.build()
-					).build()
-			));
 		} else {
 			//TODOspec.setExistingRepositoryCloneUrl(primary.getSpec().getExistingRepositoryCloneUrl());
 		}
 		repository.setSpec(spec);
 		return repository;
 	}
-	
-	private String getEventListenerUrl(DevEnvironment env) {
-		return BuildEventListenerDependentResource.getResource(env, client)
-				.waitUntilCondition(el -> el != null && el.getStatus() != null && !StringUtil.isNullOrEmpty(el.getStatus().getAddress().getUrl()),
-						10, TimeUnit.SECONDS)
-				.getStatus().getAddress().getUrl();
+
+    public static String getName(Project primary) {
+		return primary.getMetadata().getName() + REPO_POSTFIX;
 	}
 	
 	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject) {

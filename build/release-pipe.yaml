@@ -46,14 +46,15 @@ spec:
       workspaces:
         - name: output
           workspace: source
-    - name: test
+    - name: test-operator
       params:
         - name: MAVEN_IMAGE
           value: >-
             registry.redhat.io/ubi8/openjdk-17@sha256:7942acf43a41b8fd202de7c5f7745d9732fae00a401b3da06e1ac988ac26ba4d
         - name: GOALS
           value:
-            - clean verify
+            - clean
+            - verify
             - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
         - name: MAVEN_MIRROR_URL
           value: ''
@@ -187,7 +188,7 @@ spec:
         - name: CONTEXT_DIR
           value: ./operator-gitea
       runAfter:
-        - test
+        - test-operator
       taskRef:
         kind: Task
         name: build-native
