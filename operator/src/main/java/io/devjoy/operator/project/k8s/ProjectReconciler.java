@@ -29,6 +29,7 @@ import io.quarkus.runtime.util.StringUtil;
 public class ProjectReconciler implements Reconciler<Project> {
 	private final OpenShiftClient client;
 	private final TektonClient tektonClient;
+	private final SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
 	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
 	
 	public ProjectReconciler(OpenShiftClient client, TektonClient tektonClient) {
@@ -68,7 +69,7 @@ public class ProjectReconciler implements Reconciler<Project> {
 		InitStatus initStatus = new InitStatus();
 		initStatus.setPipelineRunConditions(pipelineRun.getStatus().getConditions());
 		status.setInitStatus(initStatus);
-		Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class);
+		Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator);
 		repository.ifPresent(r -> {
 			String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
 			status.setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));

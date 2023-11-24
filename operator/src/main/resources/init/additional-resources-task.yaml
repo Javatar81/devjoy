@@ -17,8 +17,16 @@ spec:
       name: SERVICE_PORT
       type: string
     - default: ''
-      description: The repository variable
+      description: The route host of the service
+      name: ROUTE_HOST
+      type: string
+    - default: ''
+      description: The image repository variable
       name: REPOSITORY
+      type: string
+    - default: ''
+      description: The git repository variable
+      name: GIT_REPOSITORY
       type: string
     - description: The file with vars to substitute
       name: FILE
@@ -36,10 +44,14 @@ spec:
           value: $(params.PROJECT)
         - name: REPOSITORY
           value: $(params.REPOSITORY)
+        - name: GIT_REPOSITORY
+          value: $(params.GIT_REPOSITORY)
         - name: PROJECT_NAMESPACE
           value: $(params.PROJECT_NAMESPACE)
         - name: SERVICE_PORT
           value: $(params.SERVICE_PORT)
+        - name: ROUTE_HOST
+          value: $(params.ROUTE_HOST)
         - name: JAVA_HOME
           value: $(params.JAVA_HOME)
       image: 'quay.io/devjoy/gettext:latest'

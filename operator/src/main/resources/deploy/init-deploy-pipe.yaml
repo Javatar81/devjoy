@@ -22,9 +22,12 @@ spec:
     - name: service_port
       type: string
       description: Port of the service
-    - name: repository
+    - name: route_host
       type: string
-      description: The image repository
+      description: The route host for ingress
+    - name: git_repository
+      type: string
+      description: The git repository
 
   tasks:
     - name: helm-create
@@ -39,7 +42,7 @@ spec:
       workspaces:
         - name: source
           workspace: src
-    - name: git-additional-resources
+    - name: add-argo-application
       params:
         - name: PROJECT
           value: $(params.project_name)
@@ -47,8 +50,8 @@ spec:
           value: $(params.project_namespace)
         - name: SERVICE_PORT
           value: $(params.service_port)
-        - name: REPOSITORY
-          value: $(params.repository)
+        - name: GIT_REPOSITORY
+          value: $(params.git_repository)
         - name: TARGET_FOLDER
           value: bootstrap
         - name: FILE
@@ -61,9 +64,34 @@ spec:
           workspace: src
         - name: source
           workspace: additional-resources
+    - name: add-helm-value-yaml
+      params:
+        - name: PROJECT
+          value: $(params.project_name)
+        - name: PROJECT_NAMESPACE
+          value: $(params.project_namespace)
+        - name: SERVICE_PORT
+          value: $(params.service_port)
+        - name: GIT_REPOSITORY
+          value: $(params.git_repository)
+        - name: ROUTE_HOST
+          value: $(params.route_host)
+        - name: TARGET_FOLDER
+          value: environments/test
+        - name: FILE
+          value: values.yaml
+      taskRef:
+        kind: Task
+        name: additional-resources
+      workspaces:
+        - name: target
+          workspace: src
+        - name: source
+          workspace: additional-resources
     - name: bootstrap
       runAfter:
-        - git-additional-resources
+        - add-argo-application
+        - add-helm-value-yaml
       taskRef:
         kind: ClusterTask
         name: openshift-client

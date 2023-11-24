@@ -48,6 +48,8 @@ public class AdditionalDeployResourcesConfigmapDependentResource extends CRUDKub
 			}
 			String devFileContent = Files.readString(Path.of(getClass().getClassLoader().getResource("deploy/argo-application.yaml").toURI()));
 			cm.getData().put("argo-application.yaml", devFileContent);
+			String helmValues = Files.readString(Path.of(getClass().getClassLoader().getResource("deploy/helm-values-test.yaml").toURI()));
+			cm.getData().put("values.yaml", helmValues);
 		} catch (IOException | URISyntaxException e) {
 			throw new RuntimeException(e);
 		}

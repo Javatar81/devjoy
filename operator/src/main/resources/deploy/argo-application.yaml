@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: $PROJECT
-  namespace: openshift-gitops
+  namespace: $PROJECT_NAMESPACE
 spec:
   destination:
     namespace: $PROJECT_NAMESPACE
@@ -10,16 +10,10 @@ spec:
   project: default
   source:
     helm:
-      parameters:
-        - name: service.port
-          value: '$SERVICE_PORT'
-        - name: image.repository
-          value: >-
-            image-registry.openshift-image-registry.svc:5000/$PROJECT_NAMESPACE/$PROJECT
-        - name: image.tag
-          value: latest
+      valueFiles:
+        - /environments/test/values.yaml
     path: apps/$PROJECT
-    repoURL: $REPO_URL
+    repoURL: $GIT_REPOSITORY
     targetRevision: HEAD
   syncPolicy:
     automated: {}

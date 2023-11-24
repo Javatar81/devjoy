@@ -1,15 +1,19 @@
 package io.devjoy.operator.project.k8s;
 
+import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.utils.URLUtils.URLBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
 import io.fabric8.tekton.pipeline.v1beta1.PipelineRefBuilder;
@@ -30,8 +34,13 @@ import jakarta.inject.Inject;
 @KubernetesDependent(resourceDiscriminator = InitDeployPipelineRunDiscriminator.class)
 public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, Updater<PipelineRun, Project>{
 	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependentResource.class);
+	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
+	
 	@Inject
 	TektonClient tektonClient;
+
+	@Inject
+	OpenShiftClient ocpClient;
 	
 	public InitDeployPipelineRunDependentResource() {
 		super(PipelineRun.class);
@@ -70,7 +79,11 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("service_port").withNewValue("8080").build());
 		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("repository").withNewValue(String.format("image-registry.openshift-image-registry.svc:5000/%s/%s", primary.getMetadata().getNamespace(), primary.getMetadata().getName())).build());
+			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.apps.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(),ocpClient.getOpenshiftUrl().getHost().replace("api.",""))).build());
+		
+		Optional<GiteaRepository> gitopsRepo = Optional.ofNullable(context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).get());
+		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
+			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
 
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
