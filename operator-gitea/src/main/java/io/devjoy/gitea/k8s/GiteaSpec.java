@@ -21,7 +21,7 @@ public class GiteaSpec {
 	private String storageClass;
 	@JsonPropertyDescription("The image url to use for Gitea. Default is quay.io/gpte-devops-automation/gitea")
 	private String image;
-	@JsonPropertyDescription("The image tag to use for Gitea. Default is latest")
+	@JsonPropertyDescription("The image tag to use for Gitea. Default is 1.20")
 	private String imageTag;
 	@JsonPropertyDescription("The cpu resource limits for the Gitea deployment")
 	private String cpuLimit;

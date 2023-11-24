@@ -1,6 +1,8 @@
 package io.devjoy.gitea.k8s.rhsso;
 
 
+import java.util.HashMap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,11 @@ public class KeycloakDependentResource extends CRUDKubernetesDependentResource<K
 		keycloak.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		String name = resourceName(primary);
 		keycloak.getMetadata().setName(name);
+		if (keycloak.getMetadata().getLabels() == null) {
+			keycloak.getMetadata().setLabels(new HashMap<>());
+		}
+		keycloak.getMetadata().getLabels().put("app.kubernetes.io/part-of", primary.getMetadata().getName()); 
+
 		return keycloak;
 	}
 	

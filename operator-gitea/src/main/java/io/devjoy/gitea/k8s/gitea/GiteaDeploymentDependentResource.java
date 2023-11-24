@@ -61,6 +61,7 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 			deployment.getMetadata().setLabels(new HashMap<>());
 		}
 		deployment.getMetadata().getLabels().put(LABEL_KEY, LABEL_VALUE);
+		deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of", primary.getMetadata().getName()); 
 		return deployment;
 	}
 	private void setVolumes(String name, PodTemplateSpec template) {
@@ -90,6 +91,7 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 
 	private void setImage(Gitea primary, Container c) {
 		String[] imageAndTag = c.getImage().split(":");
+		LOG.info("Default image is {}", c.getImage());
 		if (!StringUtil.isNullOrEmpty(primary.getSpec().getImage())) {
 			imageAndTag[0] = primary.getSpec().getImage();	
 		}

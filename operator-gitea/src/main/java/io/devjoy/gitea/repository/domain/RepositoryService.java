@@ -97,7 +97,7 @@ public class RepositoryService {
 			repoOption.setDefaultBranch("main");
 			return getDynamicUrlClient(baseUri).create(token, repoOption);
 		} catch (IllegalStateException | RestClientDefinitionException | URISyntaxException | WebApplicationException e) {
-			throw new ServiceException(e);
+			throw new ServiceException(String.format("Error creating repository %s for user %s", repository.getMetadata().getName(), repository.getSpec().getUser()), e);
 		}
 	}
 

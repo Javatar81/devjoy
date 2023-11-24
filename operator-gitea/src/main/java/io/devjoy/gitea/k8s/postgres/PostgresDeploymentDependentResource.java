@@ -91,6 +91,7 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 				);
 		}
 		deployment.getMetadata().getLabels().put(LABEL_KEY, LABEL_VALUE);
+		deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of", primary.getMetadata().getName()); 
 		return deployment;
 	}
 

@@ -3,6 +3,7 @@ kind: Keycloak
 metadata:
   labels:
     app: sso
+    app.kubernetes.io/component: sso
   name: devjoy-keycloak
 spec:
   externalAccess:
