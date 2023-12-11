@@ -3,7 +3,11 @@ package io.devjoy.operator.environment.k8s.build;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
@@ -16,6 +20,7 @@ import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class BuildEventListenerDependentResource extends CRUDKubernetesDependentResource<EventListener, DevEnvironment>{
+	private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
 	@Inject
 	TektonClient tektonClient;
 	
@@ -26,6 +31,7 @@ public class BuildEventListenerDependentResource extends CRUDKubernetesDependent
 	@SuppressWarnings("unchecked")
 	@Override
 	protected EventListener desired(DevEnvironment primary, Context<DevEnvironment> context) {
+		LOG.debug("Reconciling desired state.");
 		EventListener eventListener = tektonClient.v1alpha1()
 				.eventListeners()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-event-listener.yaml"))

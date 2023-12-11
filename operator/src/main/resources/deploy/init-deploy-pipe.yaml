@@ -36,7 +36,7 @@ spec:
         name: helm-create
       params:
         - name: chart_name
-          value: testproject
+          value: $(params.project_name)
         - name: path
           value: apps
       workspaces:
@@ -88,21 +88,21 @@ spec:
           workspace: src
         - name: source
           workspace: additional-resources
-    - name: bootstrap
-      runAfter:
-        - add-argo-application
-        - add-helm-value-yaml
-      taskRef:
-        kind: ClusterTask
-        name: openshift-client
-      params:
-        - name: SCRIPT
-          value: oc apply -f bootstrap
-        - name: VERSION
-          value: latest
-      workspaces:
-        - name: manifest-dir
-          workspace: src
+    #- name: bootstrap
+    #  runAfter:
+    #    - add-argo-application
+    #    - add-helm-value-yaml
+    #  taskRef:
+    #    kind: ClusterTask
+    #    name: openshift-client
+    #  params:
+    #    - name: SCRIPT
+    #      value: oc apply -f bootstrap
+    #    - name: VERSION
+    #      value: latest
+    #  workspaces:
+    #    - name: manifest-dir
+    #      workspace: src
     - name: git-init
       params:
         - name: BASE_IMAGE
@@ -124,7 +124,8 @@ spec:
         name: git-cli
       runAfter:
         - helm-create
-        - bootstrap
+        - add-argo-application
+        - add-helm-value-yaml
       workspaces:
         - name: source
           workspace: src

@@ -1,4 +1,4 @@
-package io.devjoy.operator.project.k8s;
+package io.devjoy.operator.project.k8s.init;
 
 import java.net.URL;
 import java.util.Optional;
@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.project.k8s.Project;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.URLUtils.URLBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;

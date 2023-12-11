@@ -1,8 +1,9 @@
-package io.devjoy.operator.project.k8s;
+package io.devjoy.operator.project.k8s.deploy;
 
 import java.util.Optional;
 
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
+import io.devjoy.operator.project.k8s.Project;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 

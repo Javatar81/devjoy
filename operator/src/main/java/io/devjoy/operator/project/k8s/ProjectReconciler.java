@@ -10,6 +10,11 @@ import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaUserSecretDependentResource;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
+import io.devjoy.operator.project.k8s.deploy.ApplicationDependentResource;
+import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
+import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependentResource;
+import io.devjoy.operator.project.k8s.init.InitPipelineRunDependentResource;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
@@ -23,6 +28,7 @@ import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependentResource.class),
 		@Dependent(type = GitopsRepositoryDependentResource.class),
+		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, type = ApplicationDependentResource.class),
 		@Dependent(type = InitPipelineRunDependentResource.class),
 		@Dependent(type = InitDeployPipelineRunDependentResource.class)
 		})

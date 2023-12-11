@@ -1,4 +1,4 @@
-package io.devjoy.operator.project.k8s;
+package io.devjoy.operator.project.k8s.init;
 
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;

@@ -4,6 +4,8 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.net.HttpURLConnection;
+import java.net.URI;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -25,8 +27,8 @@ public class ProjectReconcilerIT {
 
     @AfterEach
 	void tearDown() {
-		//client.resources(DevEnvironment.class).delete();
-        //client.resources(Project.class).delete();
+		client.resources(DevEnvironment.class).delete();
+        client.resources(Project.class).delete();
 	}
 
     @Test
@@ -48,9 +50,13 @@ public class ProjectReconcilerIT {
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
-        await().ignoreException(NullPointerException.class).atMost(300, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(500, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
+            URI uri = new URI(client.network().ingresses().inNamespace(client.getNamespace()).withName("argocd-" + project.getMetadata().getName()).get().getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+            var con = (HttpURLConnection) uri.toURL().openConnection();
+            con.connect();
+            assertThat(con.getResponseCode(), is(200));
         });
     }
 

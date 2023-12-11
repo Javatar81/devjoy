@@ -11,6 +11,7 @@ import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependen
 import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependentResource;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.AdditionalDeployResourcesConfigmapDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.InitDeployPipelineDependentResource;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentResource;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
@@ -37,6 +38,7 @@ import io.quarkus.runtime.util.StringUtil;
 	        @Dependent(type = AdditionalResourcesConfigmapDependentResource.class),
 	        @Dependent(type = InitPipelineDependentResource.class),
 			@Dependent(type = InitDeployPipelineDependentResource.class),
+			@Dependent(type = ArgoCDDependentResource.class),
 	        @Dependent(type = AdditionalResourceTaskDependentResource.class),
 			@Dependent(type = AdditionalDeployResourcesConfigmapDependentResource.class),
 	        @Dependent(type = HelmCreateTaskDependentResource.class),
