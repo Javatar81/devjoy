@@ -1,0 +1,72 @@
+[
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "devjoy",
+      "name": "DevJoy",
+      "perspective": "admin"
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "envs",
+      "name": "Environments",
+      "href": "/devenvs",
+      "perspective": "admin",
+      "section": "devjoy"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/devenvs",
+      "component": { "$codeRef": "DevEnvironment" }
+    }
+  },
+  {
+    "type": "console.page/resource/tab",
+    "properties": {
+        "name": "DevEnvironments",
+        "href": "devenvs",
+        "model": {
+            "group": "devjoy.io",
+            "version": "v1alpha1",
+            "kind": "DevEnvironment"
+        },
+        "component": { "$codeRef": "DevEnvironment" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "envs",
+      "name": "Projects",
+      "href": "/devprojs",
+      "perspective": "admin",
+      "section": "devjoy"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/devprojs",
+      "component": { "$codeRef": "DevProject" }
+    }
+  },
+  {
+    "type": "console.page/resource/tab",
+    "properties": {
+        "name": "DevProjects",
+        "href": "devprojs",
+        "model": {
+            "group": "devjoy.io",
+            "version": "v1alpha1",
+            "kind": "Project"
+        },
+        "component": { "$codeRef": "DevProject" }
+    }
+  }
+]
