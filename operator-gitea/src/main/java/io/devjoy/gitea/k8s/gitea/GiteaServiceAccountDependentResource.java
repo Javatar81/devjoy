@@ -24,12 +24,12 @@ public class GiteaServiceAccountDependentResource extends CRUDKubernetesDependen
 	
 	@Override
 	protected ServiceAccount desired(Gitea primary, Context<Gitea> context) {
-		return getDesired(primary);
+		return getDesired(primary, context);
 	}
 
-	public ServiceAccount getDesired(Gitea primary) {
+	public ServiceAccount getDesired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea service account");
-		ServiceAccount sa = client.serviceAccounts()
+		ServiceAccount sa = context.getClient().serviceAccounts()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/service-account.yaml")).item();
 		String name = primary.getMetadata().getName();
 		sa.getMetadata().setName(name);

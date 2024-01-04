@@ -34,6 +34,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaUserSecretDependentResource.class);
 	private String username;
 	private TokenService tokenService;
+	private OpenShiftClient ocpClient;
 	
 	public GiteaUserSecretDependentResource() {
 		super(Secret.class);
@@ -43,14 +44,14 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 			String username, OpenShiftClient client, TokenService tokenService) {
 		super(Secret.class);
 		this.username = username;
-		super.client = client;
 		this.tokenService = tokenService;
+		ocpClient = client;
 	}
 
 	@Override
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired state");
-		Secret desired = client.resources(Secret.class)
+		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/user-secret.yaml")).item();
 		desired.getMetadata().setName(username + desired.getMetadata().getName());
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
@@ -67,7 +68,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		desired.getMetadata().setLabels(labels);
 		addOwnerReference(primary, desired);
 		//Replace the token because reconcile will call this again and we can't get the token anymore
-		Secret existingSecret = getResource(primary, username, client).get();
+		Secret existingSecret = getResource(primary, username, context.getClient()).get();
 		reconcileToken(primary, desired, giteaRouteWithProtocol, existingSecret);
 		/*if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(WEBHOOK_SECRET_KEY))) {
 			LOG.info("Webhook secret already set. Taking it over from existing to desired.");
@@ -101,7 +102,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 	}
 
 	private Route getRouteFromGitea(Gitea primary) {
-		return GiteaRouteDependentResource.getResource(primary, (OpenShiftClient) client)
+		return GiteaRouteDependentResource.getResource(primary, ocpClient)
 				.waitUntilCondition(c -> c != null &&!StringUtil.isNullOrEmpty(c.getSpec().getHost()), 10, TimeUnit.SECONDS);
 	}
 	
@@ -115,7 +116,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 	
 	public void reconcileDirectly(Gitea primary, Context<Gitea> context) {
 		Secret desired = desired(primary, context);
-		client.secrets().inNamespace(desired.getMetadata().getNamespace()).createOrReplace(desired);
+		context.getClient().secrets().inNamespace(desired.getMetadata().getNamespace()).createOrReplace(desired);
 	}
 	
 	private Optional<String> getGitCredentials(String username, String token, String gitBaseUrl) {

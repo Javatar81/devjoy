@@ -36,7 +36,7 @@ public class PostgresSecretDependentResource extends CRUDKubernetesDependentReso
 	@Override
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.debug("Setting desired state");
-		Secret desired = client.resources(Secret.class)
+		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/secret.yaml")).item();
 		String name = getName(primary);
 		desired.getMetadata().setName(name);

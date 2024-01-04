@@ -26,7 +26,7 @@ public class PostgresServiceDependentResource extends CRUDKubernetesDependentRes
 	
 	@Override
 	protected Service desired(Gitea primary, Context<Gitea> context) {
-		Service svc = client.services()
+		Service svc = context.getClient().services()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/service.yaml"))
 				.item();
 		String name = getName(primary);

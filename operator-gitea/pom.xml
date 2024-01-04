@@ -15,7 +15,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-    <quarkus.version>3.2.6.Final</quarkus.version>
+    <quarkus.version>3.6.3</quarkus.version>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
   </properties>
   <dependencyManagement>
@@ -30,7 +30,7 @@
       <dependency>
         <groupId>io.quarkiverse.operatorsdk</groupId>
         <artifactId>quarkus-operator-sdk-bom</artifactId>
-        <version>6.3.3</version>
+        <version>6.5.0</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>

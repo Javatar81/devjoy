@@ -29,10 +29,12 @@ public class GiteaPodExecService {
 		this.client = client;
 	}
 
-
 	public Optional<String> execOnDeployment(Gitea gitea, Command cmd) {
 		LOG.debug("Executing {}", cmd);
-		Optional<Deployment> deployment = Optional.ofNullable(GiteaDeploymentDependentResource.getResource(gitea, client).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() > 0, 180, TimeUnit.SECONDS));
+		Optional<Deployment> deployment = Optional.ofNullable(GiteaDeploymentDependentResource.getResource(gitea, client).waitUntilCondition(c -> c != null 
+			&& c.getStatus() != null
+			&& c.getStatus().getReadyReplicas() != null 
+			&& c.getStatus().getReadyReplicas() > 0, 180, TimeUnit.SECONDS));
 		return deployment.flatMap(d -> {
 			Optional<ReplicaSet> replicaSet = client.apps().replicaSets()
 				.inNamespace(gitea.getMetadata().getNamespace())
@@ -45,19 +47,21 @@ public class GiteaPodExecService {
 		});
 	}
 	
-	
 	public Optional<String> execOnReplicaSetPod(Gitea gitea, ReplicaSet rs, Command cmd) {
+		LOG.debug("Found replicaset {}", rs.getMetadata().getName());
 		return client.pods()
 			.inNamespace(gitea.getMetadata().getNamespace())
 			.list()
 			.getItems()
 			.stream()
-			.filter(p -> p.getOwnerReferenceFor(rs.getMetadata().getUid()).isPresent())
+			.filter(p -> rs.getMetadata().getUid() != null && p.getOwnerReferenceFor(rs.getMetadata().getUid()).isPresent())
 			.findAny()
 			.map(p -> this.exec(p, cmd));
 	}
 
+	
 	public String exec(Pod p, Command cmd) {
+		LOG.debug("Found pod {}", p.getMetadata().getName());
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ByteArrayOutputStream error = new ByteArrayOutputStream();
 		CountDownLatch execLatch = new CountDownLatch(1);
@@ -76,7 +80,7 @@ public class GiteaPodExecService {
 	                }
 	            })
 		        .exec(cmd.toArray())) {   
-			boolean latchTerminationStatus = execLatch.await(15, TimeUnit.SECONDS);
+			boolean latchTerminationStatus = execLatch.await(30, TimeUnit.SECONDS);
 			if (!latchTerminationStatus) {
 			  throw new ServiceException("Timeout while waiting for command to complete");
 			}
@@ -89,6 +93,7 @@ public class GiteaPodExecService {
 			}
 			return out.toString();
 		} catch (InterruptedException ie) {
+			LOG.error("Error during exec", ie);
 			Thread.currentThread().interrupt();
 			throw new ServiceException("Interrupted while waiting for the exec", ie);
 	    } 

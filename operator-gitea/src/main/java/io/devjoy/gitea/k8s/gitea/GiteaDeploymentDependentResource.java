@@ -31,7 +31,7 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 	@Override
 	protected Deployment desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea deployment");
-		Deployment deployment = client.apps().deployments()
+		Deployment deployment = context.getClient().apps().deployments()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/deployment.yaml"))
 				.item();
 		String name = primary.getMetadata().getName();

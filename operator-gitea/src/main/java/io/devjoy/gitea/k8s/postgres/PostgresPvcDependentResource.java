@@ -32,7 +32,7 @@ public class PostgresPvcDependentResource extends CRUDKubernetesDependentResourc
 	@Override
 	protected PersistentVolumeClaim desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Postgres pvc");
-		PersistentVolumeClaim pvc = client.persistentVolumeClaims()
+		PersistentVolumeClaim pvc = context.getClient().persistentVolumeClaims()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/pvc.yaml"))
 				.item();
 		String name = getName(primary);

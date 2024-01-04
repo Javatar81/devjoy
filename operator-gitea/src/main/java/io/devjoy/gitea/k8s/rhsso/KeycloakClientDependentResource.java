@@ -41,7 +41,7 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 	@Override
 	protected KeycloakClient desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Reconciling");
-		KeycloakClient keycloakClient = client.resources(KeycloakClient.class)
+		KeycloakClient keycloakClient = context.getClient().resources(KeycloakClient.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/client.yaml")).item();
 		ObjectMeta metadata = keycloakClient.getMetadata();
 		KeycloakClientSpec spec = keycloakClient.getSpec();
@@ -65,7 +65,7 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 		});
 		String internalRedirectUri = String.format("%s/user/oauth2/%s/callback", giteaApiService.getLocalBaseUri(primary), authenticationService.oauthName(primary));
 		spec.getClient().getRedirectUris().add(internalRedirectUri);
-		Optional.ofNullable(getResource(primary, client).get())
+		Optional.ofNullable(getResource(primary, context.getClient()).get())
 			.map(c -> c.getSpec().getClient())
 			.ifPresentOrElse(c -> {
 				if(isNullOrEmpty(c.getSecret())) {

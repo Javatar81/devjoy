@@ -35,7 +35,7 @@ public class KeycloakOperatorGroupDependentResource extends CRUDKubernetesDepend
 	@Override
 	protected OperatorGroup desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Creating desired operator group");
-		OperatorGroup operatorGroup = client.resources(OperatorGroup.class)
+		OperatorGroup operatorGroup = context.getClient().resources(OperatorGroup.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/operator-group.yaml"))
 				.item();
 		operatorGroup.getMetadata().setNamespace(primary.getMetadata().getNamespace());

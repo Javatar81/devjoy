@@ -37,7 +37,7 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 
 	@Override
 	protected KeycloakRealm desired(Gitea primary, Context<Gitea> context) {
-		KeycloakRealm realm = client.resources(KeycloakRealm.class)
+		KeycloakRealm realm = context.getClient().resources(KeycloakRealm.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/realm.yaml")).item();
 		realm.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		String name = resourceName(primary);
@@ -59,7 +59,7 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 				.map(KeycloakRealmSpecRealmIdentityProvidersInner::getConfig)
 				.ifPresent(c -> {
 					c.put("clientSecret", oauth.getSecret());
-					c.put("baseUrl", client.getMasterUrl().toString());
+					c.put("baseUrl", ocpClient.getMasterUrl().toString());
 					c.put("clientId", primary.getMetadata().getName() + "-client");
 			})
 		);

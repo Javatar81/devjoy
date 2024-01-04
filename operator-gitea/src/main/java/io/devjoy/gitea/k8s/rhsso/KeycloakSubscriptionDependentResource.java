@@ -27,7 +27,7 @@ public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDepende
 	@Override
 	public Subscription create(Subscription target, Gitea primary, Context<Gitea> context) {
 		
-		Subscription subscription = getResource(client, primary).get();
+		Subscription subscription = getResource(context.getClient(), primary).get();
 		if (subscription != null) {
 			LOG.debug("Subscription found. Skipping creation.");
 			return subscription;
@@ -40,7 +40,7 @@ public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDepende
 	@Override
 	protected Subscription desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired state from gitea {}", primary.getMetadata().getName());
-		Subscription subscription = client.resources(Subscription.class)
+		Subscription subscription = context.getClient().resources(Subscription.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/rhsso/subscription.yaml")).item();
 		subscription.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		return subscription;

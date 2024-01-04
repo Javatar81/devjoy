@@ -122,7 +122,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	public Secret update(Secret actual, Secret target, Gitea primary, Context<Gitea> context) {
 		var updated = super.update(actual, target, primary, context);
 		LOG.info("Restarting deployment due to config change");
-		client.apps().deployments().inNamespace(actual.getMetadata().getNamespace())
+		context.getClient().apps().deployments().inNamespace(actual.getMetadata().getNamespace())
 				.withName(actual.getMetadata().getOwnerReferences().get(0).getName()).rolling().restart();
 		return updated;
 	  }
@@ -130,7 +130,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	@Override
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea config map");
-		Secret cm = client
+		Secret cm = context.getClient()
 				.secrets()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/config-secret.yaml"))
 				.item();

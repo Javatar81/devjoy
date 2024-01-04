@@ -37,7 +37,7 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 	@Override
 	protected Deployment desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Postgres deployment");
-		Deployment deployment = client.apps().deployments()
+		Deployment deployment = context.getClient().apps().deployments()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/postgres/deployment.yaml"))
 				.item();
 		String name = getName(primary);

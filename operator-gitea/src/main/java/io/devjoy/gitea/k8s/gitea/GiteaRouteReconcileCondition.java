@@ -15,7 +15,6 @@ public class GiteaRouteReconcileCondition implements Condition<Route, Gitea> {
 
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-
         boolean met = (primary.getSpec() == null || primary.getSpec().isIngressEnabled()) 
             && context.getClient().apiextensions().getApiGroup(OpenShiftAPIGroups.ROUTE) != null;
         LOG.debug("Route reconcilation active={}", met);

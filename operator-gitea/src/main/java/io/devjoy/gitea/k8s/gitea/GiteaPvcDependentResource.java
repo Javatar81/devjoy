@@ -32,7 +32,7 @@ public class GiteaPvcDependentResource extends CRUDKubernetesDependentResource<P
 	@Override
 	protected PersistentVolumeClaim desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea pvc");
-		PersistentVolumeClaim pvc = client.persistentVolumeClaims()
+		PersistentVolumeClaim pvc = context.getClient().persistentVolumeClaims()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/pvc.yaml"))
 				.item();
 		String name = getName(primary);

@@ -27,7 +27,7 @@ public class GiteaServiceDependentResource extends CRUDKubernetesDependentResour
 	@Override
 	protected Service desired(Gitea primary, Context<Gitea> context) {
 		LOG.info("Setting desired Gitea service");
-		Service svc = client.services()
+		Service svc = context.getClient().services()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/service.yaml")).item();
 		String name = primary.getMetadata().getName();
 		svc.getMetadata().setName(name);

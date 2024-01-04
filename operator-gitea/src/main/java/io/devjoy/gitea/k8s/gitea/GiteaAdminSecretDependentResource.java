@@ -62,7 +62,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 	@Override
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
 		LOG.debug("Setting desired state");
-		Secret desired = client.resources(Secret.class)
+		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/admin-secret.yaml")).item();
 		String adminUser = primary.getSpec().getAdminUser();
 		String adminPassword = primary.getSpec().getAdminPassword();
@@ -71,7 +71,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		desired.getData().put("user", new String(Base64.getEncoder().encode(
 				adminUser.getBytes())));
 		
-		Optional.ofNullable(getResource(primary, client).get())
+		Optional.ofNullable(getResource(primary, context.getClient()).get())
 			.map(s -> s.getData().get(DATA_KEY_PASSWORD))
 			.ifPresentOrElse(pw -> desired.getData().put(DATA_KEY_PASSWORD, pw),
 				() -> {
@@ -93,7 +93,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		//Replace the token because reconcile will call this again and we can't get the token anymore
 		giteaApiService.getBaseUri(primary)
 			.ifPresent(baseUri -> {
-				Secret existingSecret = getResource(primary, client).get();
+				Secret existingSecret = getResource(primary, context.getClient()).get();
 				try {
 					
 					if (existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(TOKEN_KEY))) {
