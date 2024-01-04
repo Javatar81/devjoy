@@ -31,14 +31,14 @@ public class WebhookSecretDependentResource extends CRUDKubernetesDependentResou
 	
 	@Override
 	protected Secret desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		Secret desired = client.resources(Secret.class)
+		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("build/webhook-secret.yaml")).item();
 		desired.getMetadata().setName(getName(primary));
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_TYPE_KEY, LABEL_TYPE_VALUE);
 		desired.getMetadata().setLabels(labels);
-		Optional.ofNullable(getResource(primary, client).get())
+		Optional.ofNullable(getResource(primary, context.getClient()).get())
 			.map(s -> s.getData().get(KEY_WEBHOOK_SECRET))
 			.ifPresentOrElse(pw -> desired.getData().put(KEY_WEBHOOK_SECRET, pw),
 				() -> 

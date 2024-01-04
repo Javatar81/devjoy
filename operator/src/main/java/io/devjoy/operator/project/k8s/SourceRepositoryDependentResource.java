@@ -16,6 +16,7 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
@@ -40,7 +41,7 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 			.withName(getName(primary))
 			.withNamespace(primary.getMetadata().getNamespace());
 		repository.setMetadata(metaBuilder.build());
-		DevEnvironment env = getOwningEnvironment(primary).waitUntilCondition(c -> c != null, 120, TimeUnit.SECONDS);
+		DevEnvironment env = getOwningEnvironment(primary, context.getClient()).waitUntilCondition(c -> c != null, 120, TimeUnit.SECONDS);
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());
 		labels.put(ENVIRONMENT_NAME_LABEL_KEY, primary.getSpec().getEnvironmentName());
@@ -57,7 +58,7 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 			spec.setWebhooks(List.of(WebhookSpec.builder()
 					.withActive(true)
 					.withEvents(List.of("push"))
-					.withTargetUrl(getEventListenerUrl(env))
+					.withTargetUrl(getEventListenerUrl(env, context.getClient()))
 					.withBranchFilter("*")
 					.withHttpMethod("POST")
 					.withType(TypeEnum.GITEA.toString().toUpperCase())
@@ -79,14 +80,14 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 		return primary.getMetadata().getName();
 	}
 	
-	private String getEventListenerUrl(DevEnvironment env) {
+	private String getEventListenerUrl(DevEnvironment env, KubernetesClient client) {
 		return BuildEventListenerDependentResource.getResource(env, client)
 				.waitUntilCondition(el -> el != null && el.getStatus() != null && !StringUtil.isNullOrEmpty(el.getStatus().getAddress().getUrl()),
 						10, TimeUnit.SECONDS)
 				.getStatus().getAddress().getUrl();
 	}
 	
-	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject) {
+	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
 		return 
 				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
 						.withName(owningProject.getSpec().getEnvironmentName());

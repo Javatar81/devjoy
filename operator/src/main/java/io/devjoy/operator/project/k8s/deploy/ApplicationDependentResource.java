@@ -12,8 +12,9 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
+import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
-import io.devjoy.operator.project.k8s.SourceRepositoryDiscriminator;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -41,9 +42,11 @@ public class ApplicationDependentResource extends CRUDKubernetesDependentResourc
             String cloneUrl = ApiAccessMode.INTERNAL.toString().equals(accessMode) ? r.getStatus().getInternalCloneUrl() : r.getStatus().getCloneUrl();
             try {
                 URI uri = new URI(cloneUrl.replace(".git", "/raw/branch/main/bootstrap/argo-application.yaml"));
-                 Application argo = client.resources(Application.class)
+                 Application argo = context.getClient().resources(Application.class)
                 .load(uri.toURL().openStream())
                 .item();
+            //argo.getMetadata().setNamespace(getOwningEnvironment(primary).map(e -> e.getMetadata().getNamespace())
+            //    .orElseGet(() -> primary.getMetadata().getNamespace()));
             argo.getMetadata().setNamespace(primary.getMetadata().getNamespace());
             argo.getMetadata().setName(getName(primary));
             HashMap<String, String> labels = new HashMap<>();
@@ -56,6 +59,12 @@ public class ApplicationDependentResource extends CRUDKubernetesDependentResourc
             }
        }).orElse(null);
     }
+
+    private Optional<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
+		return Optional.ofNullable(
+				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
+						.withName(owningProject.getSpec().getEnvironmentName()).get());
+	}
 
     public static String getName(Project primary) {
         return "argocd-" + primary.getMetadata().getName();

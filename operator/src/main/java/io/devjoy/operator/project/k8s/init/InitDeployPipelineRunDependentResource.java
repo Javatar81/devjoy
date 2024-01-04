@@ -14,6 +14,7 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.utils.URLUtils.URLBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -56,13 +57,13 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		String name = getName(primary);
 		pipelineRun.getMetadata().setName(name);
 		
-		DevEnvironment devEnvironment = getOwningEnvironment(primary).get();
+		DevEnvironment devEnvironment = getOwningEnvironment(primary, context.getClient()).get();
 		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Referencing {}", pipelineRun.getSpec().getPipelineRef());
 		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
-			cloneUrl = client.resources(GiteaRepository.class)
+			cloneUrl = context.getClient().resources(GiteaRepository.class)
 					.inNamespace(primary.getMetadata().getNamespace())
 					.withName(primary.getMetadata().getName() + GitopsRepositoryDependentResource.REPO_POSTFIX)
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)
@@ -124,7 +125,7 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 				.withName(getName(primary));
 	}
 	
-	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {
+	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
 		return Optional.ofNullable(
 				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
 						.withName(owningProject.getSpec().getEnvironmentName()).get());

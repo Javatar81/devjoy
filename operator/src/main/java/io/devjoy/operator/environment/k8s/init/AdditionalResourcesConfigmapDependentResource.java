@@ -30,7 +30,7 @@ public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernete
 	}
 	@Override
 	protected ConfigMap desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		ConfigMap cm = client
+		ConfigMap cm = context.getClient()
 				.configMaps()
 				.load(getClass().getClassLoader().getResourceAsStream("init/additional-resources-cm.yaml"))
 				.item();

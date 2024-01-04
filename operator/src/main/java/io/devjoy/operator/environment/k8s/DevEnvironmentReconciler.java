@@ -17,8 +17,7 @@ import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentRe
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
 import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependentResource;
 import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
-import io.devjoy.operator.environment.k8s.init.QuarkusTaskDependentResource;
-import io.fabric8.kubernetes.api.model.HasMetadata;
+
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -59,12 +58,6 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment> {
   	} 
 	String status = resource.getStatus().toString();
 
-	resource.getStatus().setGiteaSubscription(
-			GiteaSubscriptionDependentResource.getResource(client) == null ? "Error: Gitea subscription not found"
-					: "Gitea subscription available");
-	resource.getStatus().setGiteaCatalogSource(
-			GiteaCatalogSourceDependentResource.getResource(client) == null ? "Error: Gitea catalog source not found"
-					: "Gitea catalog source available");
 	var gitea = GiteaDependentResource.getResource(client, resource).get();
 	resource.getStatus().setGiteaResource(
 			gitea == null ? "Error: Gitea resource not found"

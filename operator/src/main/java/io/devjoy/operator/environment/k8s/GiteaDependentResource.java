@@ -23,21 +23,21 @@ public class GiteaDependentResource extends CRUDKubernetesDependentResource<Gite
 		if(enabledAndManaged(primary)) {
 			return super.create(target, primary, context);
 		} else {
-			return getResource(client, primary).get();
+			return getResource(context.getClient(), primary).get();
 		}
 	}
 	
 	@Override
 	protected Gitea desired(DevEnvironment primary, Context<DevEnvironment> context) {
 		if (enabledAndManaged(primary)) {
-			Gitea gitea = client.resources(Gitea.class)
+			Gitea gitea = context.getClient().resources(Gitea.class)
 					.load(getClass().getClassLoader().getResourceAsStream("dev/gitea.yaml")).item();
 			gitea.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 			gitea.getMetadata().setName(generateGiteaName(primary));
 			return gitea;
 		} else {
 			LOG.info("Gitea is not managed for {}", primary.getMetadata().getName());
-			Gitea gitea = getResource(client, primary).get();
+			Gitea gitea = getResource(context.getClient(), primary).get();
 			if (gitea == null && LOG.isWarnEnabled()) {
 				LOG.warn("Gitea not found. Set gitea to managed state or install it in namespace {} with name {}.",
 						primary.getMetadata().getNamespace(), generateGiteaName(primary));

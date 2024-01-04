@@ -20,7 +20,7 @@ public class ArgoCDDependentResource extends CRUDKubernetesDependentResource<Arg
 
     @Override
     protected ArgoCD desired(DevEnvironment primary, Context<DevEnvironment> context) {
-       ArgoCD argo = client.resources(ArgoCD.class)
+       ArgoCD argo = context.getClient().resources(ArgoCD.class)
 				.load(getClass().getClassLoader().getResourceAsStream("deploy/argocd.yaml"))
 				.item();
        argo.getMetadata().setNamespace(primary.getMetadata().getNamespace());

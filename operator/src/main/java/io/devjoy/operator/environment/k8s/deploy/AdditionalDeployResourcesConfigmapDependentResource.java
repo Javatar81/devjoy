@@ -30,7 +30,7 @@ public class AdditionalDeployResourcesConfigmapDependentResource extends CRUDKub
 	}
 	@Override
 	protected ConfigMap desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		ConfigMap cm = client
+		ConfigMap cm = context.getClient()
 				.configMaps()
 				.load(getClass().getClassLoader().getResourceAsStream("deploy/additional-resources-deploy-cm.yaml"))
 				.item();

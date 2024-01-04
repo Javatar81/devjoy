@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
@@ -45,13 +46,13 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 		String name = getName(primary);
 		pipelineRun.getMetadata().setName(name);
 		
-		DevEnvironment devEnvironment = getOwningEnvironment(primary).get();
+		DevEnvironment devEnvironment = getOwningEnvironment(primary, context.getClient()).get();
 		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Referencing {}", pipelineRun.getSpec().getPipelineRef());
 		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
-			cloneUrl = client.resources(GiteaRepository.class)
+			cloneUrl = context.getClient().resources(GiteaRepository.class)
 					.inNamespace(primary.getMetadata().getNamespace())
 					.withName(primary.getMetadata().getName())
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)
@@ -112,7 +113,7 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 				.withName(getName(primary));
 	}
 	
-	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject) {
+	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
 		return Optional.ofNullable(
 				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
 						.withName(owningProject.getSpec().getEnvironmentName()).get());
