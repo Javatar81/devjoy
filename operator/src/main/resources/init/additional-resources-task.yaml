@@ -13,6 +13,10 @@ spec:
       name: PROJECT_NAMESPACE
       type: string
     - default: ''
+      description: The development environment namespace variable
+      name: ENVIRONMENT_NAMESPACE
+      type: string
+    - default: ''
       description: The port of the service
       name: SERVICE_PORT
       type: string
@@ -48,6 +52,8 @@ spec:
           value: $(params.GIT_REPOSITORY)
         - name: PROJECT_NAMESPACE
           value: $(params.PROJECT_NAMESPACE)
+        - name: ENVIRONMENT_NAMESPACE
+          value: $(params.ENVIRONMENT_NAMESPACE)
         - name: SERVICE_PORT
           value: $(params.SERVICE_PORT)
         - name: ROUTE_HOST

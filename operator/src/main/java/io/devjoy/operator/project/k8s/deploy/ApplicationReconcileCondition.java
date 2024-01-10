@@ -34,6 +34,7 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
     
     @Override
     public boolean isMet(DependentResource<Application, Project> dependentResource, Project primary, Context<Project> context) {
+       LOG.warn("Checking whether argo application shall be reconciled.");
        Optional<GiteaRepository> giteaRepo = context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator);
        return giteaRepo
         .filter(r -> r.getStatus() != null)
@@ -44,6 +45,7 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
                 var con = (HttpURLConnection) uri.toURL().openConnection();
                 con.connect();
                 if (200 == con.getResponseCode()) {
+                    LOG.info("Argo application will be reconciled");
                     return true;
                 } else {
                     LOG.warn("Cannot read {} response code is {}", uri, con.getResponseCode());
@@ -53,6 +55,9 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
                 LOG.error("Error with repo raw uri", e);
                 return null;
             }
-       }).orElse(false);
+       }).orElseGet(() -> {
+        LOG.warn("Repo does not yet exist");
+        return false;
+       });
     }
 }

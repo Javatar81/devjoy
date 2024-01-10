@@ -2,7 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: $PROJECT
-  namespace: $PROJECT_NAMESPACE
+  namespace: $ENVIRONMENT_NAMESPACE
 spec:
   destination:
     namespace: $PROJECT_NAMESPACE

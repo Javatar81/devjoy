@@ -19,6 +19,9 @@ spec:
     - name: project_namespace
       type: string
       description: Name of the project namespace
+    - name: environment_namespace
+      type: string
+      description: Name of the dev environment namespace
     - name: service_port
       type: string
       description: Port of the service
@@ -48,6 +51,8 @@ spec:
           value: $(params.project_name)
         - name: PROJECT_NAMESPACE
           value: $(params.project_namespace)
+        - name: ENVIRONMENT_NAMESPACE
+          value: $(params.environment_namespace)
         - name: SERVICE_PORT
           value: $(params.service_port)
         - name: GIT_REPOSITORY
@@ -70,6 +75,8 @@ spec:
           value: $(params.project_name)
         - name: PROJECT_NAMESPACE
           value: $(params.project_namespace)
+        - name: ENVIRONMENT_NAMESPACE
+          value: $(params.environment_namespace)
         - name: SERVICE_PORT
           value: $(params.service_port)
         - name: GIT_REPOSITORY

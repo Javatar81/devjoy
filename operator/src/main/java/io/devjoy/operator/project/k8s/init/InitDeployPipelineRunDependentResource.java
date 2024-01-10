@@ -1,11 +1,8 @@
 package io.devjoy.operator.project.k8s.init;
 
-import java.net.URL;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
-import org.apache.http.client.utils.URIBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,7 +13,6 @@ import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.client.utils.URLUtils.URLBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
@@ -24,7 +20,6 @@ import io.fabric8.tekton.pipeline.v1beta1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
-import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.quarkus.runtime.util.StringUtil;
@@ -36,7 +31,7 @@ import jakarta.inject.Inject;
  *
  */
 @KubernetesDependent(resourceDiscriminator = InitDeployPipelineRunDiscriminator.class)
-public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, Updater<PipelineRun, Project>{
+public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependentResource.class);
 	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
 	
@@ -59,8 +54,9 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		
 		DevEnvironment devEnvironment = getOwningEnvironment(primary, context.getClient()).get();
 		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
+		LOG.info("Run {} will be started in namespace {}", name, pipelineRun.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
-		LOG.info("Referencing {}", pipelineRun.getSpec().getPipelineRef());
+		LOG.info("Defining run {} referencing pipeline {}", name, pipelineRun.getSpec().getPipelineRef().getName());
 		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
 			cloneUrl = context.getClient().resources(GiteaRepository.class)
@@ -80,6 +76,8 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 			.add(new ParamBuilder().withName("project_name").withNewValue(primary.getMetadata().getName()).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("project_namespace").withNewValue(primary.getMetadata().getNamespace()).build());
+		pipelineRun.getSpec().getParams()
+			.add(new ParamBuilder().withName("environment_namespace").withNewValue(devEnvironment.getMetadata().getNamespace()).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("service_port").withNewValue("8080").build());
 		pipelineRun.getSpec().getParams()
@@ -118,14 +116,14 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 				.item();
 	}
 	
-	public static Resource<PipelineRun> getResource(TektonClient tektonClient, Project primary) {
+	public static Resource<PipelineRun> getResource(TektonClient tektonClient, KubernetesClient client, Project primary) {
 		return tektonClient.v1beta1()
 				.pipelineRuns()
-				.inNamespace(primary.getMetadata().getNamespace())
+				.inNamespace(getOwningEnvironment(primary, client).map(env -> env.getMetadata().getNamespace()).orElseGet(() -> primary.getMetadata().getNamespace()))
 				.withName(getName(primary));
 	}
 	
-	private Optional<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
+	private static Optional<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
 		return Optional.ofNullable(
 				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
 						.withName(owningProject.getSpec().getEnvironmentName()).get());
