@@ -16,12 +16,15 @@ public class KeycloakReconcileCondition implements Condition<Route, Gitea> {
 
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-        boolean met = primary.getSpec() != null && primary.getSpec().isSso() && context.getClient().apiextensions().getApiGroup("keycloak.org") != null 
-        && KEYCLOAK_API_VERSION.equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
+        boolean met = primary.getSpec() != null 
+            && primary.getSpec().isSso() 
+            && context.getClient().apiextensions().getApiGroup("keycloak.org") != null 
+            && KEYCLOAK_API_VERSION.equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
         if (!met) {
+            boolean apiGroupExists = context.getClient().apiextensions().getApiGroup("keycloak.org") != null;
             LOG.warn("Keycloak will not be provided. Property sso={}, apiGroupAvailable={}, apiVersion={}", primary.getSpec() != null && primary.getSpec().isSso(),
-                context.getClient().apiextensions().getApiGroup("keycloak.org") != null,
-                context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
+                apiGroupExists,
+                apiGroupExists? context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion() : "");
         }
         return met;
     }

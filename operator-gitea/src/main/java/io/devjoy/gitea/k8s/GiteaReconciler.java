@@ -75,9 +75,9 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(reconcilePrecondition = GiteaOAuthClientReconcileCondition.class, type = GiteaOAuthClientDependentResource.class),
 		@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
-		@Dependent(type = KeycloakDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
-		@Dependent(type = KeycloakRealmDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class), 
-		@Dependent(type = KeycloakClientDependentResource.class, reconcilePrecondition = KeycloakReconcileCondition.class) 
+		@Dependent(type = KeycloakDependentResource.class, activationCondition = KeycloakReconcileCondition.class), 
+		@Dependent(type = KeycloakRealmDependentResource.class, activationCondition = KeycloakReconcileCondition.class), 
+		@Dependent(type = KeycloakClientDependentResource.class, activationCondition = KeycloakReconcileCondition.class) 
 		
 })
 @CSVMetadata(name = "gitea-operator-bundle", version = "0.1.0", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.1.0", others= {}))

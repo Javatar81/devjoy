@@ -90,7 +90,7 @@ public class RepositoryService {
 	
 	public Repository create(GiteaRepository repository, @NotEmpty String token, @NotEmpty String baseUri) {
 		try {
-			LOG.info("Creating repository {}", repository);
+			LOG.info("Creating repository {}", repository.getMetadata().getName());
 			CreateRepoOption repoOption = new CreateRepoOption();
 			repoOption.setName(repository.getMetadata().getName());
 			repoOption.setPrivate(repository.getSpec().getVisibility() == PRIVATE);
