@@ -1,5 +1,6 @@
 package io.devjoy.operator.project.k8s;
 
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
@@ -9,18 +10,24 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaUserSecretDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
+import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.Application;
+import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationDependentResource;
 import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
-import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunCondition;
 import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependentResource;
-import io.devjoy.operator.project.k8s.init.InitPipelineRunCondition;
 import io.devjoy.operator.project.k8s.init.InitPipelineRunDependentResource;
+import io.devjoy.operator.project.k8s.init.PipelineRunActivationCondition;
+import io.fabric8.kubernetes.api.model.Condition;
+import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -36,6 +43,8 @@ import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
+import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
@@ -43,17 +52,15 @@ import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependentResource.class),
 		@Dependent(type = GitopsRepositoryDependentResource.class),
-		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, type = ApplicationDependentResource.class),
-		@Dependent(/*name = ProjectReconciler.RESOURCE_NAME_INIT_PIPE,*/ type = InitPipelineRunDependentResource.class),
-		@Dependent(/*name = ProjectReconciler.RESOURCE_NAME_INIT_DEPLOY_PIPE,*/ type = InitDeployPipelineRunDependentResource.class)
+		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, activationCondition = ApplicationActivationCondition.class,type = ApplicationDependentResource.class),
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitPipelineRunDependentResource.class),
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependentResource.class)
 		})
-public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> {
+public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandler<Project>, Cleaner<Project> {
+	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
 	private final OpenShiftClient client;
 	private final TektonClient tektonClient;
 	private final SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
-	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
-	public static final String RESOURCE_NAME_INIT_DEPLOY_PIPE = "InitDeployPipe";
-	public static final String RESOURCE_NAME_INIT_PIPE = "InitPipe"; 
 
 	public ProjectReconciler(OpenShiftClient client, TektonClient tektonClient) {
 		this.client = client;
@@ -63,11 +70,13 @@ public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> 
 	@Override
 	public UpdateControl<Project> reconcile(Project resource, Context<Project> context) {
 		LOG.info("Reconcile");
-		
 		if (resource.getStatus() == null) {
-			resource.setStatus(new ProjectStatus());
+			ProjectStatus status = new ProjectStatus();
+			resource.setStatus(status);
 		}
+		
 		Optional<DevEnvironment> owningEnvironment = resource.getOwningEnvironment(client);
+		owningEnvironment.orElseThrow(() -> new EnvironmentNotFoundException("Environment cannot be found", resource) );
 		owningEnvironment
 			.filter(env -> !resource.getMetadata().getNamespace().equals(env.getMetadata().getNamespace()))
 			.ifPresent(env -> {
@@ -76,23 +85,56 @@ public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> 
 				makeArgoManageProjectNamespace(resource, env);
 			});
 		return owningEnvironment.flatMap(e -> {
+
 			Optional<Secret> secret = Optional.ofNullable(GiteaDependentResource.getResource(client, e).get())
 				.flatMap(g -> Optional.ofNullable(GiteaUserSecretDependentResource.getResource(g, resource.getSpec().getOwner().getUser(), client).get()));
 			
 			return secret.map(st -> {
 				UpdateControl<Project> ctrl = UpdateControl.noUpdate();
 				if (resource.getStatus().getRepository() == null || !resource.getStatus().getRepository().isUserSecretAvailable()) {
-					RepositoryStatus repositoryStatus = new RepositoryStatus();
-					repositoryStatus.setUserSecretAvailable(true);
-					resource.getStatus().setRepository(repositoryStatus);
+					resource.getStatus().getRepository().setUserSecretAvailable(true);
 					ctrl = UpdateControl.patchStatus(resource);
 				}
 				
-				if (resource.getStatus().getWorkspace() == null || StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) {
+				if ((resource.getStatus().getWorkspace() == null 
+					|| StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) 
+					&& PipelineRunActivationCondition.isPipelinesApiAvailable(client)) {
 					LOG.info("Setting workspace factory url");
 					PipelineRun pipelineRun = InitPipelineRunDependentResource.getResource(tektonClient, resource)
-					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
-					onPipelineRunComplete(pipelineRun, resource, context);
+						.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
+						onPipelineRunComplete(pipelineRun, resource, context);
+					ctrl = UpdateControl.patchStatus(resource);
+				}
+
+				if (!PipelineRunActivationCondition.isPipelinesApiAvailable(client) 
+					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString().equals(c.getType()))) {
+					Condition noPipelinesApi = new ConditionBuilder()
+						.withObservedGeneration(resource.getStatus().getObservedGeneration())
+						.withType(ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString())
+						.withMessage("Error")
+						.withLastTransitionTime(LocalDateTime.now().toString())
+						.withReason(String.format("Api for %s and version %s not found. Is OpenShift Pipelines installed?", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION))
+						.withStatus("false")
+						.build();
+					resource.getStatus().getConditions().add(noPipelinesApi);
+					resource.getStatus().getInitStatus().setMessage(String.format("Pipelines Api %s in version %s not available.", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION));
+					ctrl = UpdateControl.patchStatus(resource);
+				} else if (PipelineRunActivationCondition.isPipelinesApiAvailable(client)) {
+					resource.getStatus().getInitStatus().setMessage("Pipelines available");
+				}
+
+				if (!ArgoActivationCondition.isArgoApiAvailable(client) 
+					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.GITOPS_API_UNAVAILABLE.toString().equals(c.getType()))) {
+					Condition noGitopsCondition = new ConditionBuilder()
+						.withObservedGeneration(resource.getStatus().getObservedGeneration())
+						.withType(ProjectConditionType.GITOPS_API_UNAVAILABLE.toString())
+						.withMessage("Error")
+						.withLastTransitionTime(LocalDateTime.now().toString())
+						.withReason(String.format("Api for %s and version %s not found. Is OpenShift Gitops installed?", ArgoActivationCondition.ARGO_API_GROUP, ArgoActivationCondition.APPLICATION_API_VERSION))
+						.withStatus("false")
+						.build();
+					resource.getStatus().getConditions().add(noGitopsCondition);
+					resource.getStatus().getDeployStatus().setMessage(String.format("Gitops Api %s in version %s not available.", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION));
 					ctrl = UpdateControl.patchStatus(resource);
 				}
 				return ctrl;
@@ -104,8 +146,27 @@ public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> 
 	public DeleteControl cleanup(Project resource, Context<Project> context) {
 		// We need to clean up application because it has no owner because environment and project could be in different namespaces
 		LOG.info("Deleting project {}. Making sure that application will be deleted since it is not owned by project.", resource.getMetadata().getName());
-		context.getSecondaryResource(Application.class).ifPresent(a -> client.resource(a).delete());
+		if (ArgoActivationCondition.isArgoApiAvailable(context.getClient())) {
+			context.getSecondaryResource(Application.class).ifPresent(a -> client.resource(a).delete());
+		}
 		return DeleteControl.defaultDelete();
+	}
+
+	@Override
+	public ErrorStatusUpdateControl<Project> updateErrorStatus(Project project, Context<Project> context, Exception e) {
+		LOG.info("Error of type {}", e.getClass());
+		if (e.getCause() instanceof EnvironmentNotFoundException) {
+			EnvironmentNotFoundException envNotFoundException = (EnvironmentNotFoundException) e.getCause();
+			project.getStatus().getConditions().add(new ConditionBuilder()
+					.withObservedGeneration(project.getStatus().getObservedGeneration())
+					.withType(ProjectConditionType.ENV_NOT_FOUND.toString())
+					.withMessage("Error")
+					.withLastTransitionTime(LocalDateTime.now().toString())
+					.withReason(envNotFoundException.getMessage())
+					.withStatus("false")
+					.build());
+		}
+		return ErrorStatusUpdateControl.patchStatus(project);
 	}
 
 
@@ -136,15 +197,12 @@ public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> 
 	}
 
 	private void onPipelineRunComplete(PipelineRun pipelineRun, Project resource, Context<Project> context) {
-		WorkspaceStatus status = new WorkspaceStatus();
-		InitStatus initStatus = new InitStatus();
-		initStatus.setPipelineRunConditions(pipelineRun.getStatus().getConditions());
-		status.setInitStatus(initStatus);
+		resource.getStatus().getInitStatus().setPipelineRunConditions(pipelineRun.getStatus().getConditions());
+		resource.getStatus().getInitStatus().setMessage("Init pipeline run complete.");
 		Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator);
 		repository.ifPresent(r -> {
 			String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
-			status.setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
-			resource.getStatus().setWorkspace(status);
+			resource.getStatus().getWorkspace().setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
 		});
 		
 	}

@@ -2,9 +2,6 @@ package io.devjoy.operator.project.k8s.init;
 
 import java.util.Optional;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.tekton.client.DefaultTektonClient;
 import io.fabric8.tekton.client.TektonClient;

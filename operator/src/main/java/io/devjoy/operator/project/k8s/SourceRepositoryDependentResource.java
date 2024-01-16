@@ -2,6 +2,7 @@ package io.devjoy.operator.project.k8s;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
@@ -17,11 +18,11 @@ import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResou
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
+import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 
 @KubernetesDependent(resourceDiscriminator = SourceRepositoryDiscriminator.class)
 public class SourceRepositoryDependentResource extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
@@ -40,35 +41,50 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 		ObjectMetaBuilder metaBuilder = new ObjectMetaBuilder()
 			.withName(getName(primary))
 			.withNamespace(primary.getMetadata().getNamespace());
+			Optional<DevEnvironment> env = primary.getOwningEnvironment(context.getClient());
 		repository.setMetadata(metaBuilder.build());
-		DevEnvironment env = getOwningEnvironment(primary, context.getClient()).waitUntilCondition(c -> c != null, 120, TimeUnit.SECONDS);
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());
 		labels.put(ENVIRONMENT_NAME_LABEL_KEY, primary.getSpec().getEnvironmentName());
-		labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAME, env.getSpec().getGitea().getResourceName());
-		labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAMESPACE, env.getMetadata().getNamespace());
+		env.ifPresent(e -> {
+			if (StringUtil.isNullOrEmpty(primary.getSpec().getEnvironmentNamespace())) {
+				labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, e.getMetadata().getNamespace());
+			}
+			if (StringUtil.isNullOrEmpty(primary.getSpec().getEnvironmentName())) {
+				labels.put(ENVIRONMENT_NAME_LABEL_KEY, e.getMetadata().getName());
+			}
+			if (e.getSpec().getGitea() != null) {
+				labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
+			}
+			labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());
+		});
 		repository.getMetadata().setLabels(labels);
 		
 		GiteaRepositorySpec spec = new GiteaRepositorySpec();
 		if (StringUtil.isNullOrEmpty(primary.getSpec().getExistingRepositoryCloneUrl())) {
 			spec.setDeleteOnFinalize(true);
-			spec.setUser(primary.getSpec().getOwner().getUser());
+			if (primary.getSpec().getOwner() != null) {
+				spec.setUser(primary.getSpec().getOwner().getUser());
+			}
 			spec.setVisibility(Visibility.PUBLIC);
-			
-			spec.setWebhooks(List.of(WebhookSpec.builder()
+			env.filter(e ->  PipelineActivationCondition.isPipelinesApiAvailable(context.getClient()))
+				.ifPresent(e -> {
+				spec.setWebhooks(List.of(WebhookSpec.builder()
 					.withActive(true)
 					.withEvents(List.of("push"))
-					.withTargetUrl(getEventListenerUrl(env, context.getClient()))
+					.withTargetUrl(getEventListenerUrl(e, context.getClient()))
 					.withBranchFilter("*")
 					.withHttpMethod("POST")
 					.withType(TypeEnum.GITEA.toString().toUpperCase())
 					.withSecretRef(SecretReferenceSpec.builder()
 							.withKey("webhook-secret")
-							.withName(WebhookSecretDependentResource.getName(env))
-							.withNamespace(env.getMetadata().getNamespace())
+							.withName(WebhookSecretDependentResource.getName(e))
+							.withNamespace(e.getMetadata().getNamespace())
 							.build()
 					).build()
 			));
+			});
+			
 		} else {
 			//TODOspec.setExistingRepositoryCloneUrl(primary.getSpec().getExistingRepositoryCloneUrl());
 		}
@@ -86,12 +102,5 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 						10, TimeUnit.SECONDS)
 				.getStatus().getAddress().getUrl();
 	}
-	
-	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
-		return 
-				client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
-						.withName(owningProject.getSpec().getEnvironmentName());
-	}
-
 
 }

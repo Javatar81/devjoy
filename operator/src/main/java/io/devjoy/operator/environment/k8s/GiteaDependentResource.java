@@ -47,7 +47,7 @@ public class GiteaDependentResource extends CRUDKubernetesDependentResource<Gite
 	}
 
 	private static String generateGiteaName(DevEnvironment primary) {
-		if (primary.getSpec().getGitea().getResourceName() != null) {
+		if (primary.getSpec().getGitea() != null && primary.getSpec().getGitea().getResourceName() != null) {
 			return primary.getSpec().getGitea().getResourceName();
 		} else {
 			return primary.getMetadata().getNamespace() + "-" + primary.getMetadata().getName();

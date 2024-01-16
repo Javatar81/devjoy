@@ -5,9 +5,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 public class ProjectSpec {
 	@JsonPropertyDescription("The clone Url of your existing Git that is not managed by the project.")
 	private String existingRepositoryCloneUrl;
-	@JsonPropertyDescription("The reference to the environment namespace.")
+	@JsonPropertyDescription("The reference to the environment namespace. By default the environment in the same namespace.")
 	private String environmentNamespace;
-	@JsonPropertyDescription("The reference to the environment name.")
+	@JsonPropertyDescription("The reference to the environment name. By default the project namespace.")
 	private String environmentName;
 	@JsonPropertyDescription("The owner of the project. Can be a user or an organization.")
 	private ProjectOwner owner;

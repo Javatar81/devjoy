@@ -4,21 +4,15 @@ import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.ApiAccessMode;
-import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.project.k8s.Project;
-import io.fabric8.openshift.api.model.Route;
-import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;

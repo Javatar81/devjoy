@@ -1,13 +1,31 @@
 package io.devjoy.operator.environment.k8s;
 
-public class DevEnvironmentStatus {
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonPropertyDescription;
+
+import io.fabric8.kubernetes.api.model.Condition;
+import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+
+public class DevEnvironmentStatus extends ObservedGenerationAwareStatus{
 
     private String giteaCatalogSource;
     private String giteaSubscription;
     private String giteaResource;
     private String giteaAdminSecret;
     private DevSpacesStatus devSpaces;
+	@JsonPropertyDescription("The conditions representing the repository status.")
+    private List<Condition> conditions = new ArrayList<>();
     
+	public List<Condition> getConditions() {
+		return conditions;
+	}
+
+	public void setConditions(List<Condition> conditions) {
+		this.conditions = conditions;
+	}
+
 	public String getGiteaCatalogSource() {
 		return giteaCatalogSource;
 	}

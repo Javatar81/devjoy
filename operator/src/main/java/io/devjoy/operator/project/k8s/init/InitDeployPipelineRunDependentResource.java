@@ -52,7 +52,7 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		String name = getName(primary);
 		pipelineRun.getMetadata().setName(name);
 		
-		DevEnvironment devEnvironment = getOwningEnvironment(primary, context.getClient()).get();
+		DevEnvironment devEnvironment = primary.getOwningEnvironment(context.getClient()).get();
 		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
 		LOG.info("Run {} will be started in namespace {}", name, pipelineRun.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
