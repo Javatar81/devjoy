@@ -33,7 +33,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
+import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;

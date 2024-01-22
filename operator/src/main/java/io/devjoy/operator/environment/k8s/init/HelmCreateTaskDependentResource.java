@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.Task;
+import io.fabric8.tekton.pipeline.v1.Task;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -25,7 +25,7 @@ public class HelmCreateTaskDependentResource extends CRUDKubernetesDependentReso
 	
 	@Override
 	public Task create(Task target, DevEnvironment primary, Context<DevEnvironment> context) {
-		Optional<Task> existingTask = Optional.ofNullable(tektonClient.v1beta1()
+		Optional<Task> existingTask = Optional.ofNullable(tektonClient.v1()
 				.tasks().withName(getName()).get());
 		return existingTask.orElseGet(() -> super.create(target, primary, context));
 	}
@@ -36,7 +36,7 @@ public class HelmCreateTaskDependentResource extends CRUDKubernetesDependentReso
 	
 	@Override
 	protected Task desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		Task task = tektonClient.v1beta1()
+		Task task = tektonClient.v1()
 				.tasks()
 				.load(getClass().getClassLoader().getResourceAsStream("deploy/helm-create-task.yaml"))
 				.item();

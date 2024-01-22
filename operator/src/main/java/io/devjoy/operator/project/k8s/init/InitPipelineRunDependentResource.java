@@ -10,14 +10,12 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRefBuilder;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
+import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
+import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -71,7 +69,10 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 			.add(new ParamBuilder().withName("quarkus_artifact_id").withNewValue(primary.getMetadata().getName()).build());
 		
 		// E.g. quarkus-resteasy-reactive quarkus-reactive-routes
-		Optional.ofNullable(primary.getSpec().getQuarkus())
+		Optional.ofNullable(primary.getSpec())
+			.filter(p -> p.getQuarkus() != null)
+			.map(s -> s.getQuarkus())
+			.filter(q -> q.getExtensions() != null)
 			.map(q -> q.getExtensions().stream().collect(Collectors.joining(",")))
 			.ifPresent(ext -> pipelineRun.getSpec().getParams()
 					.add(new ParamBuilder().withName("quarkus_extensions")
@@ -101,14 +102,14 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 	}
 
 	private static PipelineRun getPipelineRunFromYaml(TektonClient tektonClient) {
-		return tektonClient.v1beta1()
+		return tektonClient.v1()
 				.pipelineRuns()
 				.load(InitPipelineRunDependentResource.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
 				.item();
 	}
 	
 	public static Resource<PipelineRun> getResource(TektonClient tektonClient, Project primary) {
-		return tektonClient.v1beta1()
+		return tektonClient.v1()
 				.pipelineRuns()
 				.inNamespace(primary.getMetadata().getNamespace())
 				.withName(getName(primary));

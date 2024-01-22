@@ -5,9 +5,9 @@ import java.util.Optional;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
-import io.fabric8.tekton.triggers.v1alpha1.TriggerTemplate;
+import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.PipelineRun;
+import io.fabric8.tekton.triggers.v1beta1.TriggerTemplate;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -24,7 +24,7 @@ public class BuildPushTriggerTemplateDependentResource extends CRUDKubernetesDep
 
 	@Override
 	protected TriggerTemplate desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		TriggerTemplate triggerTemplate = tektonClient.v1alpha1()
+		TriggerTemplate triggerTemplate = tektonClient.v1beta1()
 				.triggerTemplates()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-push-trigger-template.yaml"))
 				.item();

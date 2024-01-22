@@ -1,4 +1,4 @@
-apiVersion: triggers.tekton.dev/v1alpha1
+apiVersion: triggers.tekton.dev/v1beta1
 kind: TriggerTemplate
 metadata:
   name: build-push-template-
@@ -11,7 +11,7 @@ spec:
     - name: content-type
     - name: pusher-name
   resourcetemplates:
-    - apiVersion: tekton.dev/v1beta1
+    - apiVersion: tekton.dev/v1
       kind: PipelineRun
       metadata:
         generateName: build-project-$(tt.params.git-repo-name)-
@@ -24,8 +24,8 @@ spec:
             value: $(tt.params.git-repo-url)
         pipelineRef:
           name: build-project-
-        serviceAccountName: pipeline
-        timeout: 1h0m0s
+        taskRunTemplate:
+          serviceAccountName: pipeline
         workspaces:
           - name: sources
             volumeClaimTemplate:

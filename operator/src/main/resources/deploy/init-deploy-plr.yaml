@@ -1,12 +1,12 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: PipelineRun
 metadata:
   name: init-deploy-
 spec:
   pipelineRef:
     name: init-deploy-
-  serviceAccountName: pipeline
-  timeout: 1h0m0s
+  taskRunTemplate:
+    serviceAccountName: pipeline
   workspaces:
     - name: src
       volumeClaimTemplate:

@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: quarkus-create
@@ -25,7 +25,6 @@ spec:
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
       image: 'quay.io/devjoy/quarkuscli:latest'
       name: version-info
-      resources: {}
       workingDir: $(workspaces.source.path)
     - command:
         - quarkus
@@ -35,11 +34,9 @@ spec:
         - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
       image: 'quay.io/devjoy/quarkuscli:latest'
       name: create
-      resources: {}
       workingDir: $(workspaces.source.path)
     - image: 'quay.io/devjoy/quarkuscli:latest'
       name: add-extensions
-      resources: {}
       script: >-
         cd $(params.ARTIFACT_ID); if [ !$(params.EXTENSIONS) -eq '']; then
         quarkus extension add $(params.EXTENSIONS); else echo "Skip adding

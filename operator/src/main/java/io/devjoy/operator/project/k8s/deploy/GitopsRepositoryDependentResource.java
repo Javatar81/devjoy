@@ -48,7 +48,7 @@ public class GitopsRepositoryDependentResource extends CRUDKubernetesDependentRe
 			if (StringUtil.isNullOrEmpty(primary.getSpec().getEnvironmentName())) {
 				labels.put(ENVIRONMENT_NAME_LABEL_KEY, e.getMetadata().getName());
 			}
-			if (e.getSpec().getGitea() != null) {
+			if (e.getSpec() != null && e.getSpec().getGitea() != null) {
 				labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
 			}
 			labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());

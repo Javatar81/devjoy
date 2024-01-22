@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: helm-create
@@ -20,7 +20,6 @@ spec:
   steps:
     - image: $(params.helm_image)
       name: create-chart
-      resources: {}
       script: |
         helm create "$(params.chart_name)"
       workingDir: $(workspaces.source.path)/$(params.path)

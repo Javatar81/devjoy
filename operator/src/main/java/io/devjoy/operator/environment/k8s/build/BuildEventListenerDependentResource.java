@@ -11,8 +11,8 @@ import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.triggers.v1alpha1.EventListener;
-import io.fabric8.tekton.triggers.v1alpha1.EventListenerTrigger;
+import io.fabric8.tekton.triggers.v1beta1.EventListener;
+import io.fabric8.tekton.triggers.v1beta1.EventListenerTrigger;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -32,7 +32,7 @@ public class BuildEventListenerDependentResource extends CRUDKubernetesDependent
 	@Override
 	protected EventListener desired(DevEnvironment primary, Context<DevEnvironment> context) {
 		LOG.debug("Reconciling desired state.");
-		EventListener eventListener = tektonClient.v1alpha1()
+		EventListener eventListener = tektonClient.v1beta1()
 				.eventListeners()
 				.load(getClass().getClassLoader().getResourceAsStream("build/build-event-listener.yaml"))
 				.item();

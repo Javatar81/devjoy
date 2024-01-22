@@ -22,11 +22,8 @@ import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentRe
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
 import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependentResource;
 import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
-import io.devjoy.operator.project.k8s.EnvironmentNotFoundException;
-import io.devjoy.operator.project.k8s.ProjectConditionType;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.tekton.triggers.v1alpha1.TriggerBinding;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
@@ -79,11 +76,11 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, Err
 			gitea == null ? "Error: Gitea resource not found"
 					: "Gitea resource available");
 
-	if(resource.getSpec().getGitea() != null 
+	if(resource.getSpec() != null
+		&& resource.getSpec().getGitea() != null 
 		&& resource.getSpec().getGitea().isEnabled() 
 		&& StringUtil.isNullOrEmpty(resource.getSpec().getGitea().getResourceName())
-		&& gitea != null
-		) {
+		&& gitea != null) {
 		resource.getSpec().getGitea().setResourceName(gitea.getMetadata().getName());
 		return UpdateControl.updateResourceAndStatus(resource);
 	} else if (!status.equals(resource.getStatus().toString())) {

@@ -15,9 +15,9 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRefBuilder;
-import io.fabric8.tekton.pipeline.v1beta1.PipelineRun;
+import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
+import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -110,14 +110,14 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 	}
 
 	private static PipelineRun getPipelineRunFromYaml(TektonClient tektonClient) {
-		return tektonClient.v1beta1()
+		return tektonClient.v1()
 				.pipelineRuns()
 				.load(InitPipelineRunDependentResource.class.getClassLoader().getResourceAsStream("deploy/init-deploy-plr.yaml"))
 				.item();
 	}
 	
 	public static Resource<PipelineRun> getResource(TektonClient tektonClient, KubernetesClient client, Project primary) {
-		return tektonClient.v1beta1()
+		return tektonClient.v1()
 				.pipelineRuns()
 				.inNamespace(getOwningEnvironment(primary, client).map(env -> env.getMetadata().getNamespace()).orElseGet(() -> primary.getMetadata().getNamespace()))
 				.withName(getName(primary));

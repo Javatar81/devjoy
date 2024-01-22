@@ -2,7 +2,7 @@ package io.devjoy.operator.environment.k8s.build;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.tekton.triggers.v1alpha1.EventListener;
+import io.fabric8.tekton.triggers.v1beta1.EventListener;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;

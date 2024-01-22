@@ -1,4 +1,4 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Task
 metadata:
   name: additional-resources
@@ -62,7 +62,6 @@ spec:
           value: $(params.JAVA_HOME)
       image: 'quay.io/devjoy/gettext:latest'
       name: substitutevars
-      resources: {}
       script: |-
         echo "copying and substituting from $(workspaces.source.path)/$(params.FILE) to $(workspaces.target.path)/$(params.TARGET_FOLDER)/$(params.FILE)" && mkdir -p $(params.TARGET_FOLDER) && envsubst < $(workspaces.source.path)/$(params.FILE) > $(workspaces.target.path)/$(params.TARGET_FOLDER)/$(params.FILE)
       workingDir: $(workspaces.target.path)

@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1beta1.Pipeline;
+import io.fabric8.tekton.pipeline.v1.Pipeline;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -25,7 +25,7 @@ public class InitPipelineDependentResource extends CRUDKubernetesDependentResour
 	
 	@Override
 	protected Pipeline desired(DevEnvironment primary, Context<DevEnvironment> context) {
-		Pipeline pipeline = tektonClient.v1beta1()
+		Pipeline pipeline = tektonClient.v1()
 				.pipelines()
 				.load(getClass().getClassLoader().getResourceAsStream("init/init-project-pipe.yaml"))
 				.item();
