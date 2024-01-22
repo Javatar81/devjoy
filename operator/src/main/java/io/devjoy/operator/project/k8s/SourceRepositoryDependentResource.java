@@ -15,6 +15,7 @@ import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.WebhookSpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
+import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,7 +23,6 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
-import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 
 @KubernetesDependent(resourceDiscriminator = SourceRepositoryDiscriminator.class)
 public class SourceRepositoryDependentResource extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
@@ -67,7 +67,7 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 				spec.setUser(primary.getSpec().getOwner().getUser());
 			}
 			spec.setVisibility(Visibility.PUBLIC);
-			env.filter(e ->  PipelineActivationCondition.isPipelinesApiAvailable(context.getClient()))
+			env.filter(e ->  EventListenerActivationCondition.serverSupportsApi(context.getClient()))
 				.ifPresent(e -> {
 				spec.setWebhooks(List.of(WebhookSpec.builder()
 					.withActive(true)

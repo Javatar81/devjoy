@@ -7,15 +7,14 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
 public class ArgoActivationCondition implements Condition<ArgoCD, DevEnvironment> {
-    public static String APPLICATION_API_VERSION = "v1alpha1";
-    public static String ARGO_API_GROUP = "argoproj.io";
+
     @Override
     public boolean isMet(DependentResource<ArgoCD, DevEnvironment> dependentResource, DevEnvironment primary, Context<DevEnvironment> context) {
-       return isArgoApiAvailable(context.getClient());
+       return serverSupportsApi(context.getClient());
     }
 
-    public static boolean isArgoApiAvailable(KubernetesClient client) {
-        return client.apiextensions().getApiGroup(ARGO_API_GROUP) != null
-            && APPLICATION_API_VERSION.equals(client.apiextensions().getApiGroup(ARGO_API_GROUP).getApiVersion());
+    public static boolean serverSupportsApi(KubernetesClient client) {
+      return client.supports(ArgoCD.class);
     }
+
 }

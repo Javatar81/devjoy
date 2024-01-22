@@ -1,22 +1,21 @@
 package io.devjoy.operator.project.k8s;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaUserSecretDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
+import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
+import io.devjoy.operator.environment.k8s.build.TriggerBindingActivationCondition;
+import io.devjoy.operator.environment.k8s.build.TriggerTemplateActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.Application;
 import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationDependentResource;
@@ -27,12 +26,8 @@ import io.devjoy.operator.project.k8s.init.InitPipelineRunDependentResource;
 import io.devjoy.operator.project.k8s.init.PipelineRunActivationCondition;
 import io.fabric8.kubernetes.api.model.Condition;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
-import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -98,7 +93,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 				
 				if ((resource.getStatus().getWorkspace() == null 
 					|| StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) 
-					&& PipelineRunActivationCondition.isPipelinesApiAvailable(client)) {
+					&& supportsRequiredPipelinesApi()) {
 					LOG.info("Setting workspace factory url");
 					PipelineRun pipelineRun = InitPipelineRunDependentResource.getResource(tektonClient, resource)
 						.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
@@ -106,47 +101,62 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					ctrl = UpdateControl.patchStatus(resource);
 				}
 
-				if (!PipelineRunActivationCondition.isPipelinesApiAvailable(client) 
+				if (!supportsRequiredPipelinesApi() 
 					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString().equals(c.getType()))) {
 					Condition noPipelinesApi = new ConditionBuilder()
 						.withObservedGeneration(resource.getStatus().getObservedGeneration())
 						.withType(ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString())
 						.withMessage("Error")
 						.withLastTransitionTime(LocalDateTime.now().toString())
-						.withReason(String.format("Api for %s and version %s not found. Is OpenShift Pipelines installed?", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION))
+						.withReason("Required api for Tekton not available. Is OpenShift Pipelines installed?")
 						.withStatus("false")
 						.build();
 					resource.getStatus().getConditions().add(noPipelinesApi);
-					resource.getStatus().getInitStatus().setMessage(String.format("Pipelines Api %s in version %s not available.", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION));
+					resource.getStatus().getInitStatus().setMessage("Required api for Tekton not available.");
 					ctrl = UpdateControl.patchStatus(resource);
-				} else if (PipelineRunActivationCondition.isPipelinesApiAvailable(client)) {
-					resource.getStatus().getInitStatus().setMessage("Pipelines available");
+				} else if (supportsRequiredPipelinesApi()) {
+					resource.getStatus().getInitStatus().setMessage("Pipelines Api available");
 				}
 
-				if (!ArgoActivationCondition.isArgoApiAvailable(client) 
+				if (!supportsRequiredGitopsApi()
 					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.GITOPS_API_UNAVAILABLE.toString().equals(c.getType()))) {
 					Condition noGitopsCondition = new ConditionBuilder()
 						.withObservedGeneration(resource.getStatus().getObservedGeneration())
 						.withType(ProjectConditionType.GITOPS_API_UNAVAILABLE.toString())
 						.withMessage("Error")
 						.withLastTransitionTime(LocalDateTime.now().toString())
-						.withReason(String.format("Api for %s and version %s not found. Is OpenShift Gitops installed?", ArgoActivationCondition.ARGO_API_GROUP, ArgoActivationCondition.APPLICATION_API_VERSION))
+						.withReason("Required api for ArgoCD or Application not found. Is OpenShift Gitops installed?")
 						.withStatus("false")
 						.build();
 					resource.getStatus().getConditions().add(noGitopsCondition);
-					resource.getStatus().getDeployStatus().setMessage(String.format("Gitops Api %s in version %s not available.", PipelineRunActivationCondition.PIPELINES_API_GROUP, PipelineRunActivationCondition.PIPELINES_API_VERSION));
+					resource.getStatus().getDeployStatus().setMessage("Required api for ArgoCD or Application not found");
 					ctrl = UpdateControl.patchStatus(resource);
+				} else if (supportsRequiredPipelinesApi()) {
+					resource.getStatus().getDeployStatus().setMessage("GitOps Api available");
 				}
 				return ctrl;
 			});
 		}).orElseGet(UpdateControl::noUpdate);
 	}
 
+	private boolean supportsRequiredPipelinesApi() {
+		return PipelineActivationCondition.serverSupportsApi(client) 
+		&& PipelineRunActivationCondition.serverSupportsApi(client)
+		&& TriggerBindingActivationCondition.serverSupportsApi(client)
+		&& EventListenerActivationCondition.serverSupportsApi(client)
+		&& TriggerTemplateActivationCondition.serverSupportsApi(client);
+	}
+
+	private boolean supportsRequiredGitopsApi() {
+		return ArgoActivationCondition.serverSupportsApi(client)
+		&& ApplicationActivationCondition.serverSupportsApi(client);
+	}
+
 	@Override
 	public DeleteControl cleanup(Project resource, Context<Project> context) {
 		// We need to clean up application because it has no owner because environment and project could be in different namespaces
 		LOG.info("Deleting project {}. Making sure that application will be deleted since it is not owned by project.", resource.getMetadata().getName());
-		if (ArgoActivationCondition.isArgoApiAvailable(context.getClient())) {
+		if (supportsRequiredGitopsApi()) {
 			context.getSecondaryResource(Application.class).ifPresent(a -> client.resource(a).delete());
 		}
 		return DeleteControl.defaultDelete();

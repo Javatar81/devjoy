@@ -101,6 +101,15 @@ public class RepositoryService {
 		}
 	}
 
+	public Optional<Repository> getByRepo(GiteaRepository repository, String token) {
+		try {
+			return getByUserAndName(repository.getSpec().getUser(), repository.getMetadata().getName(), token, getBaseUri(repository));
+		} catch (URISyntaxException | MalformedURLException e) {
+			LOG.error("Error calling repository API to delete user", e);
+			return Optional.empty();
+		}
+	}
+
 	public Optional<Repository> getByUserAndName(String user, String name, String token, String baseUri) {
 		try {
 			RepoService repoService = getDynamicUrlClient(baseUri);
@@ -120,15 +129,18 @@ public class RepositoryService {
 
 	public void delete(GiteaRepository repository, String token) {
 		try {
-			URL cloneUrl = new URL(repository.getStatus().getCloneUrl());
-			String port = cloneUrl.getPort() > -1 ? ":" + cloneUrl.getPort() : ":";
-			String baseUri = String.format("%s://%s%s", cloneUrl.getProtocol(), cloneUrl.getHost(), port);
+			String baseUri = getBaseUri(repository);
 			RepoService repoService = getDynamicUrlClient(baseUri);
 			repoService.deleteByUserAndName(token, repository.getSpec().getUser(), repository.getMetadata().getName());
 		} catch (URISyntaxException | MalformedURLException e) {
 			LOG.error("Error calling repository API to delete user", e);
 		}
-		
+	}
+
+	private String getBaseUri(GiteaRepository repository) throws URISyntaxException, MalformedURLException {
+		URL cloneUrl = URI.create(repository.getStatus().getCloneUrl()).toURL();
+		String port = cloneUrl.getPort() > -1 ? ":" + cloneUrl.getPort() : ":";
+		return String.format("%s://%s%s", cloneUrl.getProtocol(), cloneUrl.getHost(), port);
 	}
 	
 	private RepoService getDynamicUrlClient(String baseUri) throws URISyntaxException {

@@ -254,9 +254,10 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 				&& resource.getSpec().isDeleteOnFinalize()){
 			LOG.info("Deleting repository");
 			associatedGitea(resource).flatMap(g -> getUserSecret(resource, g))
-			.map(s ->  s.getData().get("token"))
-			.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim())
-			.ifPresent(t -> repositoryService.delete(resource, t));
+				.map(s ->  s.getData().get("token"))
+				.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim())
+				.filter(t -> repositoryService.getByRepo(resource, t).isPresent())
+				.ifPresent(t -> repositoryService.delete(resource, t));
 		}
 		return DeleteControl.defaultDelete();
 	}
