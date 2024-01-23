@@ -27,10 +27,12 @@ import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.repository.domain.RepositoryService;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -85,11 +87,11 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		noUpdate = noUpdate.rescheduleAfter(30, TimeUnit.SECONDS);
 		return associatedGitea(resource).map(g -> {
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
+			UpdateControl<GiteaRepository> ctrl = assureGiteaLabelsSet(resource, g);
 			assureUserCreated(resource, g);
 			Optional<Repository> repo = assureRepositoryExists(resource, context, g);
-			UpdateControl<GiteaRepository> ctrl = assureGiteaLabelsSet(resource, g);
 			return ctrl.rescheduleAfter(!repo.isPresent() ? 10 : 60, TimeUnit.SECONDS);
-		}).orElse(noUpdate);
+		}).orElse(noUpdate.rescheduleAfter(10, TimeUnit.SECONDS));
 		
 	}
 
@@ -168,6 +170,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		LOG.info("Assure labels set");
 		Map<String, String> labels = resource.getMetadata().getLabels();
 		if (!labels.containsKey(LABEL_GITEA_NAME)) {
+			LOG.info("Setting labels");
 			labels.put(LABEL_GITEA_NAME,
 					g.getMetadata().getName());
 			labels.put(LABEL_GITEA_NAMESPACE,
@@ -206,7 +209,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		Map<String, String> labels = resource.getMetadata().getLabels();
 		String giteaName = labels.get(LABEL_GITEA_NAME);
 		String giteaNamespace = labels.get(LABEL_GITEA_NAMESPACE);
-		if (!StringUtil.isNullOrEmpty(giteaName) && !StringUtil.isNullOrEmpty(giteaNamespace)) {
+		if (associatedGiteaLabelsSet(resource.getMetadata())) {
 			LOG.info("Selecting gitea via label {}={}", LABEL_GITEA_NAME, giteaName);
 			return Optional
 					.ofNullable(client.resources(Gitea.class).inNamespace(giteaNamespace)
@@ -221,9 +224,15 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {
-				throw new IllegalArgumentException(String.format("Cannot determin unique Gitea in namespace %s. Expected 1 but was %d.", giteaNamespace, giteasInSameNamespace.size()));
+				throw new GiteaNotFoundException(String.format("Cannot determine unique Gitea in namespace %s. Expected 1 but was %d.", giteaNamespace, giteasInSameNamespace.size())
+				, giteaNamespace);
 			}
 		}
+	}
+
+	private boolean associatedGiteaLabelsSet(ObjectMeta meta) {
+		return !StringUtil.isNullOrEmpty(meta.getLabels().get(LABEL_GITEA_NAME)) 
+			&& !StringUtil.isNullOrEmpty(meta.getLabels().get(LABEL_GITEA_NAMESPACE));
 	}
 	
 	@Override
@@ -245,6 +254,17 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 					.withStatus("false")
 					.build());
 		}
+		if (e.getCause() instanceof GiteaNotFoundException) {
+			GiteaNotFoundException notFoundException = (GiteaNotFoundException) e.getCause();
+			gitea.getStatus().getConditions().add(new ConditionBuilder()
+					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
+					.withType(GiteaRepositoryConditionType.GITEA_NOT_FOUND.toString())
+					.withMessage("Error")
+					.withLastTransitionTime(LocalDateTime.now().toString())
+					.withReason(notFoundException.getMessage())
+					.withStatus("false")
+					.build());
+		}
 		return ErrorStatusUpdateControl.patchStatus(gitea);
 	}
 
@@ -253,11 +273,19 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		if (resource.getStatus() != null 
 				&& resource.getSpec().isDeleteOnFinalize()){
 			LOG.info("Deleting repository");
-			associatedGitea(resource).flatMap(g -> getUserSecret(resource, g))
-				.map(s ->  s.getData().get("token"))
-				.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim())
-				.filter(t -> repositoryService.getByRepo(resource, t).isPresent())
-				.ifPresent(t -> repositoryService.delete(resource, t));
+			try {
+				if (associatedGiteaLabelsSet(resource.getMetadata())){
+					associatedGitea(resource).flatMap(g -> getUserSecret(resource, g))
+						.map(s ->  s.getData().get("token"))
+						.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim())
+						.filter(t -> repositoryService.getByRepo(resource, t).isPresent())
+						.ifPresent(t -> repositoryService.delete(resource, t));
+				} else {
+					LOG.info("No labels for associated Gitea. Either it has been deleted, or you must delete it manually.");
+				}
+			} catch (GiteaNotFoundException e) {
+				LOG.error("Skipped repository because there is no associated Gitea.");
+			} 
 		}
 		return DeleteControl.defaultDelete();
 	}

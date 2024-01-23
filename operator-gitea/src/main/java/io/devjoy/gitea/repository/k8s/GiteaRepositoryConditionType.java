@@ -1,7 +1,11 @@
 package io.devjoy.gitea.repository.k8s;
 
 public enum GiteaRepositoryConditionType {
-	GITEA__REPO_UNKNOWN_ERROR("devjoy.io/UnknownError"), GITEA_REPO_CREATED("devjoy.io/GiteaRepoCreated");
+	GITEA_REPO_UNKNOWN_ERROR("devjoy.io/UnknownError"), 
+	GITEA_NOT_FOUND("devjoy.io/GiteaNotFound"),
+	GITEA_REPO_CREATED("devjoy.io/GiteaRepoCreated")
+	
+	;
 
 	private final String value;
 
