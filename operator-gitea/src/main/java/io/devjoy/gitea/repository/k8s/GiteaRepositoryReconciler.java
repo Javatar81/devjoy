@@ -284,7 +284,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 					LOG.info("No labels for associated Gitea. Either it has been deleted, or you must delete it manually.");
 				}
 			} catch (GiteaNotFoundException e) {
-				LOG.error("Skipped repository deleltion because there is no associated Gitea.");
+				LOG.error("Skipped repository deletion because there is no associated Gitea.");
 			} 
 		}
 		return DeleteControl.defaultDelete();
