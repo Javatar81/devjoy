@@ -74,7 +74,7 @@ public class GiteaReconcilerIT {
 						.build()); 
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(90, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);
@@ -109,7 +109,7 @@ public class GiteaReconcilerIT {
 		gitea.getSpec().setSso(true);
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(240, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);

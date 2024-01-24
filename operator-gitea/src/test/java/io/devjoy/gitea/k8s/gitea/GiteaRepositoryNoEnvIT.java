@@ -27,7 +27,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 
 @QuarkusTest
-public class GiteaRepositoryNoEnv {
+public class GiteaRepositoryNoEnvIT {
 
     static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
     static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
