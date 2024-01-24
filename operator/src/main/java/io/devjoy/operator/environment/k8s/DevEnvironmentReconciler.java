@@ -52,8 +52,6 @@ import io.quarkus.runtime.util.StringUtil;
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, ErrorStatusHandler<DevEnvironment> { 
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
   private final KubernetesClient client;
-  private final ArgoActivationCondition argoActivationCondition = new ArgoActivationCondition();
-  private final PipelineActivationCondition pipelineActivationCondition = new PipelineActivationCondition();
   
   public DevEnvironmentReconciler(KubernetesClient client) {
 	  this.client = client;

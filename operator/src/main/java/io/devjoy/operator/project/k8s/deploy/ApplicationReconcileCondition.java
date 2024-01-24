@@ -32,10 +32,11 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
        Optional<GiteaRepository> giteaRepo = context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator);
        return giteaRepo
         .filter(r -> r.getStatus() != null)
-        .map(r -> {    
-            String cloneUrl = ApiAccessMode.INTERNAL.toString().equals(accessMode) ? r.getStatus().getInternalCloneUrl() : r.getStatus().getCloneUrl();
+        .map(r -> ApiAccessMode.INTERNAL.toString().equals(accessMode) ? r.getStatus().getInternalCloneUrl() : r.getStatus().getCloneUrl())
+        .filter(url -> url != null)
+        .map(url -> {    
             try {
-                URI uri = new URI(cloneUrl.replace(".git", "/raw/branch/main/bootstrap/argo-application.yaml"));
+                URI uri = new URI(url.replace(".git", "/raw/branch/main/bootstrap/argo-application.yaml"));
                 var con = (HttpURLConnection) uri.toURL().openConnection();
                 con.connect();
                 if (200 == con.getResponseCode()) {

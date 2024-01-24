@@ -36,7 +36,7 @@ public class ProjectReconcilerIT {
         DevEnvironment devEnvironment = creaDevEnvironment();
         Project project = new Project();
         project.getMetadata().setNamespace(client.getNamespace());
-        project.getMetadata().setName("testproject");
+        project.getMetadata().setName("testproj");
         ProjectSpec spec = new ProjectSpec();
         spec.setEnvironmentName(devEnvironment.getMetadata().getName());
         spec.setEnvironmentNamespace(client.getNamespace());

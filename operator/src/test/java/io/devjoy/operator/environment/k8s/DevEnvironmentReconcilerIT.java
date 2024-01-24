@@ -10,8 +10,8 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.gitea.k8s.gitea.GiteaDeploymentDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -46,6 +46,10 @@ class DevEnvironmentReconcilerIT {
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
             assertThat(giteaDeployment.getStatus().getReadyReplicas(), is(1));
+            
+            final var argoCD = ArgoCDDependentResource.getResource(env, client).get();
+            assertThat(argoCD, is(IsNull.notNullValue()));
+            assertThat(argoCD.getStatus().getPhase(), is("Available"));
         });
     }
     

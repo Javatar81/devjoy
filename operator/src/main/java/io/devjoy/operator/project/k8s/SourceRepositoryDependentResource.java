@@ -41,7 +41,7 @@ public class SourceRepositoryDependentResource extends CRUDKubernetesDependentRe
 		ObjectMetaBuilder metaBuilder = new ObjectMetaBuilder()
 			.withName(getName(primary))
 			.withNamespace(primary.getMetadata().getNamespace());
-			Optional<DevEnvironment> env = primary.getOwningEnvironment(context.getClient());
+		Optional<DevEnvironment> env = primary.getOwningEnvironment(context.getClient());
 		repository.setMetadata(metaBuilder.build());
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());

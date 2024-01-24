@@ -2,8 +2,11 @@ package io.devjoy.operator.environment.k8s.deploy;
 
 import java.util.HashMap;
 
+import io.devjoy.gitea.k8s.Gitea;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
-
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -34,4 +37,8 @@ public class ArgoCDDependentResource extends CRUDKubernetesDependentResource<Arg
     public static String getName(DevEnvironment primary) {
         return "argocd-" + primary.getMetadata().getName();
     }
+
+    public static Resource<ArgoCD> getResource(DevEnvironment primary, KubernetesClient client) {
+      return client.resources(ArgoCD.class).inNamespace(primary.getMetadata().getNamespace()).withName(getName(primary));
+   }
 }
