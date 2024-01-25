@@ -11,7 +11,7 @@ public class PipelineRunActivationCondition implements Condition<PipelineRun, Pr
 
     @Override
     public boolean isMet(DependentResource<PipelineRun, Project> dependentResource, Project primary, Context<Project> context) {
-        return serverSupportsApi(context.getClient());
+        return serverSupportsApi(context.getClient()) && primary.getOwningEnvironment(context.getClient()).isPresent();
     }
 
     public static boolean serverSupportsApi(KubernetesClient client) {
