@@ -19,6 +19,8 @@ import io.fabric8.tekton.pipeline.v1.ParamBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
@@ -31,8 +33,8 @@ import jakarta.inject.Inject;
  *
  */
 @KubernetesDependent(resourceDiscriminator = InitDeployPipelineRunDiscriminator.class)
-public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project> {
-	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependentResource.class);
+public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
+	private static final Logger LOG = LoggerFactory.getLogger(InitDeployPipelineRunDependentResource.class);
 	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
 	
 	@Inject
