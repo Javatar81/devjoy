@@ -43,5 +43,5 @@ public class ProjectSpec {
 	}
 	public void setQuarkus(QuarkusSpec quarkus) {
 		this.quarkus = quarkus;
-	} 
+	}
 }

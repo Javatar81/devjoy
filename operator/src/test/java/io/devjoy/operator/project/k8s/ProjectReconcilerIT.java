@@ -65,6 +65,7 @@ public class ProjectReconcilerIT {
         env.getMetadata().setName("test-env");
         env.getMetadata().setNamespace(client.getNamespace());
         DevEnvironmentSpec spec = new DevEnvironmentSpec();
+        spec.setMavenSettingsPvc("maven");
         GiteaConfigSpec giteaSpec = new GiteaConfigSpec();
         giteaSpec.setEnabled(true);
         giteaSpec.setManaged(true);

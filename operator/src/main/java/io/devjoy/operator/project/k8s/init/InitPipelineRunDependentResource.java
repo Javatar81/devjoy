@@ -10,9 +10,12 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.ParamValue;
+import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -87,6 +90,18 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "additional-resources".equals(w.getName()))
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));
+		if (devEnvironment.getSpec().getMavenSettingsPvc() != null) {
+			ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=$(workspaces.maven-settings.path)").build();
+			pipelineRun.getSpec().getParams()
+				.add(new ParamBuilder().withName("additional_maven_params").withValue(mavenRepoPath).build());
+			pipelineRun.getSpec().getWorkspaces().stream()
+				.filter(w -> "mvn-settings".equals(w.getName()))
+				.forEach(w -> 
+					{
+						w.setEmptyDir(null);
+						w.setPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName(devEnvironment.getSpec().getMavenSettingsPvc()).build());
+					});
+		}
 		LOG.info("Pipeline run defined.");
 		return pipelineRun;
 	}

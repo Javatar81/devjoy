@@ -10,6 +10,10 @@ spec:
     - name: image_url
       type: string
       description: The url of the resulting image
+    - name: additional_maven_params
+      type: array
+      description: Additional params for the maven build task
+      default: []
   tasks:
     - name: git-clone
       params:
@@ -50,6 +54,7 @@ spec:
           value:
             - clean
             - package
+            - $(params.additional_maven_params)
         - name: PROXY_PROTOCOL
           value: http
         - name: CONTEXT_DIR

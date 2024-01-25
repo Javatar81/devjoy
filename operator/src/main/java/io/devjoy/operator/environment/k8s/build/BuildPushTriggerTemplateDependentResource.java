@@ -4,8 +4,11 @@ import java.util.Optional;
 
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.ParamValue;
+import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.fabric8.tekton.triggers.v1beta1.TriggerTemplate;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -43,7 +46,21 @@ public class BuildPushTriggerTemplateDependentResource extends CRUDKubernetesDep
 					.build()
 			);
 			p.getSpec().getPipelineRef().setName(p.getSpec().getPipelineRef().getName() + primary.getMetadata().getName());
+			if (primary.getSpec().getMavenSettingsPvc() != null) {
+				ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=$(workspaces.maven-settings.path)").build();
+				p.getSpec().getParams()
+					.add(new ParamBuilder().withName("additional_maven_params").withValue(mavenRepoPath).build());
+				p.getSpec().getWorkspaces().stream()
+					.filter(w -> "mvn-settings".equals(w.getName()))
+					.forEach(w -> 
+						{
+							w.setEmptyDir(null);
+							w.setPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName(primary.getSpec().getMavenSettingsPvc()).build());
+						});
+			}
 		});
+
+
 		//TODO Set Pipeline in resourcetemplates
 		//TODO Set Pipeline namespace in resourcetemplates
 		//TODO Set image_url in resourcetemplates

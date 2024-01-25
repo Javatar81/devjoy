@@ -25,6 +25,10 @@ spec:
       type: string
       description: The blank-separated list of quarkus extensions
       default: ""
+    - name: additional_maven_params
+      type: array
+      description: Additional params for the quarkus maven plugin
+      default: []
   tasks:
     - name: quarkus-create
       params:
@@ -33,10 +37,11 @@ spec:
             registry.redhat.io/ubi8/openjdk-17@sha256:aa53206031afff34f8c83b8cc491d853bc78d88a16bf19a3e09ed1841af4cdc7
         - name: GOALS
           value:
-            - io.quarkus.platform:quarkus-maven-plugin:3.5.2:create
+            - io.quarkus.platform:quarkus-maven-plugin:3.6.7:create
             - -DprojectGroupId=$(params.quarkus_group_id)
             - -DprojectArtifactId=$(params.quarkus_artifact_id)
             - -Dextensions=$(params.quarkus_extensions)
+            - $(params.additional_maven_params)
         - name: MAVEN_MIRROR_URL
           value: ''
         - name: SERVER_USER
