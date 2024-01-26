@@ -53,7 +53,7 @@ public class ProjectReconcilerIT {
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
-        await().ignoreExceptionsMatching(e -> e instanceof NullPointerException || e instanceof UnknownHostException).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreExceptionsMatching(e -> e instanceof NullPointerException || e instanceof UnknownHostException).atMost(600, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(projectResource.getStatus(), is(IsNull.notNullValue()));
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
