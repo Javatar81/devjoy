@@ -6,6 +6,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -52,13 +53,12 @@ public class ProjectReconcilerIT {
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
-        await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).ignoreException(UnknownHostException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
             Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(ingress, is(IsNull.notNullValue()));
             URI uri = new URI("http://" + ingress.getSpec().getRules().get(0).getHost());
-            System.out.println("URI" + uri);
             var con = (HttpURLConnection) uri.toURL().openConnection();
             con.connect();
             assertThat(con.getResponseCode(), is(200));
