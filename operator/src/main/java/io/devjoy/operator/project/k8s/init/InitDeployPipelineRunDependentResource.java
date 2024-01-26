@@ -6,8 +6,11 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.k8s.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
@@ -82,9 +85,18 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 			.add(new ParamBuilder().withName("environment_namespace").withNewValue(devEnvironment.getMetadata().getNamespace()).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("service_port").withNewValue("8080").build());
-		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.apps.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(),ocpClient.getOpenshiftUrl().getHost().replace("api.",""))).build());
 		
+		Optional<Gitea> gitea = Optional.ofNullable(GiteaDependentResource.getResource(ocpClient, devEnvironment).get());
+		String baseDomain = gitea.flatMap(g -> Optional.ofNullable(GiteaRouteDependentResource.getResource(g, ocpClient).get()))
+			.map(r -> r.getSpec().getHost().split(".apps.")[1])
+			//TODO This could return the internal service ip. Replace by something more reliable.
+			.orElseGet(() -> ocpClient.getOpenshiftUrl().getHost().replace("api.",""));
+		
+		pipelineRun.getSpec().getParams()
+			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.apps.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(), baseDomain)).build());
+		
+
+
 		Optional<GiteaRepository> gitopsRepo = Optional.ofNullable(context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).get());
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
