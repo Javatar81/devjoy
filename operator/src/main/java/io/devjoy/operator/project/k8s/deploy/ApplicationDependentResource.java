@@ -12,6 +12,8 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.operator.project.k8s.Project;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -48,9 +50,12 @@ public class ApplicationDependentResource extends CRUDNoGCKubernetesDependentRes
        }).orElse(null);
     }
 
-    public static String getName(Project primary) {
-        return "argocd-" + primary.getMetadata().getName();
-    }
+    public static Resource<Application> getResource(KubernetesClient client, Project project) {
+        String namespace = project.getOwningEnvironment(client).map(e -> e.getMetadata().getNamespace()).orElseGet(() -> project.getMetadata().getNamespace());
+		return client.resources(Application.class).inNamespace(namespace)
+				.withName(project.getMetadata().getName());
+	}
+
 }
 
 

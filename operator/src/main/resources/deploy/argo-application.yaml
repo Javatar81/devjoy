@@ -3,6 +3,8 @@ kind: Application
 metadata:
   name: $PROJECT
   namespace: $ENVIRONMENT_NAMESPACE
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
 spec:
   destination:
     namespace: $PROJECT_NAMESPACE

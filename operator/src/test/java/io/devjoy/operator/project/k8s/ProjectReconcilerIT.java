@@ -16,6 +16,8 @@ import org.junit.jupiter.api.Test;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.DevEnvironmentSpec;
 import io.devjoy.operator.environment.k8s.GiteaConfigSpec;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
@@ -50,10 +52,13 @@ public class ProjectReconcilerIT {
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
-        await().ignoreException(NullPointerException.class).atMost(500, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
-            URI uri = new URI(client.network().ingresses().inNamespace(client.getNamespace()).withName("argocd-" + project.getMetadata().getName()).get().getStatus().getLoadBalancer().getIngress().get(0).getHostname());
+            Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
+            assertThat(ingress, is(IsNull.notNullValue()));
+            URI uri = new URI("http://" + ingress.getSpec().getRules().get(0).getHost());
+            System.out.println("URI" + uri);
             var con = (HttpURLConnection) uri.toURL().openConnection();
             con.connect();
             assertThat(con.getResponseCode(), is(200));

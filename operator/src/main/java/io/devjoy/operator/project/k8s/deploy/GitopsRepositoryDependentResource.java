@@ -11,8 +11,6 @@ import io.devjoy.gitea.repository.k8s.GiteaRepositorySpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -73,9 +71,4 @@ public class GitopsRepositoryDependentResource extends CRUDKubernetesDependentRe
 		return primary.getMetadata().getName() + REPO_POSTFIX;
 	}
 	
-	private Resource<DevEnvironment> getOwningEnvironment(Project owningProject, KubernetesClient client) {
-		return 
-			client.resources(DevEnvironment.class).inNamespace(owningProject.getSpec().getEnvironmentNamespace())
-						.withName(owningProject.getSpec().getEnvironmentName());
-	}
 }

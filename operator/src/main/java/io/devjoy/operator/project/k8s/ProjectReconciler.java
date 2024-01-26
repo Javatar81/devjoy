@@ -157,7 +157,6 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 		// We need to clean up application because it has no owner because environment and project could be in different namespaces
 		LOG.info("Deleting project {}. Making sure that application will be deleted since it is not owned by project.", resource.getMetadata().getName());
 		if (supportsRequiredGitopsApi()) {
-			//TODO This could throw java.lang.IllegalArgumentException: There is no event source found for class:io.devjoy.operator.project.k8s.deploy.Application
 			context.getSecondaryResource(Application.class).ifPresent(a -> client.resource(a).delete());
 		}
 		return DeleteControl.defaultDelete();
