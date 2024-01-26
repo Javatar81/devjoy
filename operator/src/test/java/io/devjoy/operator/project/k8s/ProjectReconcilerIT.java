@@ -53,8 +53,9 @@ public class ProjectReconcilerIT {
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
-        await().ignoreException(NullPointerException.class).ignoreException(UnknownHostException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreExceptionsMatching(e -> e instanceof NullPointerException || e instanceof UnknownHostException).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
+            assertThat(projectResource.getStatus(), is(IsNull.notNullValue()));
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
             Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(ingress, is(IsNull.notNullValue()));
