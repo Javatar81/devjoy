@@ -1,7 +1,5 @@
 package io.devjoy.gitea.repository.domain;
 
-import static io.devjoy.gitea.repository.domain.Visibility.PRIVATE;
-
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -93,7 +91,7 @@ public class RepositoryService {
 			LOG.info("Creating repository {}", repository.getMetadata().getName());
 			CreateRepoOption repoOption = new CreateRepoOption();
 			repoOption.setName(repository.getMetadata().getName());
-			repoOption.setPrivate(repository.getSpec().getVisibility() == PRIVATE);
+			repoOption.setPrivate(repository.getSpec().getVisibility() == Visibility.PRIVATE);
 			repoOption.setDefaultBranch("main");
 			return getDynamicUrlClient(baseUri).create(token, repoOption);
 		} catch (IllegalStateException | RestClientDefinitionException | URISyntaxException | WebApplicationException e) {

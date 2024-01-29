@@ -7,8 +7,6 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-import jakarta.annotation.Generated;
-
 public class WebhookSpec {
 	@JsonPropertyDescription("The target url of the webhook.")
 	private String targetUrl;
@@ -29,7 +27,6 @@ public class WebhookSpec {
 		super();
 	}
 
-	@Generated("SparkTools")
 	private WebhookSpec(Builder builder) {
 		this.targetUrl = builder.targetUrl;
 		this.httpMethod = builder.httpMethod;
@@ -109,11 +106,11 @@ public class WebhookSpec {
 				&& Objects.equals(secretRef, other.secretRef) && Objects.equals(targetUrl, other.targetUrl)
 				&& type == other.type;
 	}
-	@Generated("SparkTools")
+
 	public static Builder builder() {
 		return new Builder();
 	}
-	@Generated("SparkTools")
+
 	public static final class Builder {
 		private String targetUrl;
 		private String httpMethod = "POST";
@@ -165,7 +162,5 @@ public class WebhookSpec {
 			return new WebhookSpec(this);
 		}
 	}
-	
-	
 	
 }

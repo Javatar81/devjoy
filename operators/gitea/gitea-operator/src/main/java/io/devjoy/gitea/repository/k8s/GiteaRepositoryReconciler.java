@@ -29,6 +29,7 @@ import io.devjoy.gitea.repository.domain.RepositoryService;
 import io.devjoy.gitea.repository.k8s.dependent.GiteaUserSecretDependentResource;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryLabels;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
@@ -57,8 +58,6 @@ import jakarta.ws.rs.WebApplicationException;
 @RBACRule(apiGroups = "", resources = {"pods/exec"}, verbs = {"get"})
 
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
-	public static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
-	public static final String LABEL_GITEA_NAME = "devjoy.io/gitea.name";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;
 	private final TokenService tokenService;
@@ -174,11 +173,11 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	private UpdateControl<GiteaRepository> assureGiteaLabelsSet(GiteaRepository resource, Gitea g) {
 		LOG.info("Assure labels set");
 		Map<String, String> labels = resource.getMetadata().getLabels();
-		if (!labels.containsKey(LABEL_GITEA_NAME)) {
+		if (!labels.containsKey(GiteaRepositoryLabels.LABEL_GITEA_NAME)) {
 			LOG.info("Setting labels");
-			labels.put(LABEL_GITEA_NAME,
+			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAME,
 					g.getMetadata().getName());
-			labels.put(LABEL_GITEA_NAMESPACE,
+			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE,
 					g.getMetadata().getNamespace());
 			return UpdateControl.updateResourceAndStatus(resource);
 		} else {
@@ -212,10 +211,10 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	private Optional<Gitea> associatedGitea(GiteaRepository resource) {
 		LOG.info("Looking for Gitea resource");
 		Map<String, String> labels = resource.getMetadata().getLabels();
-		String giteaName = labels.get(LABEL_GITEA_NAME);
-		String giteaNamespace = labels.get(LABEL_GITEA_NAMESPACE);
+		String giteaName = labels.get(GiteaRepositoryLabels.LABEL_GITEA_NAME);
+		String giteaNamespace = labels.get(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE);
 		if (associatedGiteaLabelsSet(resource.getMetadata())) {
-			LOG.info("Selecting gitea via label {}={}", LABEL_GITEA_NAME, giteaName);
+			LOG.info("Selecting gitea via label {}={}", GiteaRepositoryLabels.LABEL_GITEA_NAME, giteaName);
 			return Optional
 					.ofNullable(client.resources(Gitea.class).inNamespace(giteaNamespace)
 							.withName(giteaName).get());
@@ -236,8 +235,8 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	private boolean associatedGiteaLabelsSet(ObjectMeta meta) {
-		return !StringUtil.isNullOrEmpty(meta.getLabels().get(LABEL_GITEA_NAME)) 
-			&& !StringUtil.isNullOrEmpty(meta.getLabels().get(LABEL_GITEA_NAMESPACE));
+		return !StringUtil.isNullOrEmpty(meta.getLabels().get(GiteaRepositoryLabels.LABEL_GITEA_NAME)) 
+			&& !StringUtil.isNullOrEmpty(meta.getLabels().get(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE));
 	}
 	
 	@Override

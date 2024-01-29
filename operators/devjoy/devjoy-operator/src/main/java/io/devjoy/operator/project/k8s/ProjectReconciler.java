@@ -7,7 +7,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.repository.k8s.dependent.GiteaUserSecretDependentResource;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
@@ -80,9 +79,10 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 				makeArgoManageProjectNamespace(resource, env);
 			});
 		return owningEnvironment.flatMap(e -> {
-
+			
 			Optional<Secret> secret = Optional.ofNullable(GiteaDependentResource.getResource(client, e).get())
-				.flatMap(g -> Optional.ofNullable(GiteaUserSecretDependentResource.getResource(g, resource.getSpec().getOwner().getUser(), client).get()));
+				.flatMap(g -> Optional.ofNullable(client.resources(Secret.class).inNamespace(g.getMetadata().getNamespace()).withName(
+					resource.getSpec().getOwner().getUser() + "-git-secret").get()));
 			
 			return secret.map(st -> {
 				UpdateControl<Project> ctrl = UpdateControl.noUpdate();

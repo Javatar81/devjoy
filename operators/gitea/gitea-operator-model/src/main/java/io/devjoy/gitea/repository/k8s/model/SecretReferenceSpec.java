@@ -3,8 +3,6 @@ package io.devjoy.gitea.repository.k8s.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-import jakarta.annotation.Generated;
-
 public class SecretReferenceSpec {
 	@JsonPropertyDescription("The namespace of the referenced secret. If empty, it points to the same namespace as the repository resource.")
 	private String namespace;
@@ -18,7 +16,6 @@ public class SecretReferenceSpec {
 		super();
 	}
 
-	@Generated("SparkTools")
 	private SecretReferenceSpec(Builder builder) {
 		this.namespace = builder.namespace;
 		this.name = builder.name;
@@ -43,11 +40,11 @@ public class SecretReferenceSpec {
 	public void setKey(String key) {
 		this.key = key;
 	}
-	@Generated("SparkTools")
+
 	public static Builder builder() {
 		return new Builder();
 	}
-	@Generated("SparkTools")
+
 	public static final class Builder {
 		private String namespace;
 		private String name;

@@ -2,11 +2,10 @@ package io.devjoy.operator.project.k8s.deploy;
 
 import java.util.HashMap;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import io.devjoy.gitea.repository.domain.Visibility;
-import io.devjoy.gitea.repository.k8s.GiteaRepositoryReconciler;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryLabels;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
@@ -47,9 +46,9 @@ public class GitopsRepositoryDependentResource extends CRUDKubernetesDependentRe
 				labels.put(ENVIRONMENT_NAME_LABEL_KEY, e.getMetadata().getName());
 			}
 			if (e.getSpec() != null && e.getSpec().getGitea() != null) {
-				labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
+				labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
 			}
-			labels.put(GiteaRepositoryReconciler.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());
+			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());
 		});
 		repository.getMetadata().setLabels(labels);
 		
