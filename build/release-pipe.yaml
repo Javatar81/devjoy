@@ -15,6 +15,13 @@ spec:
     - description: The bundle name. One of gitea-operator or devjoy-operator.
       name: operatorname
       type: string
+    - default:
+        - 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
+      description: >-
+        The bundles, the catalog should contain. E.g.
+        quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
+      name: bundles
+      type: array
   tasks:
     - name: git-clone
       params:
@@ -139,7 +146,7 @@ spec:
             - '-u'
             - podman
             - '-b'
-            - 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
+            - $(params.bundles)
             - '--generate'
             - '-d'
             - ./target/bundle/$(params.operatorname)-bundle/catalog.Dockerfile
