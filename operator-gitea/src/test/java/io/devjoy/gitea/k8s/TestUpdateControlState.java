@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import io.devjoy.gitea.k8s.model.Gitea;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 
 class TestUpdateControlState {

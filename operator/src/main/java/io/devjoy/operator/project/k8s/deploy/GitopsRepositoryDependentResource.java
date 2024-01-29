@@ -5,9 +5,9 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import io.devjoy.gitea.repository.domain.Visibility;
-import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaRepositoryReconciler;
-import io.devjoy.gitea.repository.k8s.GiteaRepositorySpec;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;

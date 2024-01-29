@@ -22,12 +22,12 @@ import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.ServiceException;
+import io.devjoy.gitea.domain.service.ServiceException;
 import io.devjoy.gitea.repository.api.RepoService;
-import io.devjoy.gitea.repository.k8s.GiteaRepository;
-import io.devjoy.gitea.repository.k8s.GiteaRepositoryConditionType;
-import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
-import io.devjoy.gitea.repository.k8s.WebhookSpec;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
+import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
+import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.NotEmpty;

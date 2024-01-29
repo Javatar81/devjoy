@@ -3,7 +3,7 @@ package io.devjoy.operator.environment.k8s;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;

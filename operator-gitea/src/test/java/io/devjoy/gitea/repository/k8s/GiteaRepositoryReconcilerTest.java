@@ -1,12 +1,9 @@
 package io.devjoy.gitea.repository.k8s;
 
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,18 +14,18 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.devjoy.gitea.domain.AuthenticationService;
-import io.devjoy.gitea.domain.GiteaApiService;
-import io.devjoy.gitea.domain.GiteaPodExecService;
-import io.devjoy.gitea.domain.PasswordService;
 import io.devjoy.gitea.domain.TokenService;
-import io.devjoy.gitea.domain.UserService;
+import io.devjoy.gitea.domain.service.AuthenticationService;
+import io.devjoy.gitea.domain.service.GiteaApiService;
+import io.devjoy.gitea.domain.service.GiteaPodExecService;
+import io.devjoy.gitea.domain.service.PasswordService;
+import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.GiteaStatusUpdater;
 import io.devjoy.gitea.repository.domain.RepositoryService;
+import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.SecretList;
-import io.fabric8.kubernetes.api.model.SecretListBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.internal.HasMetadataOperation;
 import io.fabric8.openshift.client.OpenShiftClient;

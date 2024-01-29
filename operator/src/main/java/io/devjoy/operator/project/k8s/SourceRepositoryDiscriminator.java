@@ -2,7 +2,7 @@ package io.devjoy.operator.project.k8s;
 
 import java.util.Optional;
 
-import io.devjoy.gitea.repository.k8s.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
 

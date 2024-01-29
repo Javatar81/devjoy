@@ -2,39 +2,39 @@ package io.devjoy.gitea.k8s;
 
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.AuthenticationService;
-import io.devjoy.gitea.domain.PasswordService;
-import io.devjoy.gitea.domain.ServiceException;
-import io.devjoy.gitea.domain.UserService;
-import io.devjoy.gitea.k8s.gitea.GiteaAdminSecretDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaConfigSecretDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaDeploymentDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaOAuthClientDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaOAuthClientReconcileCondition;
-import io.devjoy.gitea.k8s.gitea.GiteaPvcDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaRouteDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaRouteReconcileCondition;
-import io.devjoy.gitea.k8s.gitea.GiteaServiceAccountDependentResource;
-import io.devjoy.gitea.k8s.gitea.GiteaServiceDependentResource;
-import io.devjoy.gitea.k8s.postgres.PostgresConfigMapDependentResource;
-import io.devjoy.gitea.k8s.postgres.PostgresDeploymentDependentResource;
-import io.devjoy.gitea.k8s.postgres.PostgresPvcDependentResource;
-import io.devjoy.gitea.k8s.postgres.PostgresSecretDependentResource;
-import io.devjoy.gitea.k8s.postgres.PostgresServiceDependentResource;
-import io.devjoy.gitea.k8s.rhsso.KeycloakClientDependentResource;
-import io.devjoy.gitea.k8s.rhsso.KeycloakDependentResource;
-import io.devjoy.gitea.k8s.rhsso.KeycloakOperatorGroupDependentResource;
-import io.devjoy.gitea.k8s.rhsso.KeycloakOperatorReconcileCondition;
-import io.devjoy.gitea.k8s.rhsso.KeycloakRealmDependentResource;
-import io.devjoy.gitea.k8s.rhsso.KeycloakReconcileCondition;
-import io.devjoy.gitea.k8s.rhsso.KeycloakSubscriptionDependentResource;
+import io.devjoy.gitea.domain.service.AuthenticationService;
+import io.devjoy.gitea.domain.service.PasswordService;
+import io.devjoy.gitea.domain.service.ServiceException;
+import io.devjoy.gitea.domain.service.UserService;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientReconcileCondition;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaPvcDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteReconcileCondition;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceAccountDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfigMapDependentResource;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependentResource;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependentResource;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresServiceDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorGroupDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorReconcileCondition;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakReconcileCondition;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependentResource;
+import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -46,17 +46,13 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
-import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
-import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations.Annotation;
+import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
 
@@ -81,7 +77,7 @@ import jakarta.ws.rs.WebApplicationException;
 		
 })
 @CSVMetadata(name = "gitea-operator-bundle", version = "0.1.0", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.1.0", others= {}))
-public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, EventSourceInitializer<Gitea>, SharedCSVMetadata { 
+public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, SharedCSVMetadata { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
@@ -90,86 +86,14 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	private final AuthenticationService authService;
 	private final GiteaStatusUpdater updater;
 	private final PasswordService passwordService;
-	/*private KubernetesDependentResource<Keycloak, Gitea> keycloakDR;
-	private KubernetesDependentResource<KeycloakClient, Gitea> keycloakClientDR;
-	private KubernetesDependentResource<KeycloakRealm, Gitea> keycloakRealmDR;
-	private KubernetesDependentResource<OperatorGroup, Gitea> operatorGroupDR;
-	private KubernetesDependentResource<Subscription, Gitea> subscriptionDR;
-	private KubernetesDependentResource<OAuthClient, Gitea> oauthClientDR;
-	private KubernetesDependentResource<Route, Gitea> giteaRouteDR;	*/
 
-	private static String KEYCLOAK_API_VERSION = "v1alpha1";
-	
 	public GiteaReconciler(OpenShiftClient client, UserService userService, AuthenticationService authService, GiteaStatusUpdater updater, PasswordService pwService) {
 		this.client = client;
 		this.userService = userService;
 		this.authService = authService;
 		this.updater = updater;
 		this.passwordService = pwService;
-		createKeycloakDependents();
 	}
-
-	private void createKeycloakDependents() {
-		/*keycloakDR = new KeycloakDependentResource();
-		keycloakDR.setKubernetesClient(client);
-		keycloakDR.configureWith(new KubernetesDependentResourceConfig<>());
-		keycloakClientDR = new KeycloakClientDependentResource();
-		keycloakClientDR.setKubernetesClient(client);
-		keycloakClientDR.configureWith(new KubernetesDependentResourceConfig<>());
-		keycloakRealmDR = new KeycloakRealmDependentResource();
-		keycloakRealmDR.setKubernetesClient(client);
-		keycloakRealmDR.configureWith(new KubernetesDependentResourceConfig<>());
-		oauthClientDR = new GiteaOAuthClientDependentResource();
-		oauthClientDR.setKubernetesClient(client);
-		oauthClientDR.configureWith(new KubernetesDependentResourceConfig<>());
-		giteaRouteDR = new GiteaRouteDependentResource();
-		giteaRouteDR.setKubernetesClient(client);
-		giteaRouteDR.configureWith(new KubernetesDependentResourceConfig<>());
-		operatorGroupDR = new KeycloakOperatorGroupDependentResource();
-		operatorGroupDR.setKubernetesClient(client);
-		operatorGroupDR.configureWith(new KubernetesDependentResourceConfig<>());
-		subscriptionDR = new KeycloakSubscriptionDependentResource();
-		subscriptionDR.setKubernetesClient(client);
-		subscriptionDR.configureWith(new KubernetesDependentResourceConfig<>());*/
-	}
-
-	@Override
-	public Map<String, EventSource> prepareEventSources(EventSourceContext<Gitea> context) {
-		Map<String, EventSource> eventSources = new HashMap<>();
-		/*if(keycloakApiAvailable()){
-			LOG.info("Keycloak is available");
-			eventSources.put("keycloakDR", keycloakDR.initEventSource(context));
-			eventSources.put("keycloakClientDR", keycloakClientDR.initEventSource(context));
-			eventSources.put("keycloakRealmDR", keycloakRealmDR.initEventSource(context));
-		} else {
-			LOG.warn("Keycloak API not available. Has it been installed on your cluster?");
-		}*/
-		//if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
-		//	eventSources.put("giteaRouteDR", giteaRouteDR.initEventSource(context));
-		//} else {
-		//	LOG.warn("OpenShift API Group {} not available. Route cannot be created", OpenShiftAPIGroups.ROUTE);
-		//}
-		/*if (client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.OAUTH)) {
-			eventSources.put("oauthClientDR", oauthClientDR.initEventSource(context));
-		} else {
-			LOG.warn("OpenShift API Group {} not available. No oauth integration into RHSSO possible", OpenShiftAPIGroups.OAUTH);
-		}
-		if (client.supportsOpenShiftAPIGroup("operators.coreos.com")) {
-			eventSources.put("operatorGroupDR", operatorGroupDR.initEventSource(context));
-			eventSources.put("subscriptionDR", subscriptionDR.initEventSource(context));
-		}
-		else {
-			LOG.warn("OpenShift API Group operators.coreos.com not available. RHSSO must be installed manually.");
-		}*/
-		return eventSources;
-	}
-	
-
-	private boolean keycloakApiAvailable() {
-		return client.apiextensions().getApiGroup("keycloak.org") != null 
-			&& KEYCLOAK_API_VERSION.equals(client.apiextensions().getApiGroup("keycloak.org").getApiVersion());
-	}
-
 
 	private void addGeneratedPasswordToSpecIfEmpty(Gitea gitea) {
 		if (StringUtil.isNullOrEmpty(gitea.getSpec().getAdminPassword())) {
@@ -257,14 +181,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		return updateCtrl;
 		
 	}
-
-	/*public void reconcileSsoResources(Gitea primary, Context<Gitea> context) {
-		keycloakDR.reconcile(primary, context);
-    	keycloakClientDR.reconcile(primary, context);
-    	keycloakRealmDR.reconcile(primary, context);
-		oauthClientDR.reconcile(primary, context);
-	}*/
-
+	
 	private void moveAdminPasswordToSecret(Gitea resource) {
 		LOG.info("New password. Moving password to secret");
 		GiteaAdminSecretDependentResource.getResource(resource, client)
@@ -317,11 +234,9 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	@Override
 	public ErrorStatusUpdateControl<Gitea> updateErrorStatus(Gitea gitea, Context<Gitea> context, Exception e) {
 		LOG.info("Error of type {}", e.getClass());
-		if (e.getCause() instanceof ServiceException) {
-			ServiceException serviceException = (ServiceException) e.getCause();
+		if (e.getCause() instanceof ServiceException serviceException) {
 			String additionalInfo = "";
-			if(serviceException.getCause() instanceof WebApplicationException) {
-				WebApplicationException webException = (WebApplicationException) serviceException.getCause();
+			if(serviceException.getCause() instanceof WebApplicationException webException) {
 				additionalInfo = ".Caused by http error " + webException.getResponse().getStatus();
 			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
@@ -335,12 +250,4 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 		return ErrorStatusUpdateControl.patchStatus(gitea);
 	}
-
-	/*@Override
-	public Map<String, EventSource> prepareEventSources(EventSourceContext<Gitea> context) {
-	  InformerConfiguration<Secret> config = InformerConfiguration.from(Secret.class, context).withLabelSelector(PostgresSecretDependentResource.LABEL_SELECTOR).build();
-	  var configMapEventSource = new InformerEventSource<>(config, context);
-	  configMapEventSource.          
-      return EventSourceInitializer.nameEventSources(configMapEventSource);
-	}*/
 }

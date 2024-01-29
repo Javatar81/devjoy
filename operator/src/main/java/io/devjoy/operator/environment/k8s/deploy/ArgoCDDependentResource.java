@@ -2,7 +2,7 @@ package io.devjoy.operator.environment.k8s.deploy;
 
 import java.util.HashMap;
 
-import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;

@@ -8,11 +8,11 @@ import java.util.concurrent.TimeUnit;
 import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
 
 import io.devjoy.gitea.repository.domain.Visibility;
-import io.devjoy.gitea.repository.k8s.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.GiteaRepositoryReconciler;
-import io.devjoy.gitea.repository.k8s.GiteaRepositorySpec;
-import io.devjoy.gitea.repository.k8s.SecretReferenceSpec;
-import io.devjoy.gitea.repository.k8s.WebhookSpec;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
+import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
+import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;

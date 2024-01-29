@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.ApiAccessMode;
-import io.devjoy.gitea.repository.k8s.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.project.k8s.Project;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;

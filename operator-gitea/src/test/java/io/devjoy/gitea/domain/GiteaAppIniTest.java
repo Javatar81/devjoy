@@ -13,14 +13,14 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 
-public class GiteaAppIniTest {
+class GiteaAppIniTest {
     static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
     static final String KEY_APP_INI = "app.ini";
     GiteaAppIni ini;
     
 
     @Test
-    public void readSimpleFile() throws IOException {
+    void readSimpleFile() throws IOException {
         Secret secret = client
           .secrets()
           .load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/config-secret.yaml"))
@@ -40,7 +40,7 @@ public class GiteaAppIniTest {
     }
 
      @Test
-    public void readAllSectionsFile() throws IOException {
+    void readAllSectionsFile() throws IOException {
         Path expectedIniPath = Paths.get("src/test/resources/ini/app3.ini");
         String expectedIniData = Files.readString(expectedIniPath);
         ini = new GiteaAppIni(expectedIniData);
@@ -56,7 +56,7 @@ public class GiteaAppIniTest {
     }
 
     @Test
-    public void changeFile() throws IOException {
+    void changeFile() throws IOException {
         Secret secret = client
           .secrets()
           .load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/config-secret.yaml"))

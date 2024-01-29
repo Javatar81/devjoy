@@ -16,7 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.api.AccessTokenService;
-import io.devjoy.gitea.k8s.Gitea;
+import io.devjoy.gitea.domain.service.GiteaPodExecService;
+import io.devjoy.gitea.domain.service.ServiceException;
+import io.devjoy.gitea.k8s.model.Gitea;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped

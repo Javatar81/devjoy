@@ -10,7 +10,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.devjoy.gitea.k8s.gitea.GiteaDeploymentDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;

@@ -18,21 +18,26 @@ import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.GiteaApiService;
-import io.devjoy.gitea.domain.PasswordService;
-import io.devjoy.gitea.domain.ServiceException;
 import io.devjoy.gitea.domain.TokenService;
-import io.devjoy.gitea.domain.UserService;
-import io.devjoy.gitea.k8s.Gitea;
-import io.devjoy.gitea.k8s.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.domain.service.GiteaApiService;
+import io.devjoy.gitea.domain.service.PasswordService;
+import io.devjoy.gitea.domain.service.ServiceException;
+import io.devjoy.gitea.domain.service.UserService;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.domain.RepositoryService;
+import io.devjoy.gitea.repository.k8s.dependent.GiteaUserSecretDependentResource;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
+import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
+import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
@@ -160,9 +165,9 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			determineInternalCloneUrl(r.getCloneUrl(), g)
 				.ifPresent(url -> resource.getStatus().setInternalCloneUrl(url));
 			
-		},() -> {
-			LOG.warn("Repository not yet present");
-		});
+		},() -> 
+			LOG.warn("Repository not yet present")
+		);
 		return repository;
 	}
 
@@ -238,11 +243,9 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	@Override
 	public ErrorStatusUpdateControl<GiteaRepository> updateErrorStatus(GiteaRepository gitea, Context<GiteaRepository> context, Exception e) {
 		LOG.info("Error of type {}", e.getClass());
-		if (e.getCause() instanceof ServiceException) {
-			ServiceException serviceException = (ServiceException) e.getCause();
+		if (e.getCause() instanceof ServiceException serviceException) {
 			String additionalInfo = "";
-			if(serviceException.getCause() instanceof WebApplicationException) {
-				WebApplicationException webException = (WebApplicationException) serviceException.getCause();
+			if(serviceException.getCause() instanceof WebApplicationException webException) {
 				additionalInfo = ".Caused by http error " + webException.getResponse().getStatus();
 			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
@@ -254,8 +257,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 					.withStatus("false")
 					.build());
 		}
-		if (e.getCause() instanceof GiteaNotFoundException) {
-			GiteaNotFoundException notFoundException = (GiteaNotFoundException) e.getCause();
+		if (e.getCause() instanceof GiteaNotFoundException notFoundException) {
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(GiteaRepositoryConditionType.GITEA_NOT_FOUND.toString())

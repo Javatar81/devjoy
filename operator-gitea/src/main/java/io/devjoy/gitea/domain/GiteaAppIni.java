@@ -50,7 +50,7 @@ public class GiteaAppIni {
             return !StringUtil.isNullOrEmpty(name);
         }
     }
-    private static final Logger LOG = LoggerFactory.getLogger(AuthenticationService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GiteaAppIni.class);
     private static final Pattern PATTERN_SECTION = Pattern.compile("\\[.*\\]\n.*[^\\[]*");
     private static final Pattern PATTERN_DEFAULT = Pattern.compile("\\[.*\\]");
     private final Map<String, GiteaIniSection> sections = new LinkedHashMap<>();
@@ -71,7 +71,7 @@ public class GiteaAppIni {
                 Optional<GiteaIniSection> section = secData.lines().findFirst()
                     .map(s -> s.trim().substring(1, s.length() - 1))
                     .map(this::getSection);
-                section.ifPresent(s -> {
+                section.ifPresent(s -> 
                     secData.lines()
                         .skip(1)
                         .filter(l -> !l.trim().isEmpty())
@@ -80,8 +80,8 @@ public class GiteaAppIni {
                             LOG.debug("Adding {} to section {}", l, s.name);
                             return new String[]{l.substring(0, index).trim(), l.substring(index + 1, l.length()).trim()};
                         })
-                        .forEach(l -> s.setProperty(l[0], l[1]));
-                });
+                        .forEach(l -> s.setProperty(l[0], l[1]))
+                );
                 
             });
         }
@@ -103,12 +103,9 @@ public class GiteaAppIni {
     }
 
     public GiteaIniSection getSection(String name) {
-        GiteaIniSection section = sections.get(name);
-        if (section == null) {
-            section = new GiteaIniSection(name);
-            sections.put(name, section);
-        }
-        return section;
+    	return sections.computeIfAbsent(name, k -> 
+    		new GiteaIniSection(k)
+    	);
     }
 
     public Object setProperty(String key, Object value) {
