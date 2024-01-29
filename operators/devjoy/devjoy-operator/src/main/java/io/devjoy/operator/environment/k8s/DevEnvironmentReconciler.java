@@ -31,6 +31,10 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(
@@ -49,6 +53,9 @@ import io.quarkus.runtime.util.StringUtil;
 			@Dependent(type = AdditionalDeployResourcesConfigmapDependentResource.class),
 	        @Dependent(activationCondition = TaskActivationCondition.class, type = HelmCreateTaskDependentResource.class),
 	    })
+
+
+@CSVMetadata(name = "devjoy-operator-bundle", version = "0.1.0-SNAPSHOT", displayName = "Devjoy Operator", description = "An operator to quickly create development environments and projects", provider = @Provider(name = "devjoy.io"), keywords = "Project,Quarkus,GitOps,Pipelines", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/devjoy-operator:0.1.0-SNAPSHOT", others= {}))
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, ErrorStatusHandler<DevEnvironment> { 
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
   private final KubernetesClient client;

@@ -42,6 +42,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependentResource.class),
@@ -50,6 +51,7 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitPipelineRunDependentResource.class),
 		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependentResource.class)
 		})
+@RBACRule(apiGroups = "config.openshift.io", resources = {"ingresses"}, verbs = {"get"}, resourceNames = {"cluster"})
 public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandler<Project>, Cleaner<Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
 	private final OpenShiftClient client;
