@@ -1,0 +1,172 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: init-project-
+spec:
+  params:
+    - name: git_url
+      type: string
+      description: Git clone URL
+    - name: git_user
+      type: string
+      description: Git user
+    - name: git_user_email
+      type: string
+      description: Git user
+    - name: quarkus_group_id
+      type: string
+      description: Maven group id for quarkus project
+      default: ""
+    - name: quarkus_artifact_id
+      type: string
+      description: Maven artifact id for quarkus project
+      default: ""
+    - name: quarkus_extensions
+      type: string
+      description: The blank-separated list of quarkus extensions
+      default: ""
+    - name: additional_maven_params
+      type: array
+      description: Additional params for the quarkus maven plugin
+      default: []
+  tasks:
+    - name: quarkus-create
+      params:
+        - name: MAVEN_IMAGE
+          value: >-
+            registry.redhat.io/ubi8/openjdk-17@sha256:aa53206031afff34f8c83b8cc491d853bc78d88a16bf19a3e09ed1841af4cdc7
+        - name: GOALS
+          value:
+            - io.quarkus.platform:quarkus-maven-plugin:3.6.7:create
+            - -DprojectGroupId=$(params.quarkus_group_id)
+            - -DprojectArtifactId=$(params.quarkus_artifact_id)
+            - -Dextensions=$(params.quarkus_extensions)
+            - $(params.additional_maven_params)
+        - name: MAVEN_MIRROR_URL
+          value: ''
+        - name: SERVER_USER
+          value: ''
+        - name: SERVER_PASSWORD
+          value: ''
+        - name: PROXY_USER
+          value: ''
+        - name: PROXY_PASSWORD
+          value: ''
+        - name: PROXY_PORT
+          value: ''
+        - name: PROXY_HOST
+          value: ''
+        - name: PROXY_NON_PROXY_HOSTS
+          value: ''
+        - name: PROXY_PROTOCOL
+          value: http
+        - name: CONTEXT_DIR
+          value: .
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      workspaces:
+        - name: source
+          workspace: src
+        - name: maven-settings
+          workspace: mvn-settings
+    - name: git-init
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) init && git -C $(params.quarkus_artifact_id) config http.sslVerify false && git -C $(params.quarkus_artifact_id) checkout -b main
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      runAfter:
+        - quarkus-create
+      workspaces:
+        - name: source
+          workspace: src
+    - name: git-additional-resources
+      params:
+        - name: PROJECT
+          value: $(params.quarkus_artifact_id)
+        - name: REPOSITORY
+          value: $(params.git_url)
+        - name: TARGET_FOLDER
+          value: $(params.quarkus_artifact_id)
+        - name: FILE
+          value: devfile.yaml
+      runAfter:
+        - git-init
+      taskRef:
+        kind: Task
+        name: additional-resources
+      workspaces:
+        - name: target
+          workspace: src
+        - name: source
+          workspace: additional-resources
+    - name: git-commit
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) add . && git -C $(params.quarkus_artifact_id) commit -m "quarkus project generated"
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      runAfter:
+        - git-additional-resources
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      workspaces:
+        - name: source
+          workspace: src
+    - name: git-push
+      params:
+        - name: BASE_IMAGE
+          value: >-
+            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
+        - name: GIT_SCRIPT
+          value: |
+            git -C $(params.quarkus_artifact_id) remote add origin $(params.git_url) && git -C $(params.quarkus_artifact_id) push -u origin main
+        - name: USER_HOME
+          value: /root
+        - name: VERBOSE
+          value: 'true'
+        - name: GIT_USER_NAME
+          value: "$(params.git_user)"
+        - name: GIT_USER_EMAIL
+          value: "$(params.git_user_email)"
+      runAfter:
+        - git-commit
+      taskRef:
+        kind: ClusterTask
+        name: git-cli
+      workspaces:
+        - name: source
+          workspace: src
+        - name: basic-auth
+          workspace: auth
+  workspaces:
+    - name: src
+    - name: auth
+    - name: additional-resources
+    - name: mvn-settings
+  

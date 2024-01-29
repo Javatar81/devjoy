@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: $PROJECT
+  namespace: $ENVIRONMENT_NAMESPACE
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  destination:
+    namespace: $PROJECT_NAMESPACE
+    server: 'https://kubernetes.default.svc'
+  project: default
+  source:
+    helm:
+      valueFiles:
+        - /environments/test/values.yaml
+    path: apps/$PROJECT
+    repoURL: $GIT_REPOSITORY
+    targetRevision: HEAD
+  syncPolicy:
+    automated: {}

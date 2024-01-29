@@ -1,0 +1,8 @@
+apiVersion: devjoy.io/v1alpha1
+kind: DevEnvironment
+metadata:
+  name: managed
+spec:
+  gitea:
+    enabled: true
+    managed: true

@@ -1,0 +1,27 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: helm-create
+spec:
+  description: These tasks will create a new helm chart
+  params:
+    - description: The helm chart name
+      name: chart_name
+      type: string
+    - description: The helm release name
+      name: path
+      type: string
+      default: "."
+    - default: >-
+        docker.io/lachlanevenson/k8s-helm:v3.10.2
+      description: Specify a specific helm image
+      name: helm_image
+      type: string
+  steps:
+    - image: $(params.helm_image)
+      name: create-chart
+      script: |
+        helm create "$(params.chart_name)"
+      workingDir: $(workspaces.source.path)/$(params.path)
+  workspaces:
+    - name: source

@@ -1,0 +1,19 @@
+kind: KeycloakClient
+apiVersion: keycloak.org/v1alpha1
+metadata:
+  name: devjoy-secret
+  labels:
+spec:
+  realmSelector:
+    matchLabels:
+  client:
+    clientId: devjoy-gitea
+    secret: ""
+    standardFlowEnabled: true
+    clientAuthenticatorType: client-secret
+    defaultClientScopes:
+      - "web-origins"
+      - "acr"
+      - "roles"
+      - "profile"
+      - "email"

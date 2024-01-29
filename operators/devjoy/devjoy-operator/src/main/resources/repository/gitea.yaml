@@ -1,0 +1,25 @@
+apiVersion: gpte.opentlc.com/v1
+kind: Gitea
+metadata:
+  name: devjoy-repository
+spec:
+  giteaUserNumber: 2
+  giteaAdminPasswordLength: 32
+  giteaGenerateUserFormat: user-%d
+  giteaMigrateRepositories: true
+  giteaVolumeSize: 4Gi
+  giteaAdminUser: devjoyadmin
+  giteaImageTag: latest
+  postgresqlVolumeSize: 4Gi
+  giteaRepositoriesList:
+    - name: repository1
+      private: false
+    - name: repository2
+      private: false
+  giteaUserPassword: openshift
+  giteaCpuRequest: 10m
+  giteaAdminEmail: ben@example.com
+  postgresqlCpuRequest: 10m
+  giteaAdminPassword: ''
+  giteaCreateUsers: true
+  giteaSsl: true

@@ -1,0 +1,31 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  name: init-deploy-
+spec:
+  pipelineRef:
+    name: init-deploy-
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  workspaces:
+    - name: src
+      volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+          volumeMode: Filesystem
+    - name: auth
+      secret:
+        secretName: -git-secret  
+    - name: additional-resources
+      configMap:
+        name: additional-resources-deploy-         
+    - name: mvn-settings
+      emptyDir: {}               
+   
+      

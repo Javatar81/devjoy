@@ -1,0 +1,13 @@
+apiVersion: devjoy.io/v1alpha1
+kind: Project
+metadata:
+  name: project-1
+spec:
+  environmentName: unmanaged
+  environmentNamespace: sample
+  owner:
+    user: user-1
+  quarkus:
+    extensions:
+      - quarkus-grpc
+      - quarkus-amazon-s3

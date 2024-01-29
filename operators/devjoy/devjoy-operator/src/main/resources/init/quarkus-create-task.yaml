@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: quarkus-create
+spec:
+  params:
+    - default: ''
+      description: The maven group id
+      name: GROUP_ID
+      type: string
+    - default: ''
+      description: The maven group id
+      name: ARTIFACT_ID
+      type: string
+    - default: ''
+      description: The comma-seperated list of extensions
+      name: EXTENSIONS
+      type: string
+  steps:
+    - command:
+        - quarkus
+        - '--version'
+        - '-e'
+        - '--verbose'
+        - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
+      image: 'quay.io/devjoy/quarkuscli:latest'
+      name: version-info
+      workingDir: $(workspaces.source.path)
+    - command:
+        - quarkus
+        - create
+        - '-B'
+        - '-e'
+        - '$(params.GROUP_ID):$(params.ARTIFACT_ID)'
+      image: 'quay.io/devjoy/quarkuscli:latest'
+      name: create
+      workingDir: $(workspaces.source.path)
+    - image: 'quay.io/devjoy/quarkuscli:latest'
+      name: add-extensions
+      script: >-
+        cd $(params.ARTIFACT_ID); if [ !$(params.EXTENSIONS) -eq '']; then
+        quarkus extension add $(params.EXTENSIONS); else echo "Skip adding
+        extensions since EXTENSIONS parameter is empty"; fi
+      workingDir: $(workspaces.source.path)
+  workspaces:
+    - name: source

@@ -1,0 +1,17 @@
+apiVersion: devjoy.io/v1alpha1
+kind: Gitea
+metadata:
+  name: minimal
+spec:
+  resourceRequirementsEnabled: false
+  logLevel: INFO
+  disableRegistration: false
+  adminPasswordLength: 12
+  migrateRepositories: false
+  registerEmailConfirm: false
+  adminUser: devjoyadmin
+  adminPassword: devjoy
+  enableCaptcha: false
+  allowCreateOrganization: false
+  adminEmail: devjoyadmin@example.com
+  ssl: false
