@@ -6,11 +6,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
-import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
-import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
@@ -22,7 +19,6 @@ import io.fabric8.tekton.pipeline.v1.ParamBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -86,17 +82,10 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("service_port").withNewValue("8080").build());
 		
-		Optional<Gitea> gitea = Optional.ofNullable(GiteaDependentResource.getResource(ocpClient, devEnvironment).get());
-		String baseDomain = gitea.flatMap(g -> Optional.ofNullable(GiteaRouteDependentResource.getResource(g, ocpClient).get()))
-			.map(r -> r.getSpec().getHost().split(".apps.")[1])
-			//TODO This could return the internal service ip. Replace by something more reliable.
-			.orElseGet(() -> ocpClient.getOpenshiftUrl().getHost().replace("api.",""));
-		
+		String baseDomain = ocpClient.config().ingresses().withName("cluster").get().getSpec().getDomain();
 		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.apps.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(), baseDomain)).build());
+			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(), baseDomain)).build());
 		
-
-
 		Optional<GiteaRepository> gitopsRepo = Optional.ofNullable(context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).get());
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
