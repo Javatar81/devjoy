@@ -1,9 +1,20 @@
-apiVersion: tekton.dev/v1beta1
+apiVersion: tekton.dev/v1
 kind: Pipeline
 metadata:
-  name: release-pipe
-  namespace: bschmeli-devjoy
+  name: release-pipe-v2
 spec:
+  params:
+    - description: The release version.
+      name: version
+      type: string
+    - description: >-
+        The release component. One of operators/gitea/gitea-operator or
+        operators/devjoy/devjoy-operator.
+      name: component
+      type: string
+    - description: The bundle name. One of gitea-operator or devjoy-operator.
+      name: operatorname
+      type: string
   tasks:
     - name: git-clone
       params:
@@ -75,7 +86,7 @@ spec:
         - name: PROXY_PROTOCOL
           value: http
         - name: CONTEXT_DIR
-          value: ./operator-gitea
+          value: ./$(params.component)
       runAfter:
         - git-clone
       taskRef:
@@ -89,7 +100,7 @@ spec:
     - name: create-bundle
       params:
         - name: IMAGE
-          value: quay.io/devjoy/gitea-operator-bundle
+          value: 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
         - name: BUILDER_IMAGE
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
@@ -98,7 +109,7 @@ spec:
         - name: DOCKERFILE
           value: ./bundle.Dockerfile
         - name: CONTEXT
-          value: ./operator-gitea/target/bundle/gitea-operator-bundle/
+          value: ./$(params.component)/target/bundle/$(params.operatorname)-bundle/
         - name: TLSVERIFY
           value: 'true'
         - name: FORMAT
@@ -124,16 +135,16 @@ spec:
             - index
             - add
             - '-t'
-            - 'quay.io/devjoy/gitea-operator-catalog '
+            - 'quay.io/devjoy/$(params.operatorname)-catalog '
             - '-u'
             - podman
             - '-b'
-            - 'quay.io/devjoy/gitea-operator-bundle:latest'
+            - 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
             - '--generate'
             - '-d'
-            - ./target/bundle/gitea-operator-bundle/catalog.Dockerfile
+            - ./target/bundle/$(params.operatorname)-bundle/catalog.Dockerfile
         - name: CONTEXT_DIR
-          value: ./operator-gitea
+          value: ./$(params.component)
       runAfter:
         - create-bundle
       taskRef:
@@ -145,16 +156,16 @@ spec:
     - name: create-catalog
       params:
         - name: IMAGE
-          value: quay.io/devjoy/gitea-operator-catalog
+          value: 'quay.io/devjoy/$(params.operatorname)-catalog:$(params.version)'
         - name: BUILDER_IMAGE
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
         - name: STORAGE_DRIVER
           value: vfs
         - name: DOCKERFILE
-          value: ./target/bundle/gitea-operator-bundle/catalog.Dockerfile
+          value: ./target/bundle/$(params.operatorname)-bundle/catalog.Dockerfile
         - name: CONTEXT
-          value: ./operator-gitea/
+          value: ./$(params.component)/
         - name: TLSVERIFY
           value: 'true'
         - name: FORMAT
@@ -186,7 +197,7 @@ spec:
             - '-Dquarkus.container-image.push=true'
             - '-DskipTests'
         - name: CONTEXT_DIR
-          value: ./operator-gitea
+          value: ./$(params.component)
       runAfter:
         - test-operator
       taskRef:

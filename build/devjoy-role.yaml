@@ -1,0 +1,391 @@
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: devjoyreconciler-cluster-role
+# Copied from ../operator/target/bundle/devjoy-operator-bundle/manifests
+# Add deletecollection to giteas, gitearepositories, devenvironments, projects
+rules:
+  - apiGroups:
+    - apiextensions.k8s.io
+    resources:
+    - customresourcedefinitions
+    verbs:
+    - get
+    - list
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - giteas
+    - giteas/status
+    - giteas/finalizers
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - create
+    - delete
+    # Added for testing purposes
+    - deletecollection
+  - apiGroups:
+    - oauth.openshift.io
+    resources:
+    - oauthclients
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - secrets
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - keycloak.org
+    resources:
+    - keycloaks
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - serviceaccounts
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - route.openshift.io
+    resources:
+    - routes
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - operators.coreos.com
+    resources:
+    - operatorgroups
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - keycloak.org
+    resources:
+    - keycloakclients
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - services
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - keycloak.org
+    resources:
+    - keycloakrealms
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - operators.coreos.com
+    resources:
+    - subscriptions
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - config.openshift.io
+    resourceNames:
+    - cluster
+    resources:
+    - ingresses
+    verbs:
+    - get
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - devenvironments
+    - devenvironments/status
+    - devenvironments/finalizers
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - create
+    - delete
+    # Added for testing purposes
+    - deletecollection
+  - apiGroups:
+    - tekton.dev
+    resources:
+    - pipelines
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - tekton.dev
+    resources:
+    - tasks
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - argoproj.io
+    resources:
+    - argocds
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - triggers.tekton.dev
+    resources:
+    - eventlisteners
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - giteas
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - triggers.tekton.dev
+    resources:
+    - triggerbindings
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - triggers.tekton.dev
+    resources:
+    - triggertemplates
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - gitearepositories
+    - gitearepositories/status
+    - gitearepositories/finalizers
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - create
+    - delete
+    # Added for testing purposes
+    - deletecollection
+  - apiGroups:
+    - apps
+    resources:
+    - replicasets
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - pods
+    verbs:
+    - get
+    - list
+    - watch
+  - apiGroups:
+    - ""
+    resources:
+    - configmaps
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+  - apiGroups:
+    - ""
+    resources:
+    - pods/exec
+    verbs:
+    - get
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - projects
+    - projects/status
+    - projects/finalizers
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - create
+    - delete
+    # Added for testing purposes
+    - deletecollection
+  - apiGroups:
+    - tekton.dev
+    resources:
+    - pipelineruns
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - patch
+  - apiGroups:
+    - argoproj.io
+    resources:
+    - applications
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
+  - apiGroups:
+    - devjoy.io
+    resources:
+    - gitearepositories
+    verbs:
+    - get
+    - list
+    - watch
+    - patch
+    - update
+    - delete
+    - create
