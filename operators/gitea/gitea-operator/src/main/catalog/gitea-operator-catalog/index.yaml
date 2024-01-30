@@ -1,0 +1,249 @@
+---
+defaultChannel: alpha
+name: gitea-operator-bundle
+schema: olm.package
+---
+schema: olm.channel
+package: gitea-operator-bundle
+name: alpha
+entries:
+  - name: gitea-operator-bundle.v0.2.0-SNAPSHOT
+    replaces: gitea-operator-bundle.v0.1.0
+  - name: gitea-operator-bundle.v0.1.0
+---
+image: quay.io/devjoy/gitea-operator-bundle:0.1.0
+name: gitea-operator-bundle.v0.1.0
+package: gitea-operator-bundle
+properties:
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: Gitea
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: GiteaRepository
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: Keycloak
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: KeycloakClient
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: KeycloakRealm
+    version: v1alpha1
+- type: olm.package
+  value:
+    packageName: gitea-operator-bundle
+    version: 0.1.0
+- type: olm.csv.metadata
+  value:
+    annotations:
+      certified: "false"
+      containerImage: quay.io/devjoy/gitea-operator:0.1.0
+      repository: https://github.com/Javatar81/devjoy
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - kind: Gitea
+        name: giteas.devjoy.io
+        version: v1alpha1
+      - kind: GiteaRepository
+        name: gitearepositories.devjoy.io
+        version: v1alpha1
+      required:
+      - kind: Keycloak
+        name: keycloaks.keycloak.org
+        version: v1alpha1
+      - kind: KeycloakClient
+        name: keycloakclients.keycloak.org
+        version: v1alpha1
+      - kind: KeycloakRealm
+        name: keycloakrealms.keycloak.org
+        version: v1alpha1
+    description: An operator to manage Gitea servers and repositories
+    displayName: Gitea Operator
+    installModes:
+    - supported: true
+      type: AllNamespaces
+    keywords:
+    - Git,Repository,Gitea
+    nativeAPIs:
+    - group: ""
+      kind: PersistentVolumeClaim
+      version: v1
+    - group: ""
+      kind: PersistentVolumeClaim
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: ServiceAccount
+      version: v1
+    - group: ""
+      kind: Service
+      version: v1
+    - group: ""
+      kind: Service
+      version: v1
+    - group: apps
+      kind: Deployment
+      version: v1
+    - group: apps
+      kind: Deployment
+      version: v1
+    - group: oauth.openshift.io
+      kind: OAuthClient
+      version: v1
+    - group: operators.coreos.com
+      kind: OperatorGroup
+      version: v1
+    - group: operators.coreos.com
+      kind: Subscription
+      version: v1alpha1
+    - group: route.openshift.io
+      kind: Route
+      version: v1
+    provider:
+      name: devjoy.io
+relatedImages:
+- image: quay.io/devjoy/gitea-operator-bundle:0.1.0
+  name: ""
+- image: quay.io/devjoy/gitea-operator:0.1.0
+  name: ""
+schema: olm.bundle
+---
+image: quay.io/devjoy/gitea-operator-bundle:0.2.0-SNAPSHOT
+name: gitea-operator-bundle.v0.2.0-SNAPSHOT
+package: gitea-operator-bundle
+properties:
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: Gitea
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: GiteaRepository
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: Keycloak
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: KeycloakClient
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: keycloak.org
+    kind: KeycloakRealm
+    version: v1alpha1
+- type: olm.package
+  value:
+    packageName: gitea-operator-bundle
+    version: 0.2.0-SNAPSHOT
+- type: olm.csv.metadata
+  value:
+    annotations:
+      certified: "false"
+      containerImage: quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT
+      repository: https://github.com/Javatar81/devjoy
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - kind: Gitea
+        name: giteas.devjoy.io
+        version: v1alpha1
+      - kind: GiteaRepository
+        name: gitearepositories.devjoy.io
+        version: v1alpha1
+      required:
+      - kind: Keycloak
+        name: keycloaks.keycloak.org
+        version: v1alpha1
+      - kind: KeycloakClient
+        name: keycloakclients.keycloak.org
+        version: v1alpha1
+      - kind: KeycloakRealm
+        name: keycloakrealms.keycloak.org
+        version: v1alpha1
+    description: An operator to manage Gitea servers and repositories
+    displayName: Gitea Operator
+    installModes:
+    - supported: true
+      type: AllNamespaces
+    keywords:
+    - Git,Repository,Gitea
+    nativeAPIs:
+    - group: ""
+      kind: ConfigMap
+      version: v1
+    - group: ""
+      kind: PersistentVolumeClaim
+      version: v1
+    - group: ""
+      kind: PersistentVolumeClaim
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: ""
+      kind: ServiceAccount
+      version: v1
+    - group: ""
+      kind: Service
+      version: v1
+    - group: ""
+      kind: Service
+      version: v1
+    - group: apps
+      kind: Deployment
+      version: v1
+    - group: apps
+      kind: Deployment
+      version: v1
+    - group: oauth.openshift.io
+      kind: OAuthClient
+      version: v1
+    - group: operators.coreos.com
+      kind: OperatorGroup
+      version: v1
+    - group: operators.coreos.com
+      kind: Subscription
+      version: v1alpha1
+    - group: route.openshift.io
+      kind: Route
+      version: v1
+    provider:
+      name: devjoy.io
+relatedImages:
+- image: quay.io/devjoy/gitea-operator-bundle:0.2.0-SNAPSHOT
+  name: ""
+- image: quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT
+  name: ""
+schema: olm.bundle
