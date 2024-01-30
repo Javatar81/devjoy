@@ -76,6 +76,10 @@
       <groupId>io.fabric8</groupId>
       <artifactId>tekton-client</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-container-image-jib</artifactId>
+    </dependency>
      <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit-5</artifactId>
