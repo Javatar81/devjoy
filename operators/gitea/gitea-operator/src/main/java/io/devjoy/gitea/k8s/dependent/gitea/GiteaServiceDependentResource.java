@@ -29,7 +29,7 @@ public class GiteaServiceDependentResource extends CRUDKubernetesDependentResour
 		LOG.info("Setting desired Gitea service");
 		Service svc = context.getClient().services()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/service.yaml")).item();
-		String name = primary.getMetadata().getName();
+		String name = getName(primary);
 		svc.getMetadata().setName(name);
 		LOG.info("Name is {} ", name);
 		svc.getMetadata().setNamespace(primary.getMetadata().getNamespace());
@@ -42,9 +42,13 @@ public class GiteaServiceDependentResource extends CRUDKubernetesDependentResour
 		return svc;
 	}
 	
+	public static String getName(Gitea primary) {
+		return primary.getMetadata().getName();
+	}
+
 	public static Resource<Service> getResource(Gitea primary, KubernetesClient client) {
 		return client.resources(Service.class).inNamespace(primary.getMetadata().getNamespace()).withName(
-				primary.getMetadata().getName());
+			getName(primary));
 	}
 
 }

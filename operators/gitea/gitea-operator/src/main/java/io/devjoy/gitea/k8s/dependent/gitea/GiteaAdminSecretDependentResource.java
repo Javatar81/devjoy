@@ -4,11 +4,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.k8s.model.Gitea;
@@ -45,10 +43,6 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 	TokenService tokenService;
 	@Inject
 	GiteaApiService giteaApiService;
-	
-	
-	@ConfigProperty(name = "io.devjoy.gitea.api.access.mode") 
-	ApiAccessMode accessMode;
 	
 	public GiteaAdminSecretDependentResource() {
 		super(Secret.class);

@@ -7,6 +7,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
@@ -55,6 +56,6 @@ public class GiteaApiService {
 	 * @return
 	 */
 	public String getLocalBaseUri(Gitea resource) {
-		return "http://" + resource.getMetadata().getName() +":3000";
+		return String.format("http://%s.%s.svc.cluster.local:3000", GiteaServiceDependentResource.getName(resource), resource.getMetadata().getNamespace());
 	}
 }
