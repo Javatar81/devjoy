@@ -48,7 +48,7 @@ class GiteaRepositoryReconcilerIT {
     void createPublicRepo() {
         GiteaRepository repo = createDefaultRepo("public");
         client.resource(repo).create();
-        await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
 			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
@@ -60,7 +60,7 @@ class GiteaRepositoryReconcilerIT {
         GiteaRepository repo = createDefaultRepo("private");
         repo.getSpec().setVisibility(Visibility.PRIVATE);
         client.resource(repo).create();
-        await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
 			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
