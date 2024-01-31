@@ -52,6 +52,7 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
+import io.quarkiverse.operatorsdk.bundle.runtime.CSVMetadataHolder.RequiredCRD;
 import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
@@ -76,7 +77,7 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(type = KeycloakClientDependentResource.class, activationCondition = KeycloakReconcileCondition.class) 
 		
 })
-@CSVMetadata(name = "gitea-operator-bundle", version = "0.2.0-SNAPSHOT", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT", others= {}))
+@CSVMetadata(name = "gitea-operator-bundle.v0.2.0-SNAPSHOT", version = "0.2.0-SNAPSHOT", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT", others= {}))
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, SharedCSVMetadata { 
 	
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";

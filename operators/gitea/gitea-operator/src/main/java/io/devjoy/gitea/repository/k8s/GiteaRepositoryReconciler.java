@@ -48,6 +48,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
@@ -56,7 +57,7 @@ import jakarta.ws.rs.WebApplicationException;
 @RBACRule(apiGroups = "", resources = {"pods"}, verbs = {"get","list","watch"})
 @RBACRule(apiGroups = "", resources = {"configmaps"}, verbs = {"get","list","watch","create"})
 @RBACRule(apiGroups = "", resources = {"pods/exec"}, verbs = {"get"})
-
+@CSVMetadata(name = "gitea-operator-bundle.v0.2.0-SNAPSHOT")
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;
