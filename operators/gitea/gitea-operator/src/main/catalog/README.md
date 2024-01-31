@@ -12,4 +12,4 @@ opm render quay.io/devjoy/gitea-operator-bundle:next --output=yaml >> gitea-oper
 opm validate gitea-operator-catalog
 
 # Generate dockerfile
-opm generate dockerfile catalog -i registry.redhat.io/openshift4/ose-operator-registry:v4.14
+opm generate dockerfile gitea-operator-catalog -i registry.redhat.io/openshift4/ose-operator-registry:v4.14

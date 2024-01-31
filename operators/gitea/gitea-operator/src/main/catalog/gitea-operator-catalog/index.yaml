@@ -8,11 +8,11 @@ package: gitea-operator-bundle
 name: alpha
 entries:
   - name: gitea-operator-bundle.v0.2.0-SNAPSHOT
-    replaces: gitea-operator-bundle.v0.1.0
-  - name: gitea-operator-bundle.v0.1.0
+    replaces: gitea-operator-bundle
+  - name: gitea-operator-bundle
 ---
 image: quay.io/devjoy/gitea-operator-bundle:0.1.0
-name: gitea-operator-bundle.v0.1.0
+name: gitea-operator-bundle
 package: gitea-operator-bundle
 properties:
 - type: olm.gvk
