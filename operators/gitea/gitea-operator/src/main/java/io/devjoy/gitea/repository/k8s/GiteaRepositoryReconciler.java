@@ -23,6 +23,7 @@ import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.domain.service.PasswordService;
 import io.devjoy.gitea.domain.service.ServiceException;
 import io.devjoy.gitea.domain.service.UserService;
+import io.devjoy.gitea.k8s.GiteaReconciler;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.domain.RepositoryService;
@@ -57,7 +58,7 @@ import jakarta.ws.rs.WebApplicationException;
 @RBACRule(apiGroups = "", resources = {"pods"}, verbs = {"get","list","watch"})
 @RBACRule(apiGroups = "", resources = {"configmaps"}, verbs = {"get","list","watch","create"})
 @RBACRule(apiGroups = "", resources = {"pods/exec"}, verbs = {"get"})
-@CSVMetadata(name = "gitea-operator-bundle.v0.2.0-SNAPSHOT")
+@CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME)
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;

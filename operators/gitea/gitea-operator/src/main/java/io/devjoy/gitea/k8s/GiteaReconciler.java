@@ -77,9 +77,10 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(type = KeycloakClientDependentResource.class, activationCondition = KeycloakReconcileCondition.class) 
 		
 })
-@CSVMetadata(name = "gitea-operator-bundle.v0.2.0-SNAPSHOT", version = "0.2.0-SNAPSHOT", displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT", others= {}))
+@CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME, version = GiteaReconciler.CSV_METADATA_VERSION, displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = "quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT", others= {}))
 public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, SharedCSVMetadata { 
-	
+	public static final String CSV_METADATA_VERSION = "0.2.0-SNAPSHOT";
+	public static final String CSV_METADATA_NAME = "gitea-operator-bundle." + CSV_METADATA_VERSION;
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
 	private final OpenShiftClient client;
