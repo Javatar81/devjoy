@@ -128,7 +128,7 @@ relatedImages:
   name: ""
 schema: olm.bundle
 ---
-image: quay.io/devjoy/gitea-operator-bundle:0.2.0-SNAPSHOT
+image: quay.io/devjoy/gitea-operator-bundle:v0.2.0-SNAPSHOT
 name: gitea-operator-bundle.v0.2.0-SNAPSHOT
 package: gitea-operator-bundle
 properties:
