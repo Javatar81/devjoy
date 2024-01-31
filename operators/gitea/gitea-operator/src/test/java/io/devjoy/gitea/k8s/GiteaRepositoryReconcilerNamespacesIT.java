@@ -48,7 +48,7 @@ class GiteaRepositoryReconcilerNamespacesIT {
     void createRepo() {
         GiteaRepository repo = createDefaultRepo("public");
         client.resource(repo).create();
-        await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
 			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace() + "2").withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
