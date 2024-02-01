@@ -21,6 +21,7 @@ import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
@@ -28,14 +29,12 @@ import jakarta.inject.Inject;
 
 @QuarkusTest
 public class GiteaReconcilerIT {
-    @Inject
-	OpenShiftClient client;
-	@Inject
-	TokenService tokenService;
-	@Inject
-	TestEnvironment env;
-	@Inject
-	GiteaAssertions assertions;
+
+	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
+
+	TestEnvironment env = new TestEnvironment(client);
+	
+	GiteaAssertions assertions = new GiteaAssertions(client);
 	static GiteaPrereqs prereqs = new GiteaPrereqs();
 
 	@BeforeAll

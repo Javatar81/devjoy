@@ -2,24 +2,22 @@ package io.devjoy.gitea.k8s;
 
 import java.util.Optional;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.ConfigProvider;
 
 import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.openshift.client.OpenShiftClient;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class TestEnvironment {
     
-    @ConfigProperty(name = "test.quarkus.kubernetes-client.devservices.flavor")
 	Optional<String> devServiceFlavor;
 
 	private OpenShiftClient client;
 
-	@Inject
 	public TestEnvironment(OpenShiftClient client) {
 		this.client = client;
+		devServiceFlavor = ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class);
 	}
 
 	public TestEnvironment(OpenShiftClient client, Optional<String> devServiceFlavor) {

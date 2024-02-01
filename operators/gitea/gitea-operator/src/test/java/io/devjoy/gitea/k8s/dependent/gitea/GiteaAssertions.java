@@ -26,14 +26,16 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
 
 @ApplicationScoped
 public class GiteaAssertions {
     private static final Logger LOG = LoggerFactory.getLogger(GiteaAssertions.class);
-    @Inject
-    OpenShiftClient client;
 
+    OpenShiftClient client;
+    
+    public GiteaAssertions(OpenShiftClient client) {
+        this.client = client;
+    }
     public void assertPostgresPvc(Gitea desired) {
         final var postgresPvc = client.persistentVolumeClaims()
                 .inNamespace(desired.getMetadata().getNamespace())
