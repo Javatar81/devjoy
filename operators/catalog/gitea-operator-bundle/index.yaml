@@ -4,7 +4,7 @@ name: gitea-operator-bundle
 schema: olm.package
 ---
 entries:
-  - name: gitea-operator-bundle.v0.2.0-SNAPSHOT
+  - name: gitea-operator-bundle.v0.2.0
     replaces: gitea-operator-bundle
   - name: gitea-operator-bundle
 name: alpha
@@ -128,8 +128,8 @@ relatedImages:
   name: ""
 schema: olm.bundle
 ---
-image: quay.io/devjoy/gitea-operator-bundle:v0.2.0-SNAPSHOT
-name: gitea-operator-bundle.v0.2.0-SNAPSHOT
+image: quay.io/devjoy/gitea-operator-bundle:v0.2.0
+name: gitea-operator-bundle.v0.2.0
 package: gitea-operator-bundle
 properties:
 - type: olm.gvk
@@ -160,7 +160,7 @@ properties:
 - type: olm.package
   value:
     packageName: gitea-operator-bundle
-    version: 0.2.0-SNAPSHOT
+    version: 0.2.0
 - type: olm.csv.metadata
   value:
     annotations:
@@ -242,8 +242,8 @@ properties:
     provider:
       name: devjoy.io
 relatedImages:
-- image: quay.io/devjoy/gitea-operator-bundle:v0.2.0-SNAPSHOT
+- image: quay.io/devjoy/gitea-operator-bundle:v0.2.0
   name: ""
-- image: quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT
+- image: quay.io/devjoy/gitea-operator:0.2.0
   name: ""
 schema: olm.bundle
