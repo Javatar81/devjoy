@@ -10,9 +10,6 @@ import io.fabric8.kubernetes.model.annotation.Version;
 public class Gitea extends CustomResource<GiteaSpec, GiteaStatus> implements Namespaced {
 
 	private static final long serialVersionUID = -6663671542664201741L;
-
-	public Gitea() {
-		spec = new GiteaSpec();
-	}
+	
 }
 
