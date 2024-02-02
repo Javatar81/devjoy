@@ -3,6 +3,9 @@ package io.devjoy.gitea.k8s.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class GiteaSpec {
 	@JsonPropertyDescription("The name of the admin user. Must not be 'admin' because it is reserved.")
 	@JsonProperty(defaultValue = "devjoyadmin")
@@ -31,7 +34,7 @@ public class GiteaSpec {
 	private String memoryLimit;
 	@JsonPropertyDescription("The memory resource requests for the Gitea deployment")
 	private String memoryRequest;
-	@JsonPropertyDescription("Enables resource requirements such as cpuLimit, cpuRequest, memoryLimit, and memoryRequest. Default value is true.")
+	@JsonPropertyDescription("Enables resource requirements such as cpuLimit, cpuRequest, memoryLimit, and memoryRequest. Default value is false.")
 	private boolean resourceRequirementsEnabled;
 	@JsonPropertyDescription("Enable this to ask for mail confirmation of registration. Requires Mailer to be enabled.. Default value is false.")
 	private boolean registerEmailConfirm;

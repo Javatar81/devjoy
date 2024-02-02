@@ -9,7 +9,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.Condition;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
 public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
 	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 	@JsonPropertyDescription("Date when repository has been created.")

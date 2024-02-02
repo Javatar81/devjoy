@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.devjoy.gitea.repository.domain.Visibility;
+import io.quarkus.runtime.annotations.RegisterForReflection;
 
+@RegisterForReflection
 public class GiteaRepositorySpec {
 
 	@JsonPropertyDescription("The visibility of the repository: PRIVATE (default) or PUBLIC.")

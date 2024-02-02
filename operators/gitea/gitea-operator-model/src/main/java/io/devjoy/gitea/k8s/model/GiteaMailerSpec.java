@@ -19,6 +19,7 @@ public class GiteaMailerSpec {
 	private String heloHostname;
 	@JsonPropertyDescription("Enable this to ask for mail confirmation of registration")
 	private boolean enableNotifyMail;
+	
 	public boolean isEnabled() {
 		return enabled;
 	}
