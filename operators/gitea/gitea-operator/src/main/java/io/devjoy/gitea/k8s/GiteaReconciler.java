@@ -140,7 +140,9 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			//userService.changeUserPasswordViaExec(resource, resource.getSpec().getAdminUser(), resource.getSpec().getAdminPassword());
 			throw new ServiceException("User 'admin' is reserved and cannot be used for spec.adminUser");
 		} else if(!"admin".equals(resource.getSpec().getAdminUser())){
-			if(!userService.getAdminId(resource).isPresent()) {
+			Optional<String> adminId = userService.getAdminId(resource);
+			LOG.debug("Admin id is: {} ", adminId);
+			if(adminId.isEmpty()) {
 				addGeneratedPasswordToSpecIfEmpty(resource);
 				userService.createAdminUserViaExec(resource);
 				LOG.info("Admin user created");

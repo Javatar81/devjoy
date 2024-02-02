@@ -53,6 +53,10 @@ public class UserService {
 		Pattern pattern = Pattern.compile(String.format("(\\d+)\\s+%s.*", userName));
 		
 		return execService.execOnDeployment(gitea, cmd)
+				.map(s -> {
+					LOG.debug("User id response: {}", s);
+					return s;
+				})
 				.map(pattern::matcher)
 				.filter(Matcher::find)
 				.map(m -> m.group(1));
@@ -104,16 +108,21 @@ public class UserService {
 			LOG.info("Waiting up to {} seconds for replicas to become ready....", 180);
 			Builder cmdBuilder = Command.builder()
 					.withExecutable(ADMIN_COMMAND)
-					.withArgs(List.of(ARG_ADMIN, ARG_USER, "create"))
-					.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
-					.addOption(new Option("email", gitea.getSpec() != null ? gitea.getSpec().getAdminEmail() : "admin@example.com"))
-					.addOption(new Option("must-change-password=false", ""))
-					.addOption(new Option(ARG_ADMIN, ""));
+					.withArgs(List.of(ARG_ADMIN, ARG_USER, "create"));
 			if (gitea.getSpec() != null) {
 				cmdBuilder.addOption(new Option("password", gitea.getSpec().getAdminPassword()));
-			}		
+			} else {
+				LOG.error("Generating password with gitea random-password option. The generated password is not known to the operator and will not show up in the secret");
+				cmdBuilder.addOption(new Option("random-password", ""));
+			}	
+			cmdBuilder.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"));
+			cmdBuilder.addOption(new Option("email", gitea.getSpec() != null ? gitea.getSpec().getAdminEmail() : "admin@example.com"));
+			cmdBuilder.addOption(new Option("must-change-password=false", ""));
+			cmdBuilder.addOption(new Option(ARG_ADMIN, ""));
 			Command cmd = cmdBuilder.build();
-			execService.execOnDeployment(gitea, cmd);
+			
+			Optional<String> execResponse = execService.execOnDeployment(gitea, cmd);
+			LOG.debug("createAdminUserViaExec Response: {}", execResponse);
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(GiteaConditionType.GITEA_ADMIN_CREATED.toString())
