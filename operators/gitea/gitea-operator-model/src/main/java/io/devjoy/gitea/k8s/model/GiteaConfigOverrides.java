@@ -6,13 +6,16 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class GiteaConfigOverrides {
     
     @JsonProperty("repository.editor")
     @JsonPropertyDescription("More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---editor-repositoryeditor")
     private Map<String, String> repositoryEditor = new HashMap<>();
     @JsonProperty("repository.pull-request")
-     @JsonPropertyDescription("More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---pull-request-repositorypull-request")
+    @JsonPropertyDescription("More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#repository---pull-request-repositorypull-request")
     private Map<String, String> repositoryPullRequest = new HashMap<>();
     @JsonProperty("default")
     @JsonPropertyDescription("Overrides properties in the [default] section of app.ini. These values are environment-dependent but form the basis of a lot of values. They will be reported as part of the default configuration when running gitea --help or on start-up. The order they are emitted there is slightly different but we will list them here in the order they are set-up. More details can be found here: https://docs.gitea.com/administration/config-cheat-sheet#overall-default")

@@ -2,6 +2,9 @@ package io.devjoy.gitea.k8s.model;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class GiteaMailerSpec {
 	@JsonPropertyDescription("Enable to use a mail service.")
 	private boolean enabled;

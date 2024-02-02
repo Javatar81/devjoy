@@ -3,6 +3,9 @@ package io.devjoy.gitea.k8s.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class GiteaPostgresSpec {
 	@JsonPropertyDescription("The size of the volume to store Postgres data")
 	@JsonProperty(defaultValue = "4Gi")

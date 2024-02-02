@@ -1,5 +1,8 @@
 package io.devjoy.gitea.k8s.model;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public enum GiteaLogLevel {
 	TRACE,DEBUG,INFO,WARN,ERROR,CRITICAL,NONE;
 	

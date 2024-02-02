@@ -3,6 +3,9 @@ package io.devjoy.gitea.repository.k8s.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class SecretReferenceSpec {
 	@JsonPropertyDescription("The namespace of the referenced secret. If empty, it points to the same namespace as the repository resource.")
 	private String namespace;

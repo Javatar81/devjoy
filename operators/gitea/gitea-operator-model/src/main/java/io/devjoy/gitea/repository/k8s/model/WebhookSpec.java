@@ -7,6 +7,9 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.quarkus.runtime.annotations.RegisterForReflection;
+
+@RegisterForReflection
 public class WebhookSpec {
 	@JsonPropertyDescription("The target url of the webhook.")
 	private String targetUrl;
