@@ -35,6 +35,7 @@ import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
+import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
@@ -119,6 +120,10 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		LOG.info("Reconciling");
 		UpdateControl<Gitea> updateCtrl = UpdateControl.noUpdate();
 		updater.init(resource);
+		if (resource.getSpec() == null) {
+			resource.setSpec(new GiteaSpec());
+			updateCtrl = UpdateControl.updateResource(resource);
+		}
 		//if(resource.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
 		//	LOG.info("Route is enabled");
 		//	giteaRouteDR.reconcile(resource, context);

@@ -41,10 +41,15 @@ public class GiteaAssertions {
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(PostgresPvcDependentResource.getName(desired)).get();
         assertThat(postgresPvc, is(IsNull.notNullValue()));
-        if (!StringUtil.isNullOrEmpty(desired.getSpec().getPostgres().getStorageClass())) {
+        if (desired.getSpec() != null && !StringUtil.isNullOrEmpty(desired.getSpec().getPostgres().getStorageClass())) {
             assertThat(postgresPvc.getSpec().getStorageClassName(), is(desired.getSpec().getPostgres().getStorageClass()));
         }
-        assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getPostgres().getVolumeSize()));
+        if (desired.getSpec() != null) {
+            assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getPostgres().getVolumeSize()));
+        } else {
+            assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is("4Gi"));
+        }
+        
         assertThat(postgresPvc.getStatus().getPhase(), is("Bound"));
     }
 
@@ -53,17 +58,21 @@ public class GiteaAssertions {
                     .inNamespace(desired.getMetadata().getNamespace())
                     .withName(GiteaPvcDependentResource.getName(desired)).get();
         assertThat(giteaPvc, is(IsNull.notNullValue()));
-        if (!StringUtil.isNullOrEmpty(desired.getSpec().getStorageClass())) {
+        if (desired.getSpec() != null && !StringUtil.isNullOrEmpty(desired.getSpec().getStorageClass())) {
             assertThat(giteaPvc.getSpec().getStorageClassName(), is(desired.getSpec().getStorageClass()));
+        } 
+        if (desired.getSpec() != null) {
+            assertThat(giteaPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getVolumeSize()));
+        } else {
+            assertThat(giteaPvc.getSpec().getResources().getRequests().get("storage").toString(), is("4Gi"));
         }
-        assertThat(giteaPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getVolumeSize()));
         assertThat(giteaPvc.getStatus().getPhase(), is("Bound"));
     }
 
     public void assertAdminSecret(Gitea desired) {
         LOG.debug("Assert admin secret");
         final var adminSecret = GiteaAdminSecretDependentResource.getResource(desired, client);
-        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("user"))), is(desired.getSpec().getAdminUser()));
+        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("user"))), is(desired.getSpec() != null ? desired.getSpec().getAdminUser() : "devjoyadmin"));
         assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(IsNull.notNullValue()));
         LOG.debug("Asserted admin secret for Postgres");
     }
@@ -73,7 +82,9 @@ public class GiteaAssertions {
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(desired.getMetadata().getName())
                 .get();
-        assertThat(gitea.getSpec().getAdminPassword(), is(IsNull.notNullValue()));
+        if (gitea.getSpec() != null) {
+            assertThat(gitea.getSpec().getAdminPassword(), is(IsNull.notNullValue()));
+        }
     }
 
     public void assertGiteaDeployment(Gitea desired) {
@@ -91,7 +102,7 @@ public class GiteaAssertions {
         assertThat(postgresDeployment, is(IsNull.notNullValue()));
         assertThat(postgresSecret, is(IsNull.notNullValue()));
         assertThat(postgresPvc, is(IsNull.notNullValue()));
-        if (!desired.getSpec().isResourceRequirementsEnabled()) {
+        if (desired.getSpec() == null || !desired.getSpec().isResourceRequirementsEnabled()) {
             assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
             assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
             assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
@@ -131,7 +142,7 @@ public class GiteaAssertions {
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(desired.getMetadata().getName()).get();
         assertThat(giteaDeployment, is(IsNull.notNullValue()));
-        if (!desired.getSpec().isResourceRequirementsEnabled()) {
+        if (desired.getSpec() == null || !desired.getSpec().isResourceRequirementsEnabled()) {
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
             assertThat(giteaDeployment.getStatus().getReadyReplicas(), is(1));

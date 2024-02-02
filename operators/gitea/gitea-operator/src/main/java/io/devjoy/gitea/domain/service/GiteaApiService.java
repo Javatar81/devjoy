@@ -26,7 +26,7 @@ public class GiteaApiService {
 	}
 	
 	public Optional<String> getBaseUri(Gitea gitea) {
-		if (accessMode == ApiAccessMode.EXTERNAL && gitea.getSpec().isIngressEnabled() && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
+		if (accessMode == ApiAccessMode.EXTERNAL && (gitea.getSpec() == null || gitea.getSpec().isIngressEnabled()) && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
 			return getRouterBaseUri(gitea);
 		} else {
 			return Optional.ofNullable(getLocalBaseUri(gitea));
@@ -46,7 +46,7 @@ public class GiteaApiService {
 	 * @return
 	 */
 	private String getRouterBaseUri(Gitea resource, Route r) {
-		String protocol = "http" + (resource.getSpec().isSsl() ? "s://" : "://");
+		String protocol = "http" + (resource.getSpec() != null && resource.getSpec().isSsl() ? "s://" : "://");
 		return protocol + r.getSpec().getHost();
 	}
 

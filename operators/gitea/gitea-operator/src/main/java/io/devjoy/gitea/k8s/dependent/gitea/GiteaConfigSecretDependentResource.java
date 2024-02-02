@@ -149,21 +149,24 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		LOG.info("Read app.ini. Adding configuration parameters based on Gitea resource.");
 		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
 		configureDatabase(primary, iniConfiguration);
-		if(primary.getSpec().isIngressEnabled() && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
+		if((primary.getSpec() == null || primary.getSpec().isIngressEnabled()) && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
 			Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
 				.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
-			route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec().isSsl()));
+			route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
 		}
 		configureServer(iniConfiguration);
 		iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty("ALLOW_LOCALNETWORKS", "false");
-		if (primary.getSpec().getLogLevel() != null) {
+		
+		if (primary.getSpec() != null && primary.getSpec().getLogLevel() != null) {
 			iniConfiguration.getSection(SECTION_LOG).setProperty("LEVEL", primary.getSpec().getLogLevel());
 		}
-		if (primary.getSpec().getMailer() != null) {
+		if (primary.getSpec() != null && primary.getSpec().getMailer() != null) {
 			configureMailer(iniConfiguration, primary.getSpec().getMailer());
 		}
 		configureService(primary, iniConfiguration);
-		addOverrides(primary, iniConfiguration);
+		if (primary.getSpec() != null){
+			addOverrides(primary, iniConfiguration);
+		}
 		String finalAppIni = iniConfiguration.toString();
 		LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
 		//cm.getStringData().put("app.ini", finalAppIni);
@@ -256,11 +259,11 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 
 
 	private void configureService(Gitea primary, GiteaAppIni iniConfiguration) {
-		iniConfiguration.getSection(SECTION_SERVICE).setProperty("REGISTER_EMAIL_CONFIRM", primary.getSpec().isRegisterEmailConfirm());
-		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_NOTIFY_MAIL", primary.getSpec().getMailer().isEnableNotifyMail());
-		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DISABLE_REGISTRATION", primary.getSpec().isDisableRegistration());
-		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_CAPTCHA", primary.getSpec().isEnableCaptcha());
-		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DEFAULT_ALLOW_CREATE_ORGANIZATION", primary.getSpec().isAllowCreateOrganization());
+		iniConfiguration.getSection(SECTION_SERVICE).setProperty("REGISTER_EMAIL_CONFIRM", primary.getSpec() != null && primary.getSpec().isRegisterEmailConfirm());
+		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_NOTIFY_MAIL", primary.getSpec() != null && primary.getSpec().getMailer().isEnableNotifyMail());
+		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DISABLE_REGISTRATION", primary.getSpec() != null && primary.getSpec().isDisableRegistration());
+		iniConfiguration.getSection(SECTION_SERVICE).setProperty("ENABLE_CAPTCHA", primary.getSpec() != null && primary.getSpec().isEnableCaptcha());
+		iniConfiguration.getSection(SECTION_SERVICE).setProperty("DEFAULT_ALLOW_CREATE_ORGANIZATION", primary.getSpec() != null && primary.getSpec().isAllowCreateOrganization());
 	}
 	private void configureMailer(GiteaAppIni iniConfiguration, GiteaMailerSpec mailer) {
 		iniConfiguration.getSection(SECTION_MAILER).setProperty("ENABLED", mailer.isEnabled());
@@ -293,7 +296,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
 		iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
-		if (primary.getSpec().getPostgres().isSsl()) {
+		if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
 			iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "verify-full");
 		}
 	}

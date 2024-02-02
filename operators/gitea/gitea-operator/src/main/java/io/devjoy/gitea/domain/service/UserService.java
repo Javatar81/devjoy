@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.Command;
+import io.devjoy.gitea.domain.Command.Builder;
 import io.devjoy.gitea.domain.Option;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
@@ -58,7 +59,7 @@ public class UserService {
 	}
 	
 	public Optional<String> getAdminId(Gitea gitea) {
-		return getUserId(gitea, gitea.getSpec().getAdminUser());
+		return getUserId(gitea, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin");
 	}
 	
 	public void deleteAdminUserViaExec(Gitea gitea) {
@@ -66,7 +67,7 @@ public class UserService {
 		Command cmd = Command.builder()
 			.withExecutable(ADMIN_COMMAND)
 			.withArgs(List.of(ARG_ADMIN, ARG_USER, "delete"))
-			.addOption(new Option(OPTION_USERNAME, gitea.getSpec().getAdminUser()))
+			.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
 			.build();
 					
 		execService.execOnDeployment(gitea, cmd);
@@ -101,22 +102,24 @@ public class UserService {
 	public void createAdminUserViaExec(Gitea gitea) {
 		try {
 			LOG.info("Waiting up to {} seconds for replicas to become ready....", 180);
-			Command cmd = Command.builder()
+			Builder cmdBuilder = Command.builder()
 					.withExecutable(ADMIN_COMMAND)
 					.withArgs(List.of(ARG_ADMIN, ARG_USER, "create"))
-					.addOption(new Option(OPTION_USERNAME, gitea.getSpec().getAdminUser()))
-					.addOption(new Option("password", gitea.getSpec().getAdminPassword()))
-					.addOption(new Option("email", gitea.getSpec().getAdminEmail()))
+					.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
+					.addOption(new Option("email", gitea.getSpec() != null ? gitea.getSpec().getAdminEmail() : "admin@example.com"))
 					.addOption(new Option("must-change-password=false", ""))
-					.addOption(new Option(ARG_ADMIN, ""))
-					.build();
+					.addOption(new Option(ARG_ADMIN, ""));
+			if (gitea.getSpec() != null) {
+				cmdBuilder.addOption(new Option("password", gitea.getSpec().getAdminPassword()));
+			}		
+			Command cmd = cmdBuilder.build();
 			execService.execOnDeployment(gitea, cmd);
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(GiteaConditionType.GITEA_ADMIN_CREATED.toString())
-					.withMessage(String.format("Admin %s has been created", gitea.getSpec().getAdminUser()))
+					.withMessage(String.format("Admin %s has been created", gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
 					.withLastTransitionTime(LocalDateTime.now().toString())
-					.withReason(String.format("Expected admin %s did not exist", gitea.getSpec().getAdminUser()))
+					.withReason(String.format("Expected admin %s did not exist", gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
 					.withStatus("True")
 					.build()); 
 		} catch (Exception e) {

@@ -83,7 +83,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
-			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
+			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(10));
         });
 	}
 

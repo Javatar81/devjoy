@@ -47,7 +47,7 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 				.filter(c -> "gitea".equals(c.getName())).findFirst();
 			giteaContainer.ifPresent(c -> {
 			setImage(primary, c);
-			if (primary.getSpec().isResourceRequirementsEnabled()) {
+			if (primary.getSpec() != null && primary.getSpec().isResourceRequirementsEnabled()) {
 				setResourcesDefaults(primary, c);
 			} else {
 				c.getResources().getRequests().clear();
@@ -92,10 +92,10 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 	private void setImage(Gitea primary, Container c) {
 		String[] imageAndTag = c.getImage().split(":");
 		LOG.info("Default image is {}", c.getImage());
-		if (!StringUtil.isNullOrEmpty(primary.getSpec().getImage())) {
+		if (primary.getSpec() != null && !StringUtil.isNullOrEmpty(primary.getSpec().getImage())) {
 			imageAndTag[0] = primary.getSpec().getImage();	
 		}
-		if (!StringUtil.isNullOrEmpty(primary.getSpec().getImageTag())) {
+		if (primary.getSpec() != null && !StringUtil.isNullOrEmpty(primary.getSpec().getImageTag())) {
 			imageAndTag[1] = primary.getSpec().getImageTag();	
 		}
 		c.setImage(imageAndTag[0] + ":" + imageAndTag[1]);

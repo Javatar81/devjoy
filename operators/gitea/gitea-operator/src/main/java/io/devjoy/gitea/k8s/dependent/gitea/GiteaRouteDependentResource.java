@@ -33,10 +33,10 @@ public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource
 				.item();
 		route.getMetadata().setName(getName(primary));
 		route.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		if (!StringUtil.isNullOrEmpty(primary.getSpec().getRoute())) {
+		if (primary.getSpec() != null && !StringUtil.isNullOrEmpty(primary.getSpec().getRoute())) {
 			route.getSpec().setHost(primary.getSpec().getRoute());
 		}
-		if (primary.getSpec().isSsl()) {
+		if (primary.getSpec() != null && primary.getSpec().isSsl()) {
 			route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect")
 					.withTermination("edge").build());
 		}

@@ -103,7 +103,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 
 	private Route getRouteFromGitea(Gitea primary) {
 		return GiteaRouteDependentResource.getResource(primary, ocpClient)
-				.waitUntilCondition(c -> c != null &&!StringUtil.isNullOrEmpty(c.getSpec().getHost()), 10, TimeUnit.SECONDS);
+				.waitUntilCondition(c -> c != null && c.getSpec() != null &&!StringUtil.isNullOrEmpty(c.getSpec().getHost()), 10, TimeUnit.SECONDS);
 	}
 	
 	

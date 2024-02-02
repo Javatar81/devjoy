@@ -51,7 +51,7 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 				.filter(c -> "postgresql".equals(c.getName())).findFirst();
 		postgresContainer.ifPresent(c -> {
 			setEnv(PostgresSecretDependentResource.getName(primary), c);
-			if (primary.getSpec().getPostgres() != null) {
+			if (primary.getSpec() != null && primary.getSpec().getPostgres() != null) {
 				setImage(primary.getSpec().getPostgres(), c);
 				if (primary.getSpec().isResourceRequirementsEnabled()) {
 					setResources(primary.getSpec().getPostgres(), c);
@@ -59,8 +59,12 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 					c.getResources().getRequests().clear();
 					c.getResources().getLimits().clear();
 				}
+			} else {
+				c.getResources().getRequests().clear();
+				c.getResources().getLimits().clear();
 			}
-			if(primary.getSpec().getPostgres().isSsl()) {
+
+			if(primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
 				c.getVolumeMounts().add(new VolumeMountBuilder().withName("tls-secret").withMountPath(PostgresConfigMapDependentResource.MOUNT_PATH_CERTS).build());
 				c.getVolumeMounts().add(new VolumeMountBuilder().withName("psql-config").withMountPath("/opt/app-root/src/postgresql-cfg").build());
 			}
@@ -71,7 +75,7 @@ public class PostgresDeploymentDependentResource extends CRUDKubernetesDependent
 		if (deployment.getMetadata().getLabels() == null) {
 			deployment.getMetadata().setLabels(new HashMap<>());
 		}
-		if (primary.getSpec().getPostgres().isSsl()) {
+		if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
 			template.getSpec().getVolumes().add(
 				new VolumeBuilder()
 						.withName("tls-secret")

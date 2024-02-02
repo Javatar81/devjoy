@@ -50,7 +50,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 	}
 
 	public static String getName(Gitea primary) {
-		return primary.getSpec().getAdminUser().toLowerCase() + "-git-secret";
+		return (primary.getSpec() != null ? primary.getSpec().getAdminUser().toLowerCase() : "devjoyadmin") + "-git-secret";
 	}
 
 	@Override
@@ -58,8 +58,8 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		LOG.debug("Setting desired state");
 		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/admin-secret.yaml")).item();
-		String adminUser = primary.getSpec().getAdminUser();
-		String adminPassword = primary.getSpec().getAdminPassword();
+		String adminUser = primary.getSpec() != null ? primary.getSpec().getAdminUser() : "devjoyadmin";
+		String adminPassword = primary.getSpec() != null ? primary.getSpec().getAdminPassword() : null;
 		desired.getMetadata().setName(getName(primary));
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		desired.getData().put("user", new String(Base64.getEncoder().encode(
