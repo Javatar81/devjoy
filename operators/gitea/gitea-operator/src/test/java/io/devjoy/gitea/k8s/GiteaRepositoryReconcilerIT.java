@@ -40,8 +40,8 @@ class GiteaRepositoryReconcilerIT {
 
     @AfterAll
 	static void tearDown() {
-		client.resources(GiteaRepository.class).delete();
-        client.resources(Gitea.class).delete();
+		client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).delete();
+        client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
 	}
 
     @Test
@@ -49,7 +49,7 @@ class GiteaRepositoryReconcilerIT {
         GiteaRepository repo = createDefaultRepo("public");
         client.resource(repo).create();
         await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
+			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
         });
@@ -61,7 +61,7 @@ class GiteaRepositoryReconcilerIT {
         repo.getSpec().setVisibility(Visibility.PRIVATE);
         client.resource(repo).create();
         await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
+			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
         });
@@ -71,7 +71,7 @@ class GiteaRepositoryReconcilerIT {
         GiteaRepository repo = new GiteaRepository();
         repo.setMetadata(new ObjectMetaBuilder()
                 .withName(name)
-                .withNamespace(client.getNamespace())
+                .withNamespace(getTargetNamespace())
                 .build()); 
         GiteaRepositorySpec spec = new GiteaRepositorySpec();
         spec.setDeleteOnFinalize(false);
@@ -85,7 +85,7 @@ class GiteaRepositoryReconcilerIT {
 		Gitea gitea = new Gitea();
         gitea.setMetadata(new ObjectMetaBuilder()
                 .withName(name)
-                .withNamespace(client.getNamespace())
+                .withNamespace(getTargetNamespace())
                 .build()); 
 		GiteaSpec spec = new GiteaSpec();
 		spec.setAdminUser("devjoyITAdmin");
@@ -98,5 +98,9 @@ class GiteaRepositoryReconcilerIT {
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		gitea.setSpec(spec);
 		return gitea;
+	}
+
+    private static String getTargetNamespace() {
+		return client.getNamespace() + "2";
 	}
 }

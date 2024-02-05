@@ -26,15 +26,15 @@ import io.quarkus.test.junit.QuarkusTest;
 
 
 @QuarkusTest
-class GiteaRepositoryNoEnvIT {
+class GiteaRepositoryReconcilerNoEnvIT {
 
     static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
     static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
     
     @AfterEach
 	void tearDown() {
-		client.resources(GiteaRepository.class).delete();
-        client.resources(Gitea.class).delete();
+		client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).delete();
+        client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
 	}
 
     @Test
@@ -42,7 +42,7 @@ class GiteaRepositoryNoEnvIT {
         GiteaRepository repo = createDefaultRepo("nogitea");
         client.resource(repo).create();
         await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
+			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.nullValue()));
         });
@@ -57,7 +57,7 @@ class GiteaRepositoryNoEnvIT {
         GiteaRepository repo = createDefaultRepo("giteainnamespace");
         client.resource(repo).create();
         await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
+			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
         });
@@ -71,7 +71,7 @@ class GiteaRepositoryNoEnvIT {
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
         await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(client.getNamespace()).withName(repo.getMetadata().getName()).get();
+			GiteaRepository giteaRepository = client.resources(GiteaRepository.class).inNamespace(getTargetNamespace()).withName(repo.getMetadata().getName()).get();
             assertThat(giteaRepository, is(IsNull.notNullValue()));
             assertThat(giteaRepository.getStatus().getRepositoryCreated(), is(IsNull.notNullValue()));
         });
@@ -81,7 +81,7 @@ class GiteaRepositoryNoEnvIT {
         GiteaRepository repo = new GiteaRepository();
         repo.setMetadata(new ObjectMetaBuilder()
                 .withName(name)
-                .withNamespace(client.getNamespace())
+                .withNamespace(getTargetNamespace())
                 .build()); 
         GiteaRepositorySpec spec = new GiteaRepositorySpec();
         spec.setDeleteOnFinalize(true);
@@ -95,7 +95,7 @@ class GiteaRepositoryNoEnvIT {
 		Gitea gitea = new Gitea();
         gitea.setMetadata(new ObjectMetaBuilder()
                 .withName(name)
-                .withNamespace(client.getNamespace())
+                .withNamespace(getTargetNamespace())
                 .build()); 
 		GiteaSpec spec = new GiteaSpec();
 		spec.setAdminUser("devjoyITAdmin");
@@ -108,5 +108,9 @@ class GiteaRepositoryNoEnvIT {
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		gitea.setSpec(spec);
 		return gitea;
+	}
+
+    private static String getTargetNamespace() {
+		return client.getNamespace() + "2";
 	}
 }

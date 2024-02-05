@@ -44,14 +44,14 @@ public class GiteaReconcilerIT {
 
 	@AfterEach
 	void tearDown() {
-		client.resources(Gitea.class).delete();
+		client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
 	}
 
 	Gitea createDefault(String name) {
 		Gitea gitea = new Gitea();
 				gitea.setMetadata(new ObjectMetaBuilder()
 						.withName(name)
-						.withNamespace(client.getNamespace())
+						.withNamespace(getTargetNamespace())
 						.build()); 
 		GiteaSpec spec = new GiteaSpec();
 		spec.setAdminUser("devjoyITAdmin");
@@ -66,12 +66,16 @@ public class GiteaReconcilerIT {
 		return gitea;
 	}
 
+	private String getTargetNamespace() {
+		return client.getNamespace() + "2";
+	}
+
 	@Test
 	void createGiteaWithoutSpec() {
 		Gitea gitea = new Gitea();
 		gitea.setMetadata(new ObjectMetaBuilder()
 						.withName("giteawithoutspec")
-						.withNamespace(client.getNamespace())
+						.withNamespace(getTargetNamespace())
 						.build()); 
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
@@ -148,9 +152,9 @@ public class GiteaReconcilerIT {
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		client.apps().deployments()
-                .inNamespace(gitea.getMetadata().getNamespace())
+                .inNamespace(getTargetNamespace())
                 .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 120, TimeUnit.SECONDS);
-		await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.resources(Gitea.class).withName("pwchange").edit(n -> {
+		await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.resources(Gitea.class).inNamespace(getTargetNamespace()).withName("pwchange").edit(n -> {
 			n.getSpec().setAdminPassword(changedPassword);
 			return n;
 			
