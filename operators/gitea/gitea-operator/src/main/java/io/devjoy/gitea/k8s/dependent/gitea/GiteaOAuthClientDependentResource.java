@@ -18,14 +18,17 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.OAuthClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
+import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
 @KubernetesDependent(labelSelector = GiteaOAuthClientDependentResource.LABEL_SELECTOR)
-public class GiteaOAuthClientDependentResource extends CRUDKubernetesDependentResource<OAuthClient, Gitea> implements Matcher<OAuthClient, Gitea> {
+public class GiteaOAuthClientDependentResource extends KubernetesDependentResource<OAuthClient, Gitea> implements Creator<OAuthClient, Gitea>, Updater<OAuthClient, Gitea>, Matcher<OAuthClient, Gitea> {
 	private static final String OAUTH2_CALLBACK = "/user/oauth2/test/callback";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaOAuthClientDependentResource.class);
 	private static final String LABEL_KEY = "devjoy.io/oauthclient.target";
