@@ -15,13 +15,10 @@ spec:
     - description: The bundle name. One of gitea-operator or devjoy-operator.
       name: operatorname
       type: string
-    - default:
-        - 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
-      description: >-
-        The bundles, the catalog should contain. E.g.
-        quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
-      name: bundles
-      type: array
+    - default: 'false'
+      description: Whether to skip the integration tests.
+      name: skip_it_tests
+      type: string
   tasks:
     - name: git-clone
       params:
@@ -73,7 +70,10 @@ spec:
           value:
             - clean
             - verify
+            - '-D%test.io.devjoy.gitea.api.access.mode=INTERNAL'
             - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
+            - '-Dfailsafe.excludes=io/devjoy/gitea/k8s/integration/*IT.java'
+            - '-DskipITs=$(params.skip_it_tests)'
         - name: MAVEN_MIRROR_URL
           value: ''
         - name: SERVER_USER
@@ -107,7 +107,7 @@ spec:
     - name: create-bundle
       params:
         - name: IMAGE
-          value: 'quay.io/devjoy/$(params.operatorname)-bundle:$(params.version)'
+          value: 'quay.io/devjoy/$(params.operatorname)-bundle:v$(params.version)'
         - name: BUILDER_IMAGE
           value: >-
             registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
@@ -116,7 +116,8 @@ spec:
         - name: DOCKERFILE
           value: ./bundle.Dockerfile
         - name: CONTEXT
-          value: ./$(params.component)/target/bundle/$(params.operatorname)-bundle/
+          value: >-
+            ./$(params.component)/target/bundle/$(params.operatorname)-bundle.v$(params.version)
         - name: TLSVERIFY
           value: 'true'
         - name: FORMAT
@@ -135,78 +136,49 @@ spec:
       workspaces:
         - name: source
           workspace: source
-    - name: opm
+    - name: native-tests
       params:
-        - name: ARGS
+        - name: GOALS
           value:
-            - index
-            - add
-            - '-t'
-            - 'quay.io/devjoy/$(params.operatorname)-catalog '
-            - '-u'
-            - podman
-            - '-b'
-            - $(params.bundles)
-            - '--generate'
-            - '-d'
-            - ./target/bundle/$(params.operatorname)-bundle/catalog.Dockerfile
+            - verify
+            - '-Pnative'
+            - >-
+              -Dquarkus.native.additional-build-args=--initialize-at-run-time=org.apache.commons.lang3.RandomStringUtils
+            - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
+            - '-Dquarkus.container-image.build=false'
+            - '-Dquarkus.container-image.push=false'
+            - '-D%test.io.devjoy.gitea.api.access.mode=INTERNAL'
+            - '-Dfailsafe.excludes=io/devjoy/gitea/k8s/*IT.java'
         - name: CONTEXT_DIR
           value: ./$(params.component)
       runAfter:
-        - create-bundle
+        - test-operator
       taskRef:
         kind: Task
-        name: opm
+        name: build-native
       workspaces:
         - name: source
           workspace: source
-    - name: create-catalog
-      params:
-        - name: IMAGE
-          value: 'quay.io/devjoy/$(params.operatorname)-catalog:$(params.version)'
-        - name: BUILDER_IMAGE
-          value: >-
-            registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
-        - name: STORAGE_DRIVER
-          value: vfs
-        - name: DOCKERFILE
-          value: ./target/bundle/$(params.operatorname)-bundle/catalog.Dockerfile
-        - name: CONTEXT
-          value: ./$(params.component)/
-        - name: TLSVERIFY
-          value: 'true'
-        - name: FORMAT
-          value: oci
-        - name: BUILD_EXTRA_ARGS
-          value: ''
-        - name: PUSH_EXTRA_ARGS
-          value: ''
-        - name: SKIP_PUSH
-          value: 'false'
-      runAfter:
-        - opm
-      taskRef:
-        kind: ClusterTask
-        name: buildah
-      workspaces:
-        - name: source
-          workspace: source
+        - name: maven-settings
+          workspace: settings
     - name: create-operator
       params:
         - name: GOALS
           value:
-            - install
+            - package
             - '-Pnative'
             - >-
               -Dquarkus.native.additional-build-args=--initialize-at-run-time=org.apache.commons.lang3.RandomStringUtils
             - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
             - '-Dquarkus.container-image.build=true'
             - '-Dquarkus.container-image.push=true'
-            - '-DskipTests'
+            - '-D%test.io.devjoy.gitea.api.access.mode=INTERNAL'
+            - '-Dquarkus.native.reuse-existing=true'
+            - '-DskipITs'
         - name: CONTEXT_DIR
           value: ./$(params.component)
       runAfter:
-        - test-operator
+        - native-tests
       taskRef:
         kind: Task
         name: build-native
