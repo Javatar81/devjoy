@@ -194,7 +194,8 @@ public class GiteaReconcilerIT {
 		spec.setResourceRequirementsEnabled(true);
 		spec.setSsl(true);
 		spec.setVolumeSize("2Gi");
-		spec.setRoute("gitea");
+		String baseDomain = client.config().ingresses().withName("cluster").get().getSpec().getDomain();
+		spec.setRoute(String.format("%s-%s.%s", "gitea", getTargetNamespace(), baseDomain));
 		spec.getMailer().setEnabled(true);
 		spec.getMailer().setFrom("gitea-devjoy@example.com");
 		spec.getMailer().setHeloHostname("gitea");
