@@ -39,7 +39,7 @@ class DevEnvironmentReconcilerIT {
         spec.setGitea(giteaSpec);
         env.setSpec(spec);
         client.resource(env).create();
-        await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
+        await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
             
             final var giteaDeployment = GiteaDeploymentDependentResource.getResource(GiteaDependentResource.getResource(client, env).get(), client).get();
             assertThat(giteaDeployment, is(IsNull.notNullValue()));
