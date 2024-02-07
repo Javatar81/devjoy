@@ -18,6 +18,7 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.DevEnvironmentSpec;
 import io.devjoy.operator.environment.k8s.GiteaConfigSpec;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
@@ -25,24 +26,24 @@ import jakarta.inject.Inject;
 
 @QuarkusTest
 public class ProjectReconcilerIT {
-    @Inject
-	OpenShiftClient client;
+    
+    static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 
     @AfterEach
 	void tearDown() {
-		client.resources(DevEnvironment.class).delete();
-        client.resources(Project.class).delete();
+		client.resources(DevEnvironment.class).inNamespace(getTargetNamespace()).delete();
+        client.resources(Project.class).inNamespace(getTargetNamespace()).delete();
 	}
 
     @Test
     public void testCreateProject() {
         DevEnvironment devEnvironment = creaDevEnvironment();
         Project project = new Project();
-        project.getMetadata().setNamespace(client.getNamespace());
+        project.getMetadata().setNamespace(getTargetNamespace());
         project.getMetadata().setName("testproj");
         ProjectSpec spec = new ProjectSpec();
         spec.setEnvironmentName(devEnvironment.getMetadata().getName());
-        spec.setEnvironmentNamespace(client.getNamespace());
+        spec.setEnvironmentNamespace(getTargetNamespace());
         ProjectOwner owner = new ProjectOwner();
         owner.setUser("testuser");
         owner.setUserEmail("testuser@example.com");
@@ -54,7 +55,7 @@ public class ProjectReconcilerIT {
         project.setSpec(spec);
         client.resource(project).create();
         await().ignoreExceptionsMatching(e -> e instanceof NullPointerException || e instanceof UnknownHostException).atMost(600, TimeUnit.SECONDS).untilAsserted(() -> {
-            final var projectResource = client.resources(Project.class).inNamespace(client.getNamespace()).withName(project.getMetadata().getName()).get();
+            final var projectResource = client.resources(Project.class).inNamespace(getTargetNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(projectResource.getStatus(), is(IsNull.notNullValue()));
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
             Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
@@ -69,7 +70,7 @@ public class ProjectReconcilerIT {
     DevEnvironment creaDevEnvironment() {
         DevEnvironment env = new DevEnvironment();
         env.getMetadata().setName("test-env");
-        env.getMetadata().setNamespace(client.getNamespace());
+        env.getMetadata().setNamespace(getTargetNamespace());
         DevEnvironmentSpec spec = new DevEnvironmentSpec();
         spec.setMavenSettingsPvc("maven");
         GiteaConfigSpec giteaSpec = new GiteaConfigSpec();
@@ -80,4 +81,8 @@ public class ProjectReconcilerIT {
         client.resource(env).create();
         return env;
     }
+
+    private static String getTargetNamespace() {
+		return client.getNamespace() + "2";
+	}
 }

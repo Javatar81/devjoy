@@ -12,26 +12,25 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 @QuarkusTest
-class DevEnvironmentReconcilerIT {
+public class DevEnvironmentReconcilerIT {
     
-    @Inject
-	OpenShiftClient client;
+    static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 
     @AfterEach
 	void tearDown() {
-		client.resources(DevEnvironment.class).delete();
+		client.resources(DevEnvironment.class).inNamespace(getTargetNamespace()).delete();
 	}
 
     @Test
     public void createMinimalEnvironment() {
         DevEnvironment env = new DevEnvironment();
         env.getMetadata().setName("test-env");
-        env.getMetadata().setNamespace(client.getNamespace());
+        env.getMetadata().setNamespace(getTargetNamespace());
         DevEnvironmentSpec spec = new DevEnvironmentSpec();
         GiteaConfigSpec giteaSpec = new GiteaConfigSpec();
         giteaSpec.setEnabled(true);
@@ -52,5 +51,9 @@ class DevEnvironmentReconcilerIT {
             assertThat(argoCD.getStatus().getPhase(), is("Available"));
         });
     }
+
+    private static String getTargetNamespace() {
+		return client.getNamespace() + "2";
+	}
     
 }
