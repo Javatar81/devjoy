@@ -52,7 +52,7 @@ public class GiteaDependentResource extends CRUDKubernetesDependentResource<Gite
 			&& primary.getSpec().getGitea().getResourceName() != null) {
 			return primary.getSpec().getGitea().getResourceName();
 		} else {
-			return primary.getMetadata().getNamespace() + "-" + primary.getMetadata().getName();
+			return primary.getMetadata().getName() + "-gitea";
 		}
 	}
 
