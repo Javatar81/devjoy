@@ -17,5 +17,6 @@ public void setSpec(GiteaRepositorySpec spec) {
 	super.setSpec(spec);
 }
 
+
 }
 

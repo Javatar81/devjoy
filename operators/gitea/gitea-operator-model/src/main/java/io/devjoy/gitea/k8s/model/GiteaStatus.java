@@ -7,7 +7,7 @@ import io.fabric8.kubernetes.api.model.Condition;
 import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
-@RegisterForReflection
+@RegisterForReflection(registerFullHierarchy = true)
 public class GiteaStatus extends ObservedGenerationAwareStatus {
 
 	private List<Condition> conditions = new ArrayList<>();
