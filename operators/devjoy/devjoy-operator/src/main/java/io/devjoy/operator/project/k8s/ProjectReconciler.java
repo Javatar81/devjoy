@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
@@ -42,6 +43,7 @@ import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
@@ -52,6 +54,7 @@ import io.quarkus.runtime.util.StringUtil;
 		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependentResource.class)
 		})
 @RBACRule(apiGroups = "config.openshift.io", resources = {"ingresses"}, verbs = {"get"}, resourceNames = {"cluster"})
+@CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME)
 public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandler<Project>, Cleaner<Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
 	private final OpenShiftClient client;

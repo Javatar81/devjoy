@@ -2,6 +2,7 @@ package io.devjoy.operator.project.k8s;
 
 import java.util.Optional;
 
+import com.fasterxml.jackson.annotation.JsonClassDescription;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
@@ -15,6 +16,7 @@ import io.quarkus.runtime.util.StringUtil;
 
 @Version("v1alpha1")
 @Group("devjoy.io")
+@JsonClassDescription("This resource represents a development project.")
 public class Project extends CustomResource<ProjectSpec, ProjectStatus> implements Namespaced {
 
 	private static final long serialVersionUID = -8776278057613557829L;
