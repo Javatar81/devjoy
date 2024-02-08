@@ -4,9 +4,9 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.devjoy</groupId>
-  <artifactId>devjoy-generator</artifactId>
-  <name>devjoy-generator</name>
-  <version>0.1.0-SNAPSHOT</version>
+  <artifactId>devjoy-operator</artifactId>
+  <name>devjoy-operator</name>
+  <version>0.1.0</version>
   <packaging>jar</packaging>
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>
@@ -42,7 +42,7 @@
     <dependency>
       <groupId>io.devjoy</groupId>
       <artifactId>gitea-operator-model</artifactId>
-      <version>0.2.0-SNAPSHOT</version>
+      <version>0.2.0</version>
      </dependency>
      <dependency>
       <groupId>io.devjoy</groupId>
