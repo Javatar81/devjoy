@@ -9,6 +9,8 @@ name: alpha
 package: devjoy-operator-bundle
 schema: olm.channel
 ---
+
+---
 image: quay.io/devjoy/devjoy-operator-bundle:v0.1.0
 name: devjoy-operator-bundle.v0.1.0
 package: devjoy-operator-bundle
@@ -17,6 +19,16 @@ properties:
   value:
     group: devjoy.io
     kind: DevEnvironment
+    version: v1alpha1
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: Project
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: argoproj.io
+    kind: Application
     version: v1alpha1
 - type: olm.gvk.required
   value:
@@ -27,6 +39,11 @@ properties:
   value:
     group: devjoy.io
     kind: Gitea
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: devjoy.io
+    kind: GiteaRepository
     version: v1alpha1
 - type: olm.package
   value:
@@ -44,9 +61,18 @@ properties:
       - kind: DevEnvironment
         name: devenvironments.devjoy.io
         version: v1alpha1
+      - kind: Project
+        name: projects.devjoy.io
+        version: v1alpha1
       required:
       - kind: Gitea
         name: giteas.devjoy.io
+        version: v1alpha1
+      - kind: GiteaRepository
+        name: gitearepositories.devjoy.io
+        version: v1alpha1
+      - kind: Application
+        name: applications.argoproj.io
         version: v1alpha1
       - kind: ArgoCD
         name: argocds.argoproj.io
@@ -67,6 +93,12 @@ properties:
       version: v1
     - group: ""
       kind: Secret
+      version: v1
+    - group: tekton.dev
+      kind: PipelineRun
+      version: v1
+    - group: tekton.dev
+      kind: PipelineRun
       version: v1
     - group: tekton.dev
       kind: Pipeline
