@@ -9,8 +9,6 @@ name: alpha
 package: devjoy-operator-bundle
 schema: olm.channel
 ---
-
----
 image: quay.io/devjoy/devjoy-operator-bundle:v0.1.0
 name: devjoy-operator-bundle.v0.1.0
 package: devjoy-operator-bundle
