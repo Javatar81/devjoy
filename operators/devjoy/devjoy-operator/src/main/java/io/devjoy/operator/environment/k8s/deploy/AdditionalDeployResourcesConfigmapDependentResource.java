@@ -2,6 +2,7 @@ package io.devjoy.operator.environment.k8s.deploy;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -43,7 +44,7 @@ public class AdditionalDeployResourcesConfigmapDependentResource extends CRUDKub
 			if (cm.getData() == null) {
 				cm.setData(new HashMap<>());
 			}
-			String devFileContent = Files.readString(Path.of(getClass().getClassLoader().getResource("deploy/argo-application.yaml").toURI()));
+			String devFileContent = new String(getClass().getClassLoader().getResourceAsStream("deploy/argo-application.yaml").readAllBytes(), StandardCharsets.UTF_8);
 			cm.getData().put("argo-application.yaml", devFileContent);
 			String helmValues = Files.readString(Path.of(getClass().getClassLoader().getResource("deploy/helm-values-test.yaml").toURI()));
 			cm.getData().put("values.yaml", helmValues);
