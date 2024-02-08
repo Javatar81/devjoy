@@ -2,6 +2,7 @@ package io.devjoy.operator.environment.k8s.init;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -46,10 +47,10 @@ public class AdditionalResourcesConfigmapDependentResource extends CRUDKubernete
 			if (cm.getData() == null) {
 				cm.setData(new HashMap<>());
 			}
-			String devFileContent = Files.readString(Path.of(getClass().getClassLoader().getResource("init/quarkus-devfile.yaml").toURI()));
+			String devFileContent = new String(getClass().getClassLoader().getResourceAsStream("init/quarkus-devfile.yaml").readAllBytes(), StandardCharsets.UTF_8);
 			Map<String, Object> devFile = addConfigParamsToDevFileYaml(primary, devFileContent);
 			cm.getData().put("devfile.yaml", mapper.writeValueAsString(devFile));
-		} catch (IOException | URISyntaxException e) {
+		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
 		return cm;
