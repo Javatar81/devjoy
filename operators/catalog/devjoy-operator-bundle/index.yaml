@@ -1,0 +1,102 @@
+---
+defaultChannel: alpha
+name: devjoy-operator-bundle
+schema: olm.package
+---
+entries:
+  - name: devjoy-operator-bundle.v0.1.0
+name: alpha
+package: devjoy-operator-bundle
+schema: olm.channel
+---
+image: quay.io/devjoy/devjoy-operator-bundle:v0.1.0
+name: devjoy-operator-bundle.v0.1.0
+package: devjoy-operator-bundle
+properties:
+- type: olm.gvk
+  value:
+    group: devjoy.io
+    kind: DevEnvironment
+    version: v1alpha1
+- type: olm.gvk.required
+  value:
+    group: argoproj.io
+    kind: ArgoCD
+    version: v1beta1
+- type: olm.gvk.required
+  value:
+    group: devjoy.io
+    kind: Gitea
+    version: v1alpha1
+- type: olm.package
+  value:
+    packageName: devjoy-operator-bundle
+    version: 0.1.0
+- type: olm.csv.metadata
+  value:
+    annotations:
+      certified: "false"
+      containerImage: quay.io/devjoy/devjoy-operator:0.1.0-SNAPSHOT
+      repository: https://github.com/Javatar81/devjoy
+    apiServiceDefinitions: {}
+    crdDescriptions:
+      owned:
+      - kind: DevEnvironment
+        name: devenvironments.devjoy.io
+        version: v1alpha1
+      required:
+      - kind: Gitea
+        name: giteas.devjoy.io
+        version: v1alpha1
+      - kind: ArgoCD
+        name: argocds.argoproj.io
+        version: v1beta1
+    description: An operator to quickly create development environments and projects
+    displayName: Devjoy Operator
+    installModes:
+    - supported: true
+      type: AllNamespaces
+    keywords:
+    - Project,Quarkus,GitOps,Pipelines
+    nativeAPIs:
+    - group: ""
+      kind: ConfigMap
+      version: v1
+    - group: ""
+      kind: ConfigMap
+      version: v1
+    - group: ""
+      kind: Secret
+      version: v1
+    - group: tekton.dev
+      kind: Pipeline
+      version: v1
+    - group: tekton.dev
+      kind: Pipeline
+      version: v1
+    - group: tekton.dev
+      kind: Pipeline
+      version: v1
+    - group: tekton.dev
+      kind: Task
+      version: v1
+    - group: tekton.dev
+      kind: Task
+      version: v1
+    - group: triggers.tekton.dev
+      kind: EventListener
+      version: v1beta1
+    - group: triggers.tekton.dev
+      kind: TriggerBinding
+      version: v1beta1
+    - group: triggers.tekton.dev
+      kind: TriggerTemplate
+      version: v1beta1
+    provider:
+      name: devjoy.io
+relatedImages:
+- image: quay.io/devjoy/devjoy-operator-bundle:v0.1.0
+  name: ""
+- image: quay.io/devjoy/devjoy-operator:0.1.0
+  name: ""
+schema: olm.bundle
