@@ -165,7 +165,7 @@ properties:
   value:
     annotations:
       certified: "false"
-      containerImage: quay.io/devjoy/gitea-operator:0.2.0-SNAPSHOT
+      containerImage: quay.io/devjoy/gitea-operator:0.2.0
       repository: https://github.com/Javatar81/devjoy
     apiServiceDefinitions: {}
     crdDescriptions:

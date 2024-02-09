@@ -51,7 +51,7 @@ properties:
   value:
     annotations:
       certified: "false"
-      containerImage: quay.io/devjoy/devjoy-operator:0.1.0-SNAPSHOT
+      containerImage: quay.io/devjoy/devjoy-operator:0.1.0
       repository: https://github.com/Javatar81/devjoy
     apiServiceDefinitions: {}
     crdDescriptions:
