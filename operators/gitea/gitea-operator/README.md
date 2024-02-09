@@ -12,7 +12,7 @@ First, you need to add the devjoy catalog source to your OpenShift cluster. This
 
 Second, create a new project for the operator, e.g. devjoy-gitea-operator
 
-Third, navigate to the OperatorHub in your cluster and serch for 'Gitea'. Install the operator into the project you created in the previous step. 
+Third, navigate to the OperatorHub in your cluster and search for 'Gitea'. Install the operator into the project you created in the previous step. 
 
 ## Custom Resources 
 
