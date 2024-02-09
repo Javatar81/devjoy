@@ -1,0 +1,121 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: release-pipe-catalog
+spec:
+  params:
+    - description: The release version.
+      name: version
+      type: string
+    - description: The bundle name. One of gitea-operator or devjoy-operator.
+      name: operatorname
+      type: string
+  tasks:
+    - name: git-clone
+      params:
+        - name: url
+          value: 'https://github.com/Javatar81/devjoy.git'
+        - name: revision
+          value: ''
+        - name: refspec
+          value: ''
+        - name: submodules
+          value: 'true'
+        - name: depth
+          value: '1'
+        - name: sslVerify
+          value: 'true'
+        - name: crtFileName
+          value: ca-bundle.crt
+        - name: subdirectory
+          value: ''
+        - name: sparseCheckoutDirectories
+          value: ''
+        - name: deleteExisting
+          value: 'true'
+        - name: httpProxy
+          value: ''
+        - name: httpsProxy
+          value: ''
+        - name: noProxy
+          value: ''
+        - name: verbose
+          value: 'true'
+        - name: gitInitImage
+          value: >-
+            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:16b8e98aa03a874dfc0fd16cd4aaaeea193dc60882c61653e768f8f503fe33e3
+        - name: userHome
+          value: /home/git
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: source
+    - name: validate-catalog
+      params:
+        - name: ARGS
+          value:
+            - validate
+            - ./catalog
+        - name: CONTEXT_DIR
+          value: ./operators/
+      runAfter:
+        - git-clone
+      taskRef:
+        kind: Task
+        name: opm
+      workspaces:
+        - name: source
+          workspace: source
+    - name: generate-dockerfile
+      params:
+        - name: ARGS
+          value:
+            - generate
+            - dockerfile
+            - ./catalog
+            - '-i registry.redhat.io/openshift4/ose-operator-registry:v4.14'
+        - name: CONTEXT_DIR
+          value: ./operators/
+      runAfter:
+        - validate-catalog
+      taskRef:
+        kind: Task
+        name: opm
+      workspaces:
+        - name: source
+          workspace: source
+    - name: create-catalog
+      params:
+        - name: IMAGE
+          value: 'quay.io/devjoy/$(params.operatorname)-catalog:v$(params.version)'
+        - name: BUILDER_IMAGE
+          value: >-
+            registry.redhat.io/rhel8/buildah@sha256:bafb452c5346d8517d94639efa90e8d6d72cd11e45d49369c3d9305784d1c3f6
+        - name: STORAGE_DRIVER
+          value: vfs
+        - name: DOCKERFILE
+          value: ./catalog.Dockerfile
+        - name: CONTEXT
+          value: ./operators/
+        - name: TLSVERIFY
+          value: 'true'
+        - name: FORMAT
+          value: oci
+        - name: BUILD_EXTRA_ARGS
+          value: ''
+        - name: PUSH_EXTRA_ARGS
+          value: ''
+        - name: SKIP_PUSH
+          value: 'false'
+      runAfter:
+        - generate-dockerfile
+      taskRef:
+        kind: ClusterTask
+        name: buildah
+      workspaces:
+        - name: source
+          workspace: source
+  workspaces:
+    - name: source

@@ -19,6 +19,10 @@ spec:
       description: Whether to skip the integration tests.
       name: skip_it_tests
       type: string
+    - default: 'false'
+      description: Whether to skip the integration tests.
+      name: skip_native_tests
+      type: string
   tasks:
     - name: git-clone
       params:
@@ -72,7 +76,7 @@ spec:
             - verify
             - '-D%test.io.devjoy.gitea.api.access.mode=INTERNAL'
             - '-Dmaven.repo.local=$(workspaces.maven-settings.path)'
-            - '-Dfailsafe.excludes=io/devjoy/gitea/k8s/integration/*IT.java'
+            - '-Dfailsafe.excludes=io/devjoy/**/k8s/integration/*IT.java'
             - '-DskipITs=$(params.skip_it_tests)'
         - name: MAVEN_MIRROR_URL
           value: ''
@@ -148,7 +152,8 @@ spec:
             - '-Dquarkus.container-image.build=false'
             - '-Dquarkus.container-image.push=false'
             - '-D%test.io.devjoy.gitea.api.access.mode=INTERNAL'
-            - '-Dfailsafe.excludes=io/devjoy/gitea/k8s/*IT.java'
+            - '-Dfailsafe.excludes=io/devjoy/**/k8s/*IT.java'
+            - '-DskipITs=$(params.skip_native_tests)'
         - name: CONTEXT_DIR
           value: ./$(params.component)
       runAfter:
@@ -165,7 +170,7 @@ spec:
       params:
         - name: GOALS
           value:
-            - package
+            - install
             - '-Pnative'
             - >-
               -Dquarkus.native.additional-build-args=--initialize-at-run-time=org.apache.commons.lang3.RandomStringUtils
