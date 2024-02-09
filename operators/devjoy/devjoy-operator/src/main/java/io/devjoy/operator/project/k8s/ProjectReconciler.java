@@ -223,8 +223,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 	}
 	
 	private String getDevSpacesUrl() {
-		return client.getOpenshiftUrl().getProtocol() + 
-				"://" +
-				client.getOpenshiftUrl().getHost().replace("api.", "devspaces.apps.");
+		String baseDomain = client.config().ingresses().withName("cluster").get().getSpec().getDomain();
+		return String.format("https://devspaces.%s", baseDomain) ;
 	}
 }
