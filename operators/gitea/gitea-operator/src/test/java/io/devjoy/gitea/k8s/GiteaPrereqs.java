@@ -1,9 +1,9 @@
 package io.devjoy.gitea.k8s;
 
+import org.keycloak.v1alpha1.Keycloak;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.rhsso.Keycloak;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 

@@ -6,7 +6,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Optional;
 
-import org.openapi.quarkus.keycloak_yaml.model.KeycloakClientSpec;
+import org.keycloak.v1alpha1.KeycloakClient;
+import org.keycloak.v1alpha1.KeycloakClientSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

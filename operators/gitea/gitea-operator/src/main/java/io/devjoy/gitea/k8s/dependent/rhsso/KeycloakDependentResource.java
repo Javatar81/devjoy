@@ -3,6 +3,7 @@ package io.devjoy.gitea.k8s.dependent.rhsso;
 
 import java.util.HashMap;
 
+import org.keycloak.v1alpha1.Keycloak;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

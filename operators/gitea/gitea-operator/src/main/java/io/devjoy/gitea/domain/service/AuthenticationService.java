@@ -8,14 +8,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
+import org.keycloak.v1alpha1.Keycloak;
+import org.keycloak.v1alpha1.KeycloakClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.Command;
 import io.devjoy.gitea.domain.Option;
-import io.devjoy.gitea.k8s.dependent.rhsso.Keycloak;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClient;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;

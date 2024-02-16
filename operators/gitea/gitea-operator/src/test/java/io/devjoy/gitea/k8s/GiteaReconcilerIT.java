@@ -13,7 +13,9 @@ import org.junit.jupiter.api.Test;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
@@ -122,6 +124,8 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			assertThat(KeycloakDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			assertThat(KeycloakRealmDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			assertThat(KeycloakClientDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
 		});
 	}
 
