@@ -6,7 +6,7 @@
   <groupId>io.devjoy</groupId>
   <artifactId>devjoy-operator</artifactId>
   <name>devjoy-operator</name>
-  <version>0.1.0</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <properties>
     <compiler-plugin.version>3.11.0</compiler-plugin.version>
@@ -19,6 +19,7 @@
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <quarkus.version>3.7.1</quarkus.version>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
+    <kubernetes-client.version>6.10.0</kubernetes-client.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -42,12 +43,12 @@
     <dependency>
       <groupId>io.devjoy</groupId>
       <artifactId>gitea-operator-model</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0-SNAPSHOT</version>
      </dependency>
      <dependency>
       <groupId>io.devjoy</groupId>
       <artifactId>gitea-operator</artifactId>
-      <version>0.2.0</version>
+      <version>0.3.0-SNAPSHOT</version>
       <scope>test</scope>
      </dependency>
     <dependency>
@@ -58,11 +59,6 @@
     <dependency>
       <groupId>io.quarkiverse.operatorsdk</groupId>
       <artifactId>quarkus-operator-sdk-bundle-generator</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkiverse.openapi.generator</groupId>
-      <artifactId>quarkus-openapi-generator</artifactId>
-      <version>2.2.8</version>
     </dependency>
     <dependency>
       <groupId>io.quarkus</groupId>
@@ -142,21 +138,36 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>io.quarkus</groupId>
-        <artifactId>quarkus-maven-plugin</artifactId>
-        <version>${quarkus.version}</version>
-        <extensions>true</extensions>
-        <executions>
-          <execution>
-            <goals>
-              <goal>build</goal>
-              <goal>generate-code</goal>
-              <goal>generate-code-tests</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+	<plugin>
+		<groupId>io.quarkus</groupId>
+		<artifactId>quarkus-maven-plugin</artifactId>
+		<version>${quarkus.version}</version>
+		<extensions>true</extensions>
+		<executions>
+			<execution>
+				<goals>
+					<goal>build</goal>
+					<goal>generate-code</goal>
+					<goal>generate-code-tests</goal>
+				</goals>
+			</execution>
+		</executions>
+	</plugin>
+	<plugin>
+		<groupId>io.fabric8</groupId>
+		<artifactId>java-generator-maven-plugin</artifactId>
+		<version>${kubernetes-client.version}</version>
+		<executions>
+			<execution>
+				<goals>
+					<goal>generate</goal>
+				</goals>
+			</execution>
+		</executions>
+		<configuration>
+			<source>src/main/crd</source>
+		</configuration>
+	</plugin>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
         <version>${compiler-plugin.version}</version>
@@ -190,6 +201,24 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+	    <groupId>org.codehaus.mojo</groupId>
+	    <artifactId>build-helper-maven-plugin</artifactId>
+	    <version>3.5.0</version>
+	    <executions>
+	        <execution>
+	            <phase>generate-sources</phase>
+	            <goals>
+	                <goal>add-source</goal>
+	            </goals>
+	            <configuration>
+	                <sources>
+	                    <source>${project.build.directory}/generated-sources/java</source>
+	                </sources>
+	            </configuration>
+	        </execution>
+	    </executions>
+	</plugin>
     </plugins>
   </build>
   <profiles>
@@ -200,5 +229,4 @@
       </properties>
     </profile>
   </profiles>
-
 </project>

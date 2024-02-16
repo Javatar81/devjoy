@@ -10,6 +10,7 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.argoproj.v1alpha1.Application;
 import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.project.k8s.Project;

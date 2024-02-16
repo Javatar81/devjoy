@@ -1,5 +1,6 @@
 package io.devjoy.operator.environment.k8s.deploy;
 
+import io.argoproj.v1beta1.ArgoCD;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;

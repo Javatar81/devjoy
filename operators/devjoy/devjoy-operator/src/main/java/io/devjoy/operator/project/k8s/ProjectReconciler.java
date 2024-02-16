@@ -7,6 +7,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.argoproj.v1alpha1.Application;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
@@ -16,7 +17,6 @@ import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerBindingActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerTemplateActivationCondition;
-import io.devjoy.operator.project.k8s.deploy.Application;
 import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationDependentResource;
 import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;

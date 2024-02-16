@@ -2,10 +2,9 @@ package io.devjoy.operator.environment.k8s.deploy;
 
 import java.util.HashMap;
 
-import io.devjoy.gitea.k8s.model.Gitea;
+import io.argoproj.v1beta1.ArgoCD;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;

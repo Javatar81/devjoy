@@ -6,11 +6,6 @@ spec:
   server:
     autoscale:
       enabled: false
-    grpc:
-      ingress:
-        enabled: false
-    ingress:
-      enabled: false
     route:
       enabled: true
     service:
@@ -42,8 +37,4 @@ spec:
   controller:
     processors: {}
     sharding: {}
-    enabled: false
-    ingress:
-      enabled: false
-    route:
-      enabled: false
+    enabled: true
