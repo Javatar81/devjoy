@@ -5,10 +5,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;

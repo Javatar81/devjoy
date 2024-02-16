@@ -1,4 +1,4 @@
-package io.devjoy.gitea.domain;
+package io.devjoy.gitea.util;
 
 public enum ApiAccessMode {
 	INTERNAL, EXTERNAL

@@ -1,4 +1,4 @@
-package io.devjoy.gitea.repository.domain;
+package io.devjoy.gitea.repository.service;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.service.ServiceException;
 import io.devjoy.gitea.repository.api.RepoService;
+import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;

@@ -11,9 +11,9 @@ import org.keycloak.v1alpha1.keycloakrealmspec.realm.IdentityProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.PasswordService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.OAuthClient;

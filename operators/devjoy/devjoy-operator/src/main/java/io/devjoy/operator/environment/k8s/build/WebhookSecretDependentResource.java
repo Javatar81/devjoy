@@ -4,7 +4,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
-import io.devjoy.gitea.domain.service.PasswordService;
+import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;

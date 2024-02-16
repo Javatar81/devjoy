@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.domain.service.AuthenticationService;
-import io.devjoy.gitea.domain.service.PasswordService;
 import io.devjoy.gitea.domain.service.ServiceException;
 import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
@@ -36,6 +35,7 @@ import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependentResource
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;

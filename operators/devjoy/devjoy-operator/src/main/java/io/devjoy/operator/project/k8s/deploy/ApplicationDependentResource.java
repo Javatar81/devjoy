@@ -10,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.argoproj.v1alpha1.Application;
-import io.devjoy.gitea.domain.ApiAccessMode;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.util.ApiAccessMode;
 import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;

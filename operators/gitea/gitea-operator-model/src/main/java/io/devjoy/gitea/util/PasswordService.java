@@ -1,4 +1,4 @@
-package io.devjoy.gitea.domain.service;
+package io.devjoy.gitea.util;
 
 import java.security.SecureRandom;
 import java.util.Collections;
