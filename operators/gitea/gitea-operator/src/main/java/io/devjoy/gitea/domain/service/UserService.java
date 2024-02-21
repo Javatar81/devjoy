@@ -2,155 +2,91 @@ package io.devjoy.gitea.domain.service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.openapi.quarkus.gitea_json.api.AdminApi;
+import org.openapi.quarkus.gitea_json.api.UserApi;
 import org.openapi.quarkus.gitea_json.model.CreateUserOption;
+import org.openapi.quarkus.gitea_json.model.EditUserOption;
+import org.openapi.quarkus.gitea_json.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.Command;
-import io.devjoy.gitea.domain.Command.Builder;
-import io.devjoy.gitea.domain.Option;
 import io.devjoy.gitea.k8s.model.Gitea;
-import io.devjoy.gitea.k8s.model.GiteaConditionType;
-import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.devjoy.gitea.util.TokenSupplierRequestFilter;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.ws.rs.WebApplicationException;
 
 @ApplicationScoped
 public class UserService {
-	private static final String OPTION_USERNAME = "username";
-	private static final String OPTION_PASSWORD = "password";
-	private static final String ARG_USER = "user";
-	private static final String ARG_ADMIN = "admin";
-	private static final String ADMIN_COMMAND = "/usr/bin/giteacmd";
+	private static final String ERROR_IN_REST_CLIENT = "Error in rest client";
+
 	private static final Logger LOG = LoggerFactory.getLogger(UserService.class);
-	private final GiteaPodExecService execService;
-
-	public UserService(GiteaPodExecService execService) {
-		this.execService = execService;
+	
+	private GiteaApiService apiService;
+	
+	public UserService(GiteaApiService apiService) {
+		this.apiService = apiService;
 	}
 	
-	public boolean adminExists(String baseUri, String adminUser) {
-		try {
-			return getDynamicUrlClient(baseUri, AdminApi.class).adminGetAllUsers(null, null).stream()
-				.anyMatch(u -> adminUser.equals(u.getLoginName()) && u.getIsAdmin());
-		} catch (URISyntaxException e) {
-			throw new ServiceException("Error creating admin via api", e, GiteaConditionType.GITEA_ADMIN_CREATED);
-		}
+	public Optional<User> getUser(Gitea gitea, String userName, String token) {
+		return apiService.getBaseUri(gitea).flatMap(uri -> {
+			try {
+				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), UserApi.class, token).userGet(userName));
+			} catch (URISyntaxException e) {
+				LOG.error(ERROR_IN_REST_CLIENT, e);
+				return Optional.empty();
+			} catch (WebApplicationException e) {
+				if (e.getResponse().getStatus() == 404) {
+					return Optional.empty();
+				} else {
+					throw e;
+				}
+			} 
+		});
 	}
 	
-	public Optional<String> getUserId(Gitea gitea, String userName) {
-		Command cmd = Command.builder()
-				.withExecutable(ADMIN_COMMAND)
-				.withArgs(List.of(ARG_ADMIN, ARG_USER, "list")).build();
-			
-		Pattern pattern = Pattern.compile(String.format("(\\d+)\\s+%s.*", userName));
-		
-		return execService.execOnDeployment(gitea, cmd)
-				.map(s -> {
-					LOG.debug("User id response: {}", s);
-					return s;
-				})
-				.map(pattern::matcher)
-				.filter(Matcher::find)
-				.map(m -> m.group(1));
+	public Optional<User> createUser(Gitea gitea, String userName, String token) {
+		return createUser(gitea, userName, token, Optional.empty());
 	}
 	
-	public Optional<String> getAdminId(Gitea gitea) {
-		return getUserId(gitea, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin");
+	public Optional<User> createUser(Gitea gitea, String userName, String token, Optional<String> email) {
+		return apiService.getBaseUri(gitea).flatMap(uri -> {
+			try {
+				CreateUserOption createUser = new CreateUserOption();
+				createUser.setEmail(email.orElse(userName + "@example.com"));
+				createUser.setFullName(userName);
+				createUser.setLoginName(userName);
+				createUser.setUsername(userName);
+				createUser.setMustChangePassword(true);
+				createUser.setPassword("devjoy");
+				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminCreateUser(createUser));
+			} catch (URISyntaxException e) {
+				LOG.error(ERROR_IN_REST_CLIENT);
+				return Optional.empty();
+			}
+		});
 	}
 	
-	public void deleteAdminUserViaExec(Gitea gitea) {
-		LOG.info("Waiting up to 180 seconds for replicas to become ready....");
-		Command cmd = Command.builder()
-			.withExecutable(ADMIN_COMMAND)
-			.withArgs(List.of(ARG_ADMIN, ARG_USER, "delete"))
-			.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
-			.build();
-					
-		execService.execOnDeployment(gitea, cmd);
-	}
-
-	public void changeUserPasswordViaExec(Gitea gitea, String user, String password) {
-		LOG.info("Waiting up to 180 seconds for replicas to become ready....");
-		Command cmd = Command.builder()
-			.withExecutable(ADMIN_COMMAND)
-			.withArgs(List.of(ARG_ADMIN, ARG_USER, "change-password"))
-			.addOption(new Option(OPTION_USERNAME, user))
-			.addOption(new Option(OPTION_PASSWORD, password))
-			.build();
-					
-		execService.execOnDeployment(gitea, cmd);
+	public Optional<User> changeUserPassword(Gitea gitea, String user, String password, String token) {
+		return apiService.getBaseUri(gitea).flatMap(uri -> {
+			try {
+				EditUserOption editUser = new EditUserOption();
+				editUser.setPassword(password);
+				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminEditUser(user, editUser));
+			} catch (URISyntaxException e) {
+				LOG.error(ERROR_IN_REST_CLIENT);
+				return Optional.empty();
+			}
+		});
 	}
 	
-	public Optional<String> createUserViaExec(Gitea gitea, String userName) {
-		LOG.info("Waiting up to {} seconds for replicas to become ready....", 180);
-		Command cmd = Command.builder()
-				.withExecutable(ADMIN_COMMAND)
-				.withArgs(List.of(ARG_ADMIN, ARG_USER, "create"))
-				.addOption(new Option(OPTION_USERNAME, userName))
-				.addOption(new Option("password", "devjoy"))
-				.addOption(new Option("email", userName + "@example.com"))
-				// If the user must change password, token will be invalid, hence must change is set to false
-				.addOption(new Option("must-change-password=false", ""))
-				.build();
-		return execService.execOnDeployment(gitea, cmd);
-	}
-	
-	public void createAdminUserViaExec(Gitea gitea) {
-		try {
-			LOG.info("Waiting up to {} seconds for replicas to become ready....", 180);
-			Builder cmdBuilder = Command.builder()
-					.withExecutable(ADMIN_COMMAND)
-					.withArgs(List.of(ARG_ADMIN, ARG_USER, "create"));
-			if (gitea.getSpec() != null) {
-				cmdBuilder.addOption(new Option("password", gitea.getSpec().getAdminPassword()));
-			} else {
-				LOG.error("Generating password with gitea random-password option. The generated password is not known to the operator and will not show up in the secret");
-				cmdBuilder.addOption(new Option("random-password", ""));
-			}	
-			cmdBuilder.addOption(new Option(OPTION_USERNAME, gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"));
-			cmdBuilder.addOption(new Option("email", gitea.getSpec() != null ? gitea.getSpec().getAdminEmail() : "admin@example.com"));
-			cmdBuilder.addOption(new Option("must-change-password=false", ""));
-			cmdBuilder.addOption(new Option(ARG_ADMIN, ""));
-			Command cmd = cmdBuilder.build();
-			
-			Optional<String> execResponse = execService.execOnDeployment(gitea, cmd);
-			LOG.debug("createAdminUserViaExec Response: {}", execResponse);
-			gitea.getStatus().getConditions().add(new ConditionBuilder()
-					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
-					.withType(GiteaConditionType.GITEA_ADMIN_CREATED.toString())
-					.withMessage(String.format("Admin %s has been created", gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
-					.withLastTransitionTime(LocalDateTime.now().toString())
-					.withReason(String.format("Expected admin %s did not exist", gitea.getSpec() != null ? gitea.getSpec().getAdminUser() : "devjoyadmin"))
-					.withStatus("True")
-					.build()); 
-		} catch (Exception e) {
-			throw new ServiceException("Error creating admin user", e, GiteaConditionType.GITEA_ADMIN_CREATED);
-		}
-	}
-
-	public void createAdminUser(String baseUri, String adminUser, String adminEmail, String adminPassword) {
-		CreateUserOption body = new CreateUserOption();
-		body.setUsername(adminUser);
-		body.setEmail(adminEmail);
-		body.setPassword(adminPassword);
-		try {
-			getDynamicUrlClient(baseUri, AdminApi.class).adminCreateUser(body);
-		} catch (URISyntaxException e) {
-			throw new ServiceException("Error creating admin via api", e, GiteaConditionType.GITEA_ADMIN_CREATED);
-		}
-	}
-	
-	private <T> T getDynamicUrlClient(String baseUri, Class<T> clazz) throws URISyntaxException {
+	private <T> T getDynamicUrlClient(URI baseUri, Class<T> clazz, String token) throws URISyntaxException {
 		return RestClientBuilder.newBuilder()
-				.baseUri(new URI(baseUri + "/api/v1"))
+				.baseUri(new URIBuilder(baseUri).setPath("/api/v1").build())
+				.register(new TokenSupplierRequestFilter(() -> token))
 				.build(clazz);
 	}
 }

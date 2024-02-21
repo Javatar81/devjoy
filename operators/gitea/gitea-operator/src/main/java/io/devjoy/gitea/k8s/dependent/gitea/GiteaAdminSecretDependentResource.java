@@ -4,6 +4,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
+import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +29,10 @@ import jakarta.ws.rs.WebApplicationException;
  */
 @KubernetesDependent(resourceDiscriminator = GiteaAdminSecretDiscriminator.class, labelSelector = GiteaAdminSecretDependentResource.SELECTOR)
 public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
-	
-	private static final String DATA_KEY_PASSWORD = "password";
+	public static final String DATA_KEY_USERNAME = "user";
+	public static final String DATA_KEY_PASSWORD = "password";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaAdminSecretDependentResource.class);
-	private static final String TOKEN_KEY = "token";
+	public static final String DATA_KEY_TOKEN = "token";
 	private static final String LABEL_TYPE_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_TYPE_VALUE = "admin";
 	static final String LABEL_TYPE_SELECTOR = LABEL_TYPE_KEY + "=" + LABEL_TYPE_VALUE;
@@ -62,7 +63,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		String adminPassword = primary.getSpec() != null ? primary.getSpec().getAdminPassword() : null;
 		desired.getMetadata().setName(getName(primary));
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
-		desired.getData().put("user", new String(Base64.getEncoder().encode(
+		desired.getData().put(DATA_KEY_USERNAME, new String(Base64.getEncoder().encode(
 				adminUser.getBytes())));
 		
 		Optional.ofNullable(getResource(primary, context.getClient()).get())
@@ -90,16 +91,16 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 				Secret existingSecret = getResource(primary, context.getClient()).get();
 				try {
 					
-					if (existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(TOKEN_KEY))) {
+					if (existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(DATA_KEY_TOKEN))) {
 						LOG.info("Token already set. Taking it over from existing to desired.");
-						desired.getData().put(TOKEN_KEY, existingSecret.getData().get(TOKEN_KEY));
+						desired.getData().put(DATA_KEY_TOKEN, existingSecret.getData().get(DATA_KEY_TOKEN));
 					} else if(existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(DATA_KEY_PASSWORD))){
 						//String password = new String(Base64.getDecoder().decode(existingSecret.getData().get(DATA_KEY_PASSWORD)));
 						LOG.info("Token not set. Generating new token.");
-						tokenService.createUserTokenViaCli(primary, adminUser, "devjoy-" + primary.getMetadata().getNamespace())
+						tokenService.createAdminTokenViaCli(primary, adminUser, "devjoy-" + primary.getMetadata().getNamespace())
 						.ifPresentOrElse(t -> {
 							LOG.info("Updating token for secret {}", desired.getMetadata().getName());
-							desired.getData().put(TOKEN_KEY, new String(Base64.getEncoder().encode(t.getBytes())));
+							desired.getData().put(DATA_KEY_TOKEN, new String(Base64.getEncoder().encode(t.getBytes())));
 						}, () -> LOG.warn("Cannot update token."));
 						
 						/*AccessToken token = tokenService.replaceUserToken(baseUri, adminUser, password);
@@ -116,10 +117,22 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		return desired;
 	}
 
-	
-
 	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {
 		return client.resources(Secret.class).inNamespace(primary.getMetadata().getNamespace()).withName(
 				getName(primary));
+	}
+	
+	public static Optional<String> getAdminToken(Secret adminSecret) {
+		return getNonEmptyValue(adminSecret, DATA_KEY_TOKEN);
+	}
+	
+	public static Optional<String> getAdminPassword(Secret adminSecret) {
+		return getNonEmptyValue(adminSecret, DATA_KEY_PASSWORD);
+	}
+	
+	private static Optional<String> getNonEmptyValue(Secret adminSecret, String key) {
+		return Optional.ofNullable(adminSecret.getData().get(key))
+			.map(t -> new String(Base64.getDecoder().decode(t)).trim())
+			.filter(p -> !StringUtil.isNullOrEmpty(p)); 
 	}
 }

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -22,66 +23,74 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKubernetesDependentResource;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
+import jakarta.inject.Inject;
 
-public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
+@KubernetesDependent(useSSA = BooleanWithUndefined.TRUE)
+public class GiteaUserSecretDependentResource extends CRUDNoGCKubernetesDependentResource<Secret, GiteaRepository> {
 	private static final String KEY_GITCONFIG = ".gitconfig";
 	private static final String KEY_GIT_CREDENTIALS = ".git-credentials";
 	private static final String KEY_TOKEN = "token";
 	private static final String LABEL_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_VALUE = "user";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaUserSecretDependentResource.class);
-	private String username;
-	private TokenService tokenService;
-	private OpenShiftClient ocpClient;
+	@Inject
+	TokenService tokenService;
+	@Inject
+	OpenShiftClient ocpClient;
 	
 	public GiteaUserSecretDependentResource() {
 		super(Secret.class);
 	}
 	
-	public GiteaUserSecretDependentResource(
-			String username, OpenShiftClient client, TokenService tokenService) {
-		super(Secret.class);
-		this.username = username;
-		this.tokenService = tokenService;
-		ocpClient = client;
+	@Override
+	public Secret create(Secret desired, GiteaRepository primary, Context<GiteaRepository> context) {
+		// TODO Auto-generated method stub
+		return super.create(desired, primary, context);
 	}
 
 	@Override
-	protected Secret desired(Gitea primary, Context<Gitea> context) {
+	protected Secret desired(GiteaRepository primary, Context<GiteaRepository> context) {
 		LOG.info("Setting desired state");
 		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/user-secret.yaml")).item();
+		String username = primary.getSpec().getUser();
 		desired.getMetadata().setName(username + desired.getMetadata().getName());
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		desired.getData().put("user", new String(Base64.getEncoder().encode(
 				username.getBytes())));
-		Route routeFromGitea = getRouteFromGitea(primary);
-		String giteaRouteWithProtocol = String.format("%s://%s", "http" + (routeFromGitea.getSpec().getTls() != null ? "s": ""), routeFromGitea.getSpec().getHost());
-		
-		desired.getData().put(KEY_GITCONFIG, new String(Base64.getEncoder().encode(
-				String.format("[credential \"%s\"]\n"
-						+ "\nhelper = store", giteaRouteWithProtocol).getBytes())));
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		desired.getMetadata().setLabels(labels);
-		addOwnerReference(primary, desired);
-		//Replace the token because reconcile will call this again and we can't get the token anymore
-		Secret existingSecret = getResource(primary, username, context.getClient()).get();
-		reconcileToken(primary, desired, giteaRouteWithProtocol, existingSecret);
-		/*if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(WEBHOOK_SECRET_KEY))) {
-			LOG.info("Webhook secret already set. Taking it over from existing to desired.");
-			desired.getData().put(WEBHOOK_SECRET_KEY, existingSecret.getData().get(WEBHOOK_SECRET_KEY));
-		} else {
-			LOG.info("Webhook secret not set. Generating new secret.");
-			desired.getData().put(WEBHOOK_SECRET_KEY, Base64.encodeBytes(passwordService.generateNewPassword(12).getBytes()));
-		}*/
-		//LOG.info("Data {}", desired.getData());
+		primary.associatedGitea(ocpClient).ifPresent(gitea -> {
+			Route routeFromGitea = getRouteFromGitea(gitea);
+			String giteaRouteWithProtocol = String.format("%s://%s", "http" + (routeFromGitea.getSpec().getTls() != null ? "s": ""), routeFromGitea.getSpec().getHost());
+			desired.getData().put(KEY_GITCONFIG, new String(Base64.getEncoder().encode(
+					String.format("[credential \"%s\"]\n"
+							+ "\nhelper = store", giteaRouteWithProtocol).getBytes())));
+			addOwnerReference(gitea, desired);
+			//Replace the token because reconcile will call this again and we can't get the token anymore
+			Secret existingSecret = getResource(primary, username, context.getClient()).get();
+			reconcileToken(gitea, desired, giteaRouteWithProtocol, existingSecret, username);
+			/*if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(WEBHOOK_SECRET_KEY))) {
+				LOG.info("Webhook secret already set. Taking it over from existing to desired.");
+				desired.getData().put(WEBHOOK_SECRET_KEY, existingSecret.getData().get(WEBHOOK_SECRET_KEY));
+			} else {
+				LOG.info("Webhook secret not set. Generating new secret.");
+				desired.getData().put(WEBHOOK_SECRET_KEY, Base64.encodeBytes(passwordService.generateNewPassword(12).getBytes()));
+			}*/
+			//LOG.info("Data {}", desired.getData());
+		});
+		
+		
+		
 		return desired;
 	}
 
-	private void reconcileToken(Gitea primary, Secret desired, String giteaRouteWithProtocol, Secret existingSecret) {
+	private void reconcileToken(Gitea primary, Secret desired, String giteaRouteWithProtocol, Secret existingSecret, String username) {
 		if (existingSecret != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(KEY_TOKEN))) {
 			LOG.info("Token already set. Taking it over from existing to desired.");
 			desired.getData().put(KEY_TOKEN, existingSecret.getData().get(KEY_TOKEN));
@@ -114,11 +123,6 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		desired.getMetadata().setOwnerReferences(ownerReferences);
 	}
 	
-	public void reconcileDirectly(Gitea primary, Context<Gitea> context) {
-		Secret desired = desired(primary, context);
-		context.getClient().secrets().inNamespace(desired.getMetadata().getNamespace()).createOrReplace(desired);
-	}
-	
 	private Optional<String> getGitCredentials(String username, String token, String gitBaseUrl) {
 		try {
 			URL url = new URL(gitBaseUrl);
@@ -129,7 +133,7 @@ public class GiteaUserSecretDependentResource extends CRUDKubernetesDependentRes
 		}
 	}
 
-	public static Resource<Secret> getResource(Gitea primary, String username, KubernetesClient client) {
+	public static Resource<Secret> getResource(GiteaRepository primary, String username, KubernetesClient client) {
 		return client.resources(Secret.class).inNamespace(primary.getMetadata().getNamespace()).withName(
 				getName(username));
 	}

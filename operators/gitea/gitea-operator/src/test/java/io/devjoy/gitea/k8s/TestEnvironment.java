@@ -24,7 +24,7 @@ public class TestEnvironment {
 		this.devServiceFlavor = devServiceFlavor;
 	}
     
-    void createStaticPVsIfRequired() {
+    public void createStaticPVsIfRequired() {
 		devServiceFlavor.filter(f -> "k3s".equalsIgnoreCase(f)).ifPresent(f -> {
 			PersistentVolume pv1 = client.persistentVolumes()
 				.load(getClass().getClassLoader().getResourceAsStream("k3s/pv1.yaml"))

@@ -2,12 +2,13 @@ package io.devjoy.gitea.domain;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+import java.util.stream.Collectors;
 
 import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.openapi.quarkus.gitea_json.model.AccessToken;
@@ -26,7 +27,16 @@ public class TokenService {
 	private static final Logger LOG = LoggerFactory.getLogger(TokenService.class);
 	private static final String TOKEN_NAME = "devjoy";
 	/** See https://docs.gitea.com/development/oauth2-provider#scopes **/
-	private static final String ACCESS_TOKEN_SCOPES = "write:repository,write:user";
+	private static final String SCOPE_WRITE_REPO = "write:repository";
+	private static final String SCOPE_WRITE_USER = "write:user";
+	private static final String SCOPE_WRITE_ADMIN = "write:admin";
+	private static final String SCOPE_WRITE_ACTIVITYPUB = "write:activitypub";
+	private static final String SCOPE_WRITE_ISSUE = "write:issue";
+	private static final String SCOPE_WRITE_MISC = "write:misc";
+	private static final String SCOPE_WRITE_NOTIFICATION = "write:notification";
+	private static final String SCOPE_WRITE_ORGANIZATION = "write:organization";
+	private static final String SCOPE_WRITE_PACKAGE = "write:package";
+
 	private final GiteaPodExecService execService;
 	
 	public TokenService(GiteaPodExecService execService) {
@@ -34,20 +44,31 @@ public class TokenService {
 		this.execService = execService;
 	}
 
-	public Optional<String> createUserTokenViaCli(Gitea gitea, String userName, String tokenName) {
+	private Optional<String> createUserTokenViaCli(Gitea gitea, String userName, String tokenName, String ... scopes) {
 		// We cannot delete nor create a unique token
 		Command cmd = Command.builder()
 				.withExecutable("/usr/bin/giteacmd")
 				.withArgs(List.of("admin", "user", "generate-access-token"))
 				.addOption(new Option("username", userName))
 				.addOption(new Option("token-name", tokenName))
-				.addOption(new Option("scopes", ACCESS_TOKEN_SCOPES))
+				.addOption(new Option("scopes", Arrays.stream(scopes).collect(Collectors.joining(","))))
 				.build();
 		Pattern pattern = Pattern.compile("created:\\s+([a-f0-9_\\-]+)");
-		
-		return execService.execOnDeployment(gitea, cmd).map(pattern::matcher)
+		Optional<String> execResult = execService.execOnDeployment(gitea, cmd);
+		execResult.ifPresent(r -> LOG.info("Exec result is {}", r));
+		return execResult.map(pattern::matcher)
 				.filter(Matcher::find)
 				.map(m -> m.group(1));
+	}
+	
+	public Optional<String> createUserTokenViaCli(Gitea gitea, String userName, String tokenName) {
+		return createUserTokenViaCli(gitea, userName, tokenName, SCOPE_WRITE_REPO, SCOPE_WRITE_USER);
+	}
+	
+	public Optional<String> createAdminTokenViaCli(Gitea gitea, String userName, String tokenName) {
+		return createUserTokenViaCli(gitea, userName, tokenName, SCOPE_WRITE_ADMIN, SCOPE_WRITE_REPO, 
+				SCOPE_WRITE_USER, SCOPE_WRITE_ACTIVITYPUB, SCOPE_WRITE_ISSUE, SCOPE_WRITE_MISC, 
+				SCOPE_WRITE_NOTIFICATION, SCOPE_WRITE_ORGANIZATION, SCOPE_WRITE_PACKAGE);
 	}
 	
 	public AccessToken replaceUserToken(String baseUri, String userName, String password) {

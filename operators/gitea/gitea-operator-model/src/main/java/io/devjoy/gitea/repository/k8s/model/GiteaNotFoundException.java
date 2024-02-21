@@ -1,4 +1,4 @@
-package io.devjoy.gitea.repository.k8s;
+package io.devjoy.gitea.repository.k8s.model;
 
 
 public class GiteaNotFoundException extends RuntimeException {

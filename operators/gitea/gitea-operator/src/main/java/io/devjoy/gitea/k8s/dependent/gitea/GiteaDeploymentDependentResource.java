@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.Container;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -47,16 +48,17 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 				.filter(c -> "gitea".equals(c.getName())).findFirst();
 			giteaContainer.ifPresent(c -> {
 			setImage(primary, c);
+			addAdminEnvVar(c, "ADMIN_USERNAME", GiteaAdminSecretDependentResource.DATA_KEY_USERNAME, primary);
+			addAdminEnvVar(c, "ADMIN_PASSWORD", GiteaAdminSecretDependentResource.DATA_KEY_PASSWORD, primary);
 			if (primary.getSpec() != null && primary.getSpec().isResourceRequirementsEnabled()) {
 				setResourcesDefaults(primary, c);
 			} else {
 				c.getResources().getRequests().clear();
 				c.getResources().getLimits().clear();
-
 			}
 			
 		});
-		setVolumes(name, template);
+		setVolumes(name, template, primary);
 		if (deployment.getMetadata().getLabels() == null) {
 			deployment.getMetadata().setLabels(new HashMap<>());
 		}
@@ -64,7 +66,19 @@ public class GiteaDeploymentDependentResource extends CRUDKubernetesDependentRes
 		deployment.getMetadata().getLabels().put("app.kubernetes.io/part-of", primary.getMetadata().getName()); 
 		return deployment;
 	}
-	private void setVolumes(String name, PodTemplateSpec template) {
+	
+	private void addAdminEnvVar(Container container, String varName, String key, Gitea gitea) {
+		container.getEnv().add(new EnvVarBuilder().withName(varName)
+					.withNewValueFrom()
+						.withNewSecretKeyRef()
+							.withName(GiteaAdminSecretDependentResource.getName(gitea))
+							.withKey(key)
+						.endSecretKeyRef()
+					.endValueFrom()
+				.build());
+	}
+	
+	private void setVolumes(String name, PodTemplateSpec template, Gitea gitea) {
 		template.getSpec().getVolumes().stream()
 			.filter(v -> "gitea-repositories".equals(v.getName()))
 			.findAny().ifPresent(v -> v.getPersistentVolumeClaim().setClaimName(name + "-pvc"));

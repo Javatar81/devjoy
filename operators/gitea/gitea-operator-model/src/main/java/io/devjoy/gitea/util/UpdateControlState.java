@@ -1,4 +1,8 @@
-package io.devjoy.gitea.k8s;
+package io.devjoy.gitea.util;
+
+import java.time.Duration;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -6,6 +10,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 public class UpdateControlState<P extends HasMetadata> {
 
     private UpdateControl<P> state = UpdateControl.noUpdate();
+    private Optional<Duration> scheduleDelay = Optional.empty();
     private final P resource;
 
     public UpdateControlState(P resource) {
@@ -17,7 +22,7 @@ public class UpdateControlState<P extends HasMetadata> {
         this.state = state;
     }
 
-    public void patchStatus() {
+    public UpdateControlState<P> patchStatus() {
         if (!state.isPatchStatus()) {
             if (state.isUpdateResource()) {
                 state = UpdateControl.updateResourceAndPatchStatus(resource);
@@ -25,9 +30,10 @@ public class UpdateControlState<P extends HasMetadata> {
                 state = UpdateControl.patchStatus(resource);
             }
         }
+        return this;
     }
 
-    public void updateStatus() {
+    public UpdateControlState<P>  updateStatus() {
         if (!state.isUpdateStatus()) {
             if (state.isUpdateResource()) {
                 state = UpdateControl.updateResourceAndStatus(resource);
@@ -35,9 +41,10 @@ public class UpdateControlState<P extends HasMetadata> {
                 state = UpdateControl.updateStatus(resource);
             }
         }
+        return this;
     }
     
-    public void updateResource() {
+    public UpdateControlState<P>  updateResource() {
         if (!state.isUpdateResource()) {
             if (state.isPatchStatus()) {
                 state = UpdateControl.updateResourceAndPatchStatus(resource);
@@ -48,9 +55,10 @@ public class UpdateControlState<P extends HasMetadata> {
                 state = UpdateControl.updateResource(resource);
             }
         }
+        return this;
     }
 
-    public void updateResourceAndStatus() {
+    public UpdateControlState<P>  updateResourceAndStatus() {
         if (!state.isUpdateResource() || !state.isUpdateStatus()) {
             if(state.isPatchStatus()) {
                 state = UpdateControl.updateResourceAndPatchStatus(resource);
@@ -58,14 +66,31 @@ public class UpdateControlState<P extends HasMetadata> {
                 state = UpdateControl.updateResourceAndStatus(resource);
             }
         } 
-        
+        return this;
     }
 
-    public void updateResourceAndPatchStatus() {
+    public UpdateControlState<P>  updateResourceAndPatchStatus() {
         state = UpdateControl.updateResourceAndPatchStatus(resource);
+        return this;
     }
 
     public UpdateControl<P> getState() {
+    	scheduleDelay.ifPresent(d -> this.state.rescheduleAfter(d));
         return this.state;
     }
+
+	public UpdateControlState<P> rescheduleAfter(long delay, TimeUnit unit) {
+		scheduleDelay = Optional.of(Duration.ofMillis(unit.toMillis(delay)));
+		return this;
+	}
+	
+	public UpdateControlState<P> rescheduleAfter(long delayMillis) {
+		scheduleDelay = Optional.of(Duration.ofMillis(delayMillis));
+		return this;
+	}
+	
+	public UpdateControlState<P> rescheduleAfter(Duration scheduleDelay) {
+		this.scheduleDelay = Optional.of(scheduleDelay);
+		return this;
+	}
 }

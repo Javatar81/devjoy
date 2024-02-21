@@ -36,7 +36,12 @@ public class Option {
 	}
 	
 	public String[] toArray() {
-		return new String[] {String.format("--%s", name), value};
+		if(!StringUtil.isNullOrEmpty(value)) {
+			return new String[] {String.format("--%s", name), value};
+		} else {
+			return new String[] {String.format("--%s", name)};
+		}
+		
 	}
 	
 }

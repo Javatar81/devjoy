@@ -19,6 +19,7 @@ spec:
       serviceAccountName: "gitea"
       containers:
       - name: gitea
+        # Will be "quay.io/rhpds/gitea:1.21"
         image: "quay.io/gpte-devops-automation/gitea:1.20"
         imagePullPolicy: Always
         env:
@@ -64,6 +65,10 @@ spec:
         #  subPath: service-ca-bundle-ocp.trust.crt
           #/etc/pki/ca-trust/extracted/pem
           readOnly: true
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false --access-token"]
       volumes:
       - name: gitea-repositories
         persistentVolumeClaim:
