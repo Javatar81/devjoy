@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
@@ -37,8 +36,7 @@ public class GiteaUserSecretDependentResource extends CRUDNoGCKubernetesDependen
 	private static final String LABEL_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_VALUE = "user";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaUserSecretDependentResource.class);
-	@Inject
-	TokenService tokenService;
+	
 	@Inject
 	OpenShiftClient ocpClient;
 	
@@ -97,7 +95,7 @@ public class GiteaUserSecretDependentResource extends CRUDNoGCKubernetesDependen
 			desired.getData().put(KEY_GIT_CREDENTIALS, existingSecret.getData().get(KEY_GIT_CREDENTIALS));
 		} else {
 			LOG.info("Token not set. Generating new token.");
-			tokenService.createUserTokenViaCli(primary, username, "devjoy-" + primary.getMetadata().getNamespace())
+			/*tokenService.createUserTokenViaCli(primary, username, "devjoy-" + primary.getMetadata().getNamespace())
 			.ifPresentOrElse(t -> {
 				LOG.info("Updating token for secret {}", desired.getMetadata().getName());
 				desired.getData().put(KEY_TOKEN, new String(Base64.getEncoder().encode(t.getBytes())));
@@ -106,7 +104,7 @@ public class GiteaUserSecretDependentResource extends CRUDNoGCKubernetesDependen
 						c.getBytes())))
 				);
 				
-			}, () -> LOG.warn("Cannot update token."));
+			}, () -> LOG.warn("Cannot update token."));*/
 		}
 	}
 

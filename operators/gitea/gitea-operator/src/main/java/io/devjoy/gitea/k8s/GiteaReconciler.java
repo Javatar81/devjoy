@@ -120,12 +120,20 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 		LOG.info("Waiting for Gitea pod to be ready...");
 		Optional<Secret> adminSecret = context.getSecondaryResource(Secret.class, adminSecretDiscriminator);
-		Optional<String> adminSecretPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependentResource::getAdminPassword);
+		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependentResource::getAdminPassword);
+		Optional<String> adminPasswordInSpec = Optional.ofNullable(resource.getSpec())
+				.map(s -> s.getAdminPassword())
+				.filter(pw -> !StringUtil.isNullOrEmpty(pw));
 		
-		if (adminSecretPasswordInSecret.isEmpty()) {
-			addGeneratedPasswordToSpecIfEmpty(resource);
+		if(adminPasswordInSecret.equals(adminPasswordInSpec)) {
+			resource.getSpec().setAdminPassword(null);
+			state.updateResource();
 		}
-		
+			
+		/*if (adminSecretPasswordInSecret.isEmpty()) {
+			addGeneratedPasswordToSpecIfEmpty(resource);
+		}*/
+		/*
 		if (!StringUtil.isNullOrEmpty(resource.getSpec().getAdminPassword())) {
 			if (adminSecretPasswordInSecret.isEmpty() || !resource.getSpec().getAdminPassword().equals(adminSecretPasswordInSecret.get())) {
 				LOG.info("Updating admin password in secret");
@@ -144,7 +152,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			state.updateResourceAndStatus();
 		} else {
 			LOG.info("Admin password has not been changed.");
-		}
+		}*/
 		reconcileTrustMap(resource);
 		if (resource.getSpec().isSso()) {
 			reconcileAuthenticationSource(resource);

@@ -1,12 +1,12 @@
 package io.devjoy.gitea.util;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.containing;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.matching;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 
 import java.net.URISyntaxException;
+import java.util.Base64;
 
 import org.apache.http.client.utils.URIBuilder;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -32,7 +32,7 @@ class TokenSupplierRequestFilterTest {
 	
 	
 	@Test
-	void authSuccess() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
+	void authAccessTokenSuccess() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
         wiremock.register(get(urlPathEqualTo("/api/v1/users/myuser"))
         		.withHeader("Authorization", matching("token adsfagag"))
         		.willReturn(aResponse()
@@ -41,7 +41,26 @@ class TokenSupplierRequestFilterTest {
         				.withBody("{}")));
         RestClientBuilder.newBuilder()
 			.baseUri(new URIBuilder("http://localhost:" + port).setPath("/api/v1").build())
-			.register(new TokenSupplierRequestFilter(() -> "adsfagag"))
+			.register(AuthorizationRequestFilter.accessToken("adsfagag"))
+			.build(UserApi.class).userGet("myuser");
+	}
+	
+	@Test
+	void authBasicAuthSuccess() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
+        String username = "test";
+        String password = "password";
+		String encoded = Base64.getEncoder()
+				.encodeToString(String.format("%s:%s", username, password).getBytes());
+		
+		wiremock.register(get(urlPathEqualTo("/api/v1/users/myuser"))
+        		.withHeader("Authorization", matching("Basic " + encoded))
+        		.willReturn(aResponse()
+        				.withHeader("content-type", "application/json")
+        				.withStatus(200)
+        				.withBody("{}")));
+        RestClientBuilder.newBuilder()
+			.baseUri(new URIBuilder("http://localhost:" + port).setPath("/api/v1").build())
+			.register(AuthorizationRequestFilter.basicAuth(username, password))
 			.build(UserApi.class).userGet("myuser");
 	}
 }

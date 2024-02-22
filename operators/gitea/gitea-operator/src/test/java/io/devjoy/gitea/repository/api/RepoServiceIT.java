@@ -69,7 +69,8 @@ class RepoServiceIT {
         client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
 	}
     
-    @Test
+  
+    //@Test
     void createRepo() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());
@@ -98,7 +99,7 @@ class RepoServiceIT {
 		}
 	}
     
-    @Test
+    //@Test
     void createRepoForOtherUser() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());

@@ -72,8 +72,9 @@ public class GiteaAssertions {
     public void assertAdminSecret(Gitea desired) {
         LOG.debug("Assert admin secret");
         final var adminSecret = GiteaAdminSecretDependentResource.getResource(desired, client);
-        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("user"))), is(desired.getSpec() != null ? desired.getSpec().getAdminUser() : "devjoyadmin"));
-        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(IsNull.notNullValue()));
+        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get(GiteaAdminSecretDependentResource.DATA_KEY_USERNAME))), is(desired.getSpec() != null ? desired.getSpec().getAdminUser() : "devjoyadmin"));
+        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get(GiteaAdminSecretDependentResource.DATA_KEY_PASSWORD))), is(IsNull.notNullValue()));
+        assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN))), is(IsNull.notNullValue()));
         LOG.debug("Asserted admin secret for Postgres");
     }
 

@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.domain.service.AuthenticationService;
 import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.domain.service.GiteaPodExecService;
@@ -38,8 +37,6 @@ class GiteaRepositoryReconcilerTest {
 	//public KubernetesServer server = new KubernetesServer();
 	@Mock(answer = Answers.RETURNS_DEEP_STUBS)
 	OpenShiftClient ocpClient;
-	@Mock
-	TokenService tokenService;
 	@Mock
 	RepositoryService repositoryService;
 	@Mock

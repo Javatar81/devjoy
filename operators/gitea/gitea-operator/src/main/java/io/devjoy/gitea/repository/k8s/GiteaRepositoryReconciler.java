@@ -19,7 +19,6 @@ import org.openapi.quarkus.gitea_json.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.domain.service.ServiceException;
 import io.devjoy.gitea.domain.service.UserService;
@@ -73,16 +72,14 @@ import jakarta.ws.rs.WebApplicationException;
 public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;
-	private final TokenService tokenService;
 	private final PasswordService passwordService;
 	private final UserService userService;
 	private final RepositoryService repositoryService;
 	private final GiteaApiService apiService;
 
-	public GiteaRepositoryReconciler(OpenShiftClient client, TokenService tokenService, UserService userService,
+	public GiteaRepositoryReconciler(OpenShiftClient client, UserService userService,
 			RepositoryService repositoryService, GiteaApiService apiService, PasswordService passwordService) {
 		this.client = client;
-		this.tokenService = tokenService;
 		this.userService = userService;
 		this.repositoryService = repositoryService;
 		this.apiService = apiService;
@@ -150,7 +147,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	private void assureUserCreated(GiteaRepository resource, Gitea g, String token) {
-		LOG.info("Assure user {} is created", resource.getSpec().getUser());
+		LOG.info("Assure user {} is created {}", resource.getSpec().getUser(), token);
 		Optional<Long> userId = userService.getUser(g, resource.getSpec().getUser(), token).map(User::getId)
 			.map(id -> {LOG.info("User with id {} exists", id); return id;})
 			.or(() -> userService.createUser(g, resource.getSpec().getUser(), token)

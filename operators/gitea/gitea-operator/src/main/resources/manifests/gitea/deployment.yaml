@@ -68,7 +68,7 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false --access-token"]
+              command: ["/bin/sh", "-c", "for i in {1..5}; do giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false && break || sleep 15; done"]
       volumes:
       - name: gitea-repositories
         persistentVolumeClaim:

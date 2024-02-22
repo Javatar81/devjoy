@@ -28,7 +28,7 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
-import io.devjoy.gitea.util.TokenSupplierRequestFilter;
+import io.devjoy.gitea.util.AuthorizationRequestFilter;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.validation.constraints.NotEmpty;
@@ -224,7 +224,7 @@ public class RepositoryService {
 	private <T> T getDynamicUrlClient(URI baseUri, Class<T> clazz, String token) throws URISyntaxException {
 		return RestClientBuilder.newBuilder()
 				.baseUri(new URIBuilder(baseUri).setPath("/api/v1").build())
-				.register(new TokenSupplierRequestFilter(() -> token))
+				.register(AuthorizationRequestFilter.accessToken(token))
 				.build(clazz);
 	}
 	

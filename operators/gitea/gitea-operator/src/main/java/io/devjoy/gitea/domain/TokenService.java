@@ -23,7 +23,7 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class TokenService {
+class TokenService {
 	private static final Logger LOG = LoggerFactory.getLogger(TokenService.class);
 	private static final String TOKEN_NAME = "devjoy";
 	/** See https://docs.gitea.com/development/oauth2-provider#scopes **/

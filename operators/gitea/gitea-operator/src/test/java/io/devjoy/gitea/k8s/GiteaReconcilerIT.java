@@ -10,7 +10,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.devjoy.gitea.domain.TokenService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
@@ -27,7 +26,6 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 public class GiteaReconcilerIT {
