@@ -46,7 +46,8 @@ public class GiteaRepository extends CustomResource<GiteaRepositorySpec, GiteaRe
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {
-				throw new GiteaNotFoundException(String.format("Cannot determine unique Gitea in namespace %s. Expected 1 but was %d.", giteaNamespace, giteasInSameNamespace.size())
+				
+				throw new GiteaNotFoundException(String.format("Cannot determine unique Gitea in namespace %s. Expected 1 but was %d. Create a Gitea resource before you create a repository.", giteaNamespace, giteasInSameNamespace.size())
 				, giteaNamespace);
 			}
 		}

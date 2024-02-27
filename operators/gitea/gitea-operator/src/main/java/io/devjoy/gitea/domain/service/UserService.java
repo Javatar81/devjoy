@@ -27,6 +27,9 @@ public class UserService {
 	private static final String ERROR_IN_REST_CLIENT = "Error in rest client";
 	private static final String SCOPE_WRITE_REPO = "write:repository";
 	private static final String SCOPE_WRITE_USER = "write:user";
+	/**
+	 * We need Gitea 1.20+ to use this scope
+	 */
 	private static final String SCOPE_WRITE_ADMIN = "write:admin";
 	private static final String SCOPE_WRITE_ACTIVITYPUB = "write:activitypub";
 	private static final String SCOPE_WRITE_ISSUE = "write:issue";
@@ -102,6 +105,7 @@ public class UserService {
 	}
 	
 	public Optional<AccessToken> createAccessToken(Gitea gitea, String userName, String password, String tokenName, String ... scopes) {
+		LOG.info("Creating token {} for user {} with scopes {}", tokenName, userName, Arrays.asList(scopes));
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
 				CreateAccessTokenOption createToken = new CreateAccessTokenOption();

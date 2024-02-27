@@ -191,7 +191,7 @@ public class GiteaReconcilerIT {
 		spec.setEnableCaptcha(true);
 		spec.setImage("quay.io/gpte-devops-automation/gitea");
 		spec.setImageTag("latest");
-		spec.setLogLevel(GiteaLogLevel.ERROR);
+		spec.setLogLevel(GiteaLogLevel.INFO);
 		spec.setRegisterEmailConfirm(false);
 		spec.setResourceRequirementsEnabled(true);
 		spec.setSsl(true);

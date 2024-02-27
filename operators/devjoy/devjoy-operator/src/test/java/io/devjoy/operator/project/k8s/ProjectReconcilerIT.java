@@ -1,8 +1,9 @@
 package io.devjoy.operator.project.k8s;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertNotNull;
 
 import java.net.HttpURLConnection;
 import java.net.URI;
@@ -19,10 +20,8 @@ import io.devjoy.operator.environment.k8s.DevEnvironmentSpec;
 import io.devjoy.operator.environment.k8s.GiteaConfigSpec;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 public class ProjectReconcilerIT {
@@ -56,10 +55,14 @@ public class ProjectReconcilerIT {
         client.resource(project).create();
         await().ignoreExceptionsMatching(e -> e instanceof NullPointerException || e instanceof UnknownHostException).atMost(600, TimeUnit.SECONDS).untilAsserted(() -> {
             final var projectResource = client.resources(Project.class).inNamespace(getTargetNamespace()).withName(project.getMetadata().getName()).get();
+            assertNotNull(projectResource);
             assertThat(projectResource.getStatus(), is(IsNull.notNullValue()));
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
             Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
             assertThat(ingress, is(IsNull.notNullValue()));
+            assertThat(ingress.getSpec(), is(IsNull.notNullValue()));
+            assertThat(ingress.getSpec().getRules().isEmpty(), is(false));
+            assertThat(ingress.getSpec().getRules().isEmpty(), is(false));
             URI uri = new URI("http://" + ingress.getSpec().getRules().get(0).getHost());
             var con = (HttpURLConnection) uri.toURL().openConnection();
             con.connect();

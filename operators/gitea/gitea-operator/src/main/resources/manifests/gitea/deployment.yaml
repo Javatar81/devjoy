@@ -20,7 +20,7 @@ spec:
       containers:
       - name: gitea
         # Will be "quay.io/rhpds/gitea:1.21"
-        image: "quay.io/gpte-devops-automation/gitea:1.20"
+        image: "quay.io/rhpds/gitea:1.21"
         imagePullPolicy: Always
         env:
         - name: SSL_CERT_FILE

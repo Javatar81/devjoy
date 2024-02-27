@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -19,7 +20,6 @@ import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.Deleter;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -84,9 +84,21 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 							.withNewValue(ext)
 									.build()));
 		
+		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
+			.withName(user + "-git-secret").get() != null; 
+		String secretPrefix;
+		if (deprecatedUserSecretAvailable){
+			secretPrefix = user;
+		} else {
+			secretPrefix = GiteaDependentResource.getResource(context.getClient(), devEnvironment).get().getSpec().getAdminUser();
+		}
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
-			.forEach(w -> w.getSecret().setSecretName(user + w.getSecret().getSecretName()));
+			.forEach(w -> w.getSecret().setSecretName(secretPrefix + "-git-secret"));
+
+
+
+
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "additional-resources".equals(w.getName()))
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));

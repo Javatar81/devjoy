@@ -1,9 +1,13 @@
 package io.devjoy.gitea.k8s.dependent.gitea;
 
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Optional;
 
+import org.apache.http.client.utils.URIBuilder;
 import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +21,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.openshift.api.model.Route;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -32,10 +37,12 @@ import jakarta.ws.rs.WebApplicationException;
  */
 @KubernetesDependent(resourceDiscriminator = GiteaAdminSecretDiscriminator.class, labelSelector = GiteaAdminSecretDependentResource.SELECTOR)
 public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaAdminSecretDependentResource.class);
 	public static final String DATA_KEY_USERNAME = "user";
 	public static final String DATA_KEY_PASSWORD = "password";
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaAdminSecretDependentResource.class);
 	public static final String DATA_KEY_TOKEN = "token";
+	public static final String DATA_KEY_GITCONFIG = ".gitconfig";
+	public static final String DATA_KEY_GIT_CREDENTIALS = ".git-credentials";
 	private static final String LABEL_TYPE_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_TYPE_VALUE = "admin";
 	static final String LABEL_TYPE_SELECTOR = LABEL_TYPE_KEY + "=" + LABEL_TYPE_VALUE;
@@ -89,23 +96,6 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 			passwordFromSpec = Optional.of(newPassword);
 		}
 		
-		
-	
-		/*Optional<String> effectivePassword;
-		if (!passwordFromSpec.equals(passwordFromSecret)) {
-			effectivePassword = passwordFromSpec
-				.filter(pw -> !StringUtil.isNullOrEmpty(pw))
-				.map(pw -> {
-					LOG.info("Taking over password from Gitea spec {}. {}",pw, pw.length());
-					return pw;
-				});
-		} else {
-			// spec: pw secret: pw
-			LOG.info("Password has not changed.");
-			effectivePassword = passwordFromSpec;
-			// We must state that desired == actual otherwise password is set to null
-			
-		}*/
 		Optional<String> effectivePassword = passwordFromSpec.filter(pw -> !StringUtil.isNullOrEmpty(pw))
 				.or(() -> passwordFromSecret.filter(pw -> !StringUtil.isNullOrEmpty(pw)));
 		
@@ -113,31 +103,25 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 				pw.getBytes())));
 		
 		
-		
-		/**Optional<String> password = passwordFromSecret
-			.map(pw -> {
-				LOG.info("Password .");
-				desired.getData().put(DATA_KEY_PASSWORD, pw);
-				return pw;
-			}).or(
-				() -> {
-					if (!StringUtil.isNullOrEmpty(passwordFromSpec)) {
-						LOG.info("Storing admin password from Gitea spec.");
-						desired.getData().put(DATA_KEY_PASSWORD, new String(Base64.getEncoder().encode(
-								passwordFromSpec.getBytes())));
-						return Optional.of(passwordFromSpec);
-					} else {
-						LOG.warn("No password available. Will set it later");
-						return Optional.empty();
-					}
-				}
-			);**/
-		
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(LABEL_KEY, LABEL_VALUE);
 		labels.put(LABEL_TYPE_KEY, LABEL_TYPE_VALUE);
 		desired.getMetadata().setLabels(labels);
 
+		desiredToken(primary, context, desired, adminUser, effectivePassword);
+		
+		
+		Optional<String> routeUrl = context.getSecondaryResource(Route.class).map(r -> String.format("%s://%s", "http" + (r.getSpec().getTls() != null ? "s": ""), r.getSpec().getHost()));
+		routeUrl.ifPresent(url -> desired.getData().put(DATA_KEY_GITCONFIG, new String(Base64.getEncoder().encode(
+				String.format("[credential \"%s\"]\n"
+						+ "\nhelper = store", url).getBytes()))));
+		
+		
+		return desired;
+	}
+
+	private void desiredToken(Gitea primary, Context<Gitea> context, Secret desired, String adminUser,
+			Optional<String> effectivePassword) {
 		//Replace the token because reconcile will call this again and we can't get the token anymore
 		giteaApiService.getBaseUri(primary)
 			.ifPresent(baseUri -> {
@@ -147,9 +131,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 						LOG.info("Token already set. Taking it over from existing to desired.");
 						desired.getData().put(DATA_KEY_TOKEN, existingSecret.getData().get(DATA_KEY_TOKEN));
 					} else if(existingSecret != null && existingSecret.getData() != null && !StringUtil.isNullOrEmpty(existingSecret.getData().get(DATA_KEY_PASSWORD))){
-						//String password = new String(Base64.getDecoder().decode(existingSecret.getData().get(DATA_KEY_PASSWORD)));
 						LOG.info("Token not set. Generating new token.");
-						//tokenService.createAdminTokenViaCli(primary, adminUser, "devjoy-" + primary.getMetadata().getNamespace())
 						context.getSecondaryResource(Deployment.class, deploymentDiscriminator)
 							.filter(d -> d.getStatus().getReadyReplicas() != null && d.getStatus().getReadyReplicas() > 0)
 							.flatMap(d -> {
@@ -157,11 +139,16 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 								return effectivePassword;
 							})
 							.filter(pw -> !StringUtil.isNullOrEmpty(pw))
-							.flatMap(pw -> userService.createAdminAccessToken(primary, adminUser, pw, "devjoy-" + primary.getMetadata().getNamespace()))
+							.flatMap(pw -> userService.createAdminAccessToken(primary, adminUser, pw, "devjoy-" + primary.getMetadata().getName()))
 							.ifPresentOrElse(
 								t -> {
 									LOG.info("Updating token for secret {}", desired.getMetadata().getName());
 									desired.getData().put(DATA_KEY_TOKEN, Base64.getEncoder().encodeToString(t.getSha1().getBytes()));
+									giteaApiService.getBaseUri(primary).ifPresent(uri -> 
+										getGitCredentials(adminUser, t.getSha1(), uri).ifPresent(c -> 
+											desired.getData().put(DATA_KEY_GIT_CREDENTIALS, new String(Base64.getEncoder().encode(c.getBytes())))
+										)
+									);
 									}, 
 								() -> LOG.warn("Cannot update token.")
 							);
@@ -172,7 +159,16 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 					LOG.error("Error setting token data", e1);
 				}
 			});
-		return desired;
+	}
+	
+	private Optional<String> getGitCredentials(String username, String token, String gitBaseUrl) {
+		try {
+			URL url = new URIBuilder(gitBaseUrl).build().toURL();
+			return Optional.of(String.format("%s://%s:%s@%s%s", url.getProtocol(), username, token, url.getHost(), url.getFile()));
+		} catch (MalformedURLException | URISyntaxException e) {
+			LOG.error("Invalid gitBaseUrl " + gitBaseUrl, e);
+			return Optional.empty();
+		}
 	}
 
 	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {

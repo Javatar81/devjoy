@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import io.argoproj.v1alpha1.Application;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.util.UpdateControlState;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
@@ -69,13 +70,16 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 	@Override
 	public UpdateControl<Project> reconcile(Project resource, Context<Project> context) {
 		LOG.info("Reconcile");
+		UpdateControlState<Project> ctrl = new UpdateControlState<>(resource);
 		if (resource.getStatus() == null) {
 			ProjectStatus status = new ProjectStatus();
 			resource.setStatus(status);
+			ctrl.updateStatus();
+			LOG.info("Updating empty status");
 		}
-		
 		Optional<DevEnvironment> owningEnvironment = resource.getOwningEnvironment(client);
 		owningEnvironment.orElseThrow(() -> new EnvironmentNotFoundException("Environment cannot be found", resource) );
+		LOG.info("Environment exists");
 		owningEnvironment
 			.filter(env -> !resource.getMetadata().getNamespace().equals(env.getMetadata().getNamespace()))
 			.ifPresent(env -> {
@@ -83,17 +87,28 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 				allowProjectNamespaceToPullImagesFromEnvNamespace(resource, env);
 				makeArgoManageProjectNamespace(resource, env);
 			});
-		return owningEnvironment.flatMap(e -> {
+		owningEnvironment.ifPresent(e -> {
+			LOG.info("Looking for user secret");
+			String user = resource.getSpec().getOwner().getUser();
+			boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(e.getMetadata().getNamespace())
+					.withName(user + "-git-secret").get() != null; 
+				String secretPrefix;
+				if (deprecatedUserSecretAvailable){
+					secretPrefix = user;
+					LOG.warn("You are running a Gitea operator version < 0.3.0. Please update.");
+				} else {
+					secretPrefix = GiteaDependentResource.getResource(context.getClient(), e).get().getSpec().getAdminUser();
+				}
 			
 			Optional<Secret> secret = Optional.ofNullable(GiteaDependentResource.getResource(client, e).get())
 				.flatMap(g -> Optional.ofNullable(client.resources(Secret.class).inNamespace(g.getMetadata().getNamespace()).withName(
-					resource.getSpec().getOwner().getUser() + "-git-secret").get()));
+						secretPrefix + "-git-secret").get()));
 			
-			return secret.map(st -> {
-				UpdateControl<Project> ctrl = UpdateControl.noUpdate();
+			secret.ifPresent(st -> {
+				LOG.info("Secret found");
 				if (resource.getStatus().getRepository() == null || !resource.getStatus().getRepository().isUserSecretAvailable()) {
 					resource.getStatus().getRepository().setUserSecretAvailable(true);
-					ctrl = UpdateControl.patchStatus(resource);
+					ctrl.patchStatus();
 				}
 				
 				if ((resource.getStatus().getWorkspace() == null 
@@ -103,7 +118,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					PipelineRun pipelineRun = InitPipelineRunDependentResource.getResource(tektonClient, resource)
 						.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
 						onPipelineRunComplete(pipelineRun, resource, context);
-					ctrl = UpdateControl.patchStatus(resource);
+					ctrl.patchStatus();
 				}
 
 				if (!supportsRequiredPipelinesApi() 
@@ -118,7 +133,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 						.build();
 					resource.getStatus().getConditions().add(noPipelinesApi);
 					resource.getStatus().getInitStatus().setMessage("Required api for Tekton not available.");
-					ctrl = UpdateControl.patchStatus(resource);
+					ctrl.patchStatus();
 				} else if (supportsRequiredPipelinesApi()) {
 					resource.getStatus().getInitStatus().setMessage("Pipelines Api available");
 				}
@@ -135,13 +150,14 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 						.build();
 					resource.getStatus().getConditions().add(noGitopsCondition);
 					resource.getStatus().getDeployStatus().setMessage("Required api for ArgoCD or Application not found");
-					ctrl = UpdateControl.patchStatus(resource);
+					ctrl.patchStatus();
 				} else if (supportsRequiredPipelinesApi()) {
 					resource.getStatus().getDeployStatus().setMessage("GitOps Api available");
 				}
-				return ctrl;
+				//return ctrl.getState();
 			});
-		}).orElseGet(UpdateControl::noUpdate);
+		});//.orElseGet(() -> ctrl.getState());
+		return ctrl.getState();
 	}
 
 	private boolean supportsRequiredPipelinesApi() {

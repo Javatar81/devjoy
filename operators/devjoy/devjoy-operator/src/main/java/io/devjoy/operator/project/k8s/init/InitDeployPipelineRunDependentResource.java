@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
@@ -90,9 +91,19 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
 
+		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
+			.withName(user + "-git-secret").get() != null; 
+		String secretPrefix;
+		if (deprecatedUserSecretAvailable){
+			secretPrefix = user;
+		} else {
+			secretPrefix = GiteaDependentResource.getResource(context.getClient(), devEnvironment).get().getSpec().getAdminUser();
+		}
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
-			.forEach(w -> w.getSecret().setSecretName(user + w.getSecret().getSecretName()));
+			.forEach(w -> w.getSecret().setSecretName(secretPrefix + "-git-secret"));
+
+			
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "additional-resources".equals(w.getName()))
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));

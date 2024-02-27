@@ -34,7 +34,6 @@ import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
-import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkus.runtime.util.StringUtil;
 
@@ -58,7 +57,7 @@ import io.quarkus.runtime.util.StringUtil;
 
 @CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME, version = DevEnvironmentReconciler.CSV_METADATA_VERSION, displayName = "Devjoy Operator", description = "An operator to quickly create development environments and projects", provider = @Provider(name = "devjoy.io"), keywords = "Project,Quarkus,GitOps,Pipelines", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = DevEnvironmentReconciler.CSV_CONTAINER_IMAGE, others= {}))
 public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, ErrorStatusHandler<DevEnvironment>, SharedCSVMetadata { 
-  public static final String CSV_METADATA_VERSION = "0.1.0";
+  public static final String CSV_METADATA_VERSION = "0.2.0";
   public static final String CSV_METADATA_NAME = "devjoy-operator-bundle.v" + CSV_METADATA_VERSION;
   public static final String CSV_CONTAINER_IMAGE ="quay.io/devjoy/devjoy-operator:" + CSV_METADATA_VERSION;
   private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
