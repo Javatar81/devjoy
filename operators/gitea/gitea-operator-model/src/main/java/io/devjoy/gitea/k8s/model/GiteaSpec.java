@@ -22,9 +22,9 @@ public class GiteaSpec {
 	private String volumeSize = "4Gi";
 	@JsonPropertyDescription("Storage class of the persistent volume claim.")
 	private String storageClass;
-	@JsonPropertyDescription("The image url to use for Gitea. Default is quay.io/gpte-devops-automation/gitea")
+	@JsonPropertyDescription("The image url to use for Gitea. Default is quay.io/rhpds/gitea")
 	private String image;
-	@JsonPropertyDescription("The image tag to use for Gitea. Default is 1.20")
+	@JsonPropertyDescription("The image tag to use for Gitea. Default is 1.21")
 	private String imageTag;
 	@JsonPropertyDescription("The cpu resource limits for the Gitea deployment")
 	private String cpuLimit;
