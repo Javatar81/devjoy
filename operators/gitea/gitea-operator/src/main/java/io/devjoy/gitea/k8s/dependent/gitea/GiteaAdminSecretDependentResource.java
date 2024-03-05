@@ -85,7 +85,6 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 			.filter(pw -> !StringUtil.isNullOrEmpty(pw))
 			.map(pw -> new String(Base64.getDecoder().decode(pw)));
 		
-		LOG.info("Secret pw {}", passwordFromSecret);
 		if (passwordFromSpec.isEmpty() && passwordFromSecret.isEmpty()) {
 			LOG.info("No password set. Generating new one.");
 			String newPassword = passwordService.generateNewPassword(Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminPasswordLength).orElse(10));
@@ -94,6 +93,11 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 			}
 			primary.getSpec().setAdminPassword(newPassword);
 			passwordFromSpec = Optional.of(newPassword);
+		} else if(!passwordFromSpec.isEmpty() && !passwordFromSecret.isEmpty() && !passwordFromSecret.equals(passwordFromSpec)) {
+			LOG.info("Password changed.");
+			passwordFromSpec.ifPresent(pw -> getSecondaryResource(primary, context)
+					.flatMap(GiteaAdminSecretDependentResource::getAdminToken)
+					.ifPresent(token -> userService.changeUserPassword(primary, adminUser, pw, token)));
 		}
 		
 		Optional<String> effectivePassword = passwordFromSpec.filter(pw -> !StringUtil.isNullOrEmpty(pw))
@@ -150,7 +154,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 										)
 									);
 									}, 
-								() -> LOG.warn("Cannot update token.")
+								() -> LOG.warn("Cannot update token. Reasons could be: deployment not ready, or password is empty.")
 							);
 					} else {
 						LOG.info("Secret is not yet created");	

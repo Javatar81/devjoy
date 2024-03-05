@@ -25,8 +25,8 @@ import jakarta.ws.rs.WebApplicationException;
 @ApplicationScoped
 public class UserService {
 	private static final String ERROR_IN_REST_CLIENT = "Error in rest client";
-	private static final String SCOPE_WRITE_REPO = "write:repository";
-	private static final String SCOPE_WRITE_USER = "write:user";
+	public static final String SCOPE_WRITE_REPO = "write:repository";
+	public static final String SCOPE_WRITE_USER = "write:user";
 	/**
 	 * We need Gitea 1.20+ to use this scope
 	 */
@@ -76,7 +76,7 @@ public class UserService {
 				createUser.setLoginName(userName);
 				createUser.setUsername(userName);
 				createUser.setMustChangePassword(true);
-				createUser.setPassword("devjoy");
+				createUser.setPassword("devjoypw");
 				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminCreateUser(createUser));
 			} catch (URISyntaxException e) {
 				LOG.error(ERROR_IN_REST_CLIENT);
@@ -89,6 +89,7 @@ public class UserService {
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
 				EditUserOption editUser = new EditUserOption();
+				editUser.setLoginName(user);
 				editUser.setPassword(password);
 				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminEditUser(user, editUser));
 			} catch (URISyntaxException e) {

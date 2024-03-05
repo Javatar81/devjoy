@@ -68,7 +68,11 @@ spec:
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "for i in {1..5}; do giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false && break || sleep 15; done"]
+              #giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false
+              #ADMIN_ID=$(giteacmd admin user list --admin|grep $ADMIN_USERNAME|grep $ADMIN_USERNAME|awk -F ' ' '{print $1}') && if [[ $ADMIN_ID ]]; then giteacmd admin user change-password --username $ADMIN_USERNAME --password $ADMIN_PASSWORD;else giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false;fi
+              #giteacmd admin user delete --username $ADMIN_USERNAME
+              command: ["/bin/sh", "-c", "for i in {1..5}; do ADMIN_ID=$(giteacmd admin user list --admin|grep $ADMIN_USERNAME|grep $ADMIN_USERNAME|awk -F ' ' '{print $1}') && if [[ $ADMIN_ID ]]; then giteacmd admin user change-password --username $ADMIN_USERNAME --password $ADMIN_PASSWORD;else giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false;fi && break || sleep 10;done; if [[ $OIDC_CLIENT_ID ]]; then for i in {1..5}; do OAUTH_ID=$(giteacmd admin auth list|grep devjoy-oidc|awk -F ' ' '{print $1}') && if [[ $OAUTH_ID ]]; then giteacmd admin auth update-oauth --id $OAUTH_ID --key $OIDC_CLIENT_ID --secret $OIDC_CLIENT_SECRET --auto-discover-url $OIDC_AUTO_DISCOVER_URL;else giteacmd admin auth add-oauth --name devjoy-oidc --provider openidConnect --key $OIDC_CLIENT_ID --secret $OIDC_CLIENT_SECRET --auto-discover-url $OIDC_AUTO_DISCOVER_URL --scopes email profile;fi && break || sleep 10;done;fi"]
+              #command: ["/bin/sh", "-c", "for i in {1..5}; do giteacmd admin user create --username $ADMIN_USERNAME --password $ADMIN_PASSWORD --email $ADMIN_USERNAME@example.com --admin --must-change-password=false && break || sleep 10;done; if [[ $OIDC_CLIENT_ID ]]; then for i in {1..5}; do giteacmd admin auth add-oauth --name devjoy-oidc --provider openidConnect --key $OIDC_CLIENT_ID --secret $OIDC_CLIENT_SECRET --auto-discover-url $OIDC_AUTO_DISCOVER_URL --scopes email profile && break || sleep 10;done;fi"]
       volumes:
       - name: gitea-repositories
         persistentVolumeClaim:

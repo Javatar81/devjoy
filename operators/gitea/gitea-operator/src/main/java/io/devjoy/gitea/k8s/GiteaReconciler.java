@@ -1,7 +1,6 @@
 package io.devjoy.gitea.k8s;
 
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.Optional;
 
 import org.slf4j.Logger;
@@ -43,7 +42,6 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -116,63 +114,26 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			resource.setSpec(new GiteaSpec());
 			state.updateResource();
 		}
-		LOG.info("Waiting for Gitea pod to be ready...");
-		Optional<Secret> adminSecret = context.getSecondaryResource(Secret.class, adminSecretDiscriminator);
-		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependentResource::getAdminPassword);
-		Optional<String> adminPasswordInSpec = Optional.ofNullable(resource.getSpec())
-				.map(s -> s.getAdminPassword())
-				.filter(pw -> !StringUtil.isNullOrEmpty(pw));
-		
-		if(adminPasswordInSecret.equals(adminPasswordInSpec)) {
-			resource.getSpec().setAdminPassword(null);
-			state.updateResource();
-		}
-			
-		/*if (adminSecretPasswordInSecret.isEmpty()) {
-			addGeneratedPasswordToSpecIfEmpty(resource);
-		}*/
-		/*
-		if (!StringUtil.isNullOrEmpty(resource.getSpec().getAdminPassword())) {
-			if (adminSecretPasswordInSecret.isEmpty() || !resource.getSpec().getAdminPassword().equals(adminSecretPasswordInSecret.get())) {
-				LOG.info("Updating admin password in secret");
-				moveAdminPasswordToSecret(resource);
-			} 
-			if (adminSecretPasswordInSecret.isPresent() && !resource.getSpec().getAdminPassword().equals(adminSecretPasswordInSecret.get())) {
-				LOG.info("Admin password must be changed.");
-				GiteaAdminSecretDependentResource.getAdminToken(adminSecret.get())
-					.ifPresentOrElse(t -> userService.changeUserPassword(resource, resource.getSpec().getAdminUser(), resource.getSpec().getAdminPassword(), t), 
-							() -> LOG.warn("Admin password cannot be changed."));
-					
-			}
-			Optional<Secret> adminSecretResource = Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(resource, client).get());
-			adminSecretResource.ifPresent(r -> LOG.info("Removing admin password because it is stored in secret {}", r.getMetadata().getName()));
-			resource.getSpec().setAdminPassword(null);
-			state.updateResourceAndStatus();
-		} else {
-			LOG.info("Admin password has not been changed.");
-		}*/
+		emptyPasswordStatus(resource);
+		removeAdmPwFromSpecIfInSecret(resource, context, state);
 		reconcileTrustMap(resource);
 		if (resource.getSpec().isSso()) {
-			reconcileAuthenticationSource(resource);
+			//reconcileAuthenticationSource(resource);
 		}
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
 		}
 		return updateCtrl;
-		
 	}
 
-	private void addGeneratedPasswordToSpecIfEmpty(Gitea gitea) {
-		if (StringUtil.isNullOrEmpty(gitea.getSpec().getAdminPassword())) {
-			LOG.info("Admin password is empty. Generating new one.");
-			int length = gitea.getSpec().getAdminPasswordLength() < 10 ? 10 : gitea.getSpec().getAdminPasswordLength();
-			gitea.getSpec().setAdminPassword(passwordService.generateNewPassword(length));  
-			gitea.getSpec().setAdminPasswordLength(length);
-			gitea.getStatus().getConditions().add(new ConditionBuilder()
-					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
+	private void emptyPasswordStatus(Gitea resource) {
+		if (StringUtil.isNullOrEmpty(resource.getSpec().getAdminPassword())) {
+			LOG.info("Password is empty. GiteaAdminSecretDependentResource will generate one.");
+			resource.getStatus().getConditions().add(new ConditionBuilder()
+					.withObservedGeneration(resource.getStatus().getObservedGeneration())
 					.withType(GiteaConditionType.GITEA_ADMIN_PW_GENERATED.toString())
-					.withMessage(String.format("Password for admin %s has been generated", gitea.getSpec().getAdminUser()))
+					.withMessage(String.format("Password for admin %s has been generated", resource.getSpec().getAdminUser()))
 					.withLastTransitionTime(LocalDateTime.now().toString())
 					.withReason("No admin password given in Gitea resource.")
 					.withStatus("True")
@@ -180,22 +141,31 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 	}
 
-	private void moveAdminPasswordToSecret(Gitea resource) {
-		LOG.info("New password. Moving password to secret");
-		GiteaAdminSecretDependentResource.getResource(resource, client)
-				.edit(s -> new SecretBuilder(s).addToData("password", new String(Base64.getEncoder().encode(resource.getSpec().getAdminPassword().getBytes())))
+	private void removeAdmPwFromSpecIfInSecret(Gitea resource, Context<Gitea> context,
+			UpdateControlState<Gitea> state) {
+		
+		Optional<Secret> adminSecret = context.getSecondaryResource(Secret.class, adminSecretDiscriminator);
+		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependentResource::getAdminPassword);
+		Optional<String> adminPasswordInSpec = Optional.ofNullable(resource.getSpec())
+				.map(s -> s.getAdminPassword())
+				.filter(pw -> !StringUtil.isNullOrEmpty(pw));
+		
+		if(adminPasswordInSecret.equals(adminPasswordInSpec)) {
+			LOG.info("Admin password matches the one stored in secret, hence removing it.");
+			resource.getSpec().setAdminPassword(null);
+			state.updateResource();
+			resource.getStatus().getConditions().add(new ConditionBuilder()
+					.withObservedGeneration(resource.getStatus().getObservedGeneration())
+					.withType(GiteaConditionType.GITEA_ADMIN_PW_IN_SECRET.toString())
+					.withMessage("Stored admin password in secret.")
+					.withLastTransitionTime(LocalDateTime.now().toString())
+					.withReason("New password has been provided in Gitea spec.")
+					.withStatus("true")
 					.build());
-		resource.getStatus().getConditions().add(new ConditionBuilder()
-				.withObservedGeneration(resource.getStatus().getObservedGeneration())
-				.withType(GiteaConditionType.GITEA_ADMIN_PW_IN_SECRET.toString())
-				.withMessage("Stored admin password in secret.")
-				.withLastTransitionTime(LocalDateTime.now().toString())
-				.withReason("New password has been provided in Gitea spec.")
-				.withStatus("true")
-				.build());
-		LOG.info("Done, updating status.");
+		}
 	}
 
+	// TODO Replace by dependent
 	private ConfigMap reconcileTrustMap(Gitea resource) {
 		LOG.info("Reconciling trust map");
 		Optional<ConfigMap> trustMap = Optional.ofNullable(client.configMaps().inNamespace(resource.getMetadata().getNamespace()).withName(GITEA_TRUST_BUNDLE_MAP_NAME).get());

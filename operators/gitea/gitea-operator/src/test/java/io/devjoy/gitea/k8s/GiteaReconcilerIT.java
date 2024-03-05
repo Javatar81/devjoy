@@ -6,10 +6,15 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
+import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import io.devjoy.gitea.domain.service.GiteaApiService;
+import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
@@ -19,6 +24,7 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
@@ -31,8 +37,15 @@ import io.quarkus.test.junit.QuarkusTest;
 public class GiteaReconcilerIT {
 
 	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
-
+	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
 	TestEnvironment env = new TestEnvironment(client);
+	GiteaApiService apiService = new GiteaApiService(client);
+	{
+		apiService.setAccessMode(accessMode);
+		
+	}
+	
+	UserService userService = new UserService(apiService);
 	
 	GiteaAssertions assertions = new GiteaAssertions(client);
 	static GiteaPrereqs prereqs = new GiteaPrereqs();
@@ -162,15 +175,17 @@ public class GiteaReconcilerIT {
 			
 		}) != null)
 		;
-		await().ignoreExceptions().atMost(150, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(150, TimeUnit.SECONDS).untilAsserted(() -> {
 			assertions.assertPostgresPvc(gitea);
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
-			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(changedPassword));
-			//Check if Admin can login
-			//String host = GiteaRouteDependentResource.getResource(gitea, client).get().getStatus().getIngress().get(0).getHost();
+			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+			assertThat(adminSecret, is(IsNull.notNullValue()));
+			assertThat(GiteaAdminSecretDependentResource.getAdminPassword(adminSecret).get(), is(changedPassword));
+			//System.out.println(GiteaAdminSecretDependentResource.getAdminPassword(adminSecret).get());
+			//Check if Admin can login by trying to create a token with the new password
+			assertThat(userService.createAccessToken(gitea, gitea.getSpec().getAdminUser(), changedPassword, "testpwchg", UserService.SCOPE_WRITE_REPO).isEmpty(), is(false));
 			//AccessToken token = tokenService.createUserToken("http://" + host, gitea.getSpec().getAdminUser(), changedPassword);
 			//assertThat(token,  is(IsNull.notNullValue()));
         });
@@ -189,8 +204,8 @@ public class GiteaReconcilerIT {
 		spec.setMemoryRequest("256Mi");
 		spec.setDisableRegistration(true);
 		spec.setEnableCaptcha(true);
-		spec.setImage("quay.io/gpte-devops-automation/gitea");
-		spec.setImageTag("latest");
+		spec.setImage("quay.io/rhpds/gitea");
+		spec.setImageTag("1.21");
 		spec.setLogLevel(GiteaLogLevel.INFO);
 		spec.setRegisterEmailConfirm(false);
 		spec.setResourceRequirementsEnabled(true);
@@ -295,7 +310,7 @@ public class GiteaReconcilerIT {
 		
 		
 		client.resource(gitea).create();
-		await().ignoreException(NullPointerException.class).atMost(240, TimeUnit.SECONDS).untilAsserted(() -> {
+		await().ignoreException(NullPointerException.class).atMost(360, TimeUnit.SECONDS).untilAsserted(() -> {
             // check that we create the deployment
             // Postgres PVC
 			assertions.assertPostgresPvc(gitea);

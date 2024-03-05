@@ -18,6 +18,7 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.OAuthClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
@@ -55,6 +56,7 @@ public class GiteaOAuthClientDependentResource extends KubernetesDependentResour
 	public Optional<OAuthClient> getSecondaryResource(Gitea primaryResource, Context<Gitea> ctx) {
 		return super.getSecondaryResource(primaryResource, ctx).or(() -> Optional.ofNullable(getResource(primaryResource, ocpClient).get()));
 	}
+	
 	
 	@Override
 	protected OAuthClient desired(Gitea primary, Context<Gitea> context) {

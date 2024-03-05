@@ -25,6 +25,13 @@ public class GiteaApiService {
 		this.client = client;
 	}
 	
+
+	public void setAccessMode(ApiAccessMode accessMode) {
+		this.accessMode = accessMode;
+	}
+
+
+
 	public Optional<String> getBaseUri(Gitea gitea) {
 		if (accessMode == ApiAccessMode.EXTERNAL && (gitea.getSpec() == null || gitea.getSpec().isIngressEnabled()) && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
 			return getRouterBaseUri(gitea);

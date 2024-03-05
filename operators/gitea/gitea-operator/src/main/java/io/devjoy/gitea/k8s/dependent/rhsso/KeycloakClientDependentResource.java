@@ -61,10 +61,10 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 		}
 		
 		giteaApiService.getRouterBaseUri(primary).ifPresent(baseUri -> {
-			String routerRedirectUri = String.format("%s/user/oauth2/%s/callback", baseUri, authenticationService.oauthName(primary));
+			String routerRedirectUri = String.format("%s/user/oauth2/%s/callback", baseUri, "devjoy-oidc");
 			spec.getClient().getRedirectUris().add(routerRedirectUri);
 		});
-		String internalRedirectUri = String.format("%s/user/oauth2/%s/callback", giteaApiService.getLocalBaseUri(primary), authenticationService.oauthName(primary));
+		String internalRedirectUri = String.format("%s/user/oauth2/%s/callback", giteaApiService.getLocalBaseUri(primary), "devjoy-oidc");
 		spec.getClient().getRedirectUris().add(internalRedirectUri);
 		Optional.ofNullable(getResource(primary, context.getClient()).get())
 			.map(c -> c.getSpec().getClient())
