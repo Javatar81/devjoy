@@ -9,10 +9,10 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.OAuthClient;

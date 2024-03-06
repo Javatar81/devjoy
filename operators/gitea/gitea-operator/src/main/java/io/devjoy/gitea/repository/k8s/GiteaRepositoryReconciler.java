@@ -19,14 +19,11 @@ import org.openapi.quarkus.gitea_json.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.GiteaApiService;
-import io.devjoy.gitea.domain.service.ServiceException;
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.GiteaReconciler;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
 import io.devjoy.gitea.k8s.model.Gitea;
-import io.devjoy.gitea.repository.k8s.dependent.GiteaUserSecretDependentResource;
 import io.devjoy.gitea.repository.k8s.model.GiteaNotFoundException;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
@@ -34,7 +31,10 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryLabels;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
-import io.devjoy.gitea.repository.service.RepositoryService;
+import io.devjoy.gitea.service.GiteaApiService;
+import io.devjoy.gitea.service.RepositoryService;
+import io.devjoy.gitea.service.ServiceException;
+import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
@@ -212,9 +212,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		return userSecret;
 	} */
 
-	private Optional<Secret> getUserSecret(GiteaRepository resource) {
-		return Optional.ofNullable(GiteaUserSecretDependentResource.getResource(resource, resource.getSpec().getUser(), client).get());
-	}
+	
 	
 	@Override
 	public ErrorStatusUpdateControl<GiteaRepository> updateErrorStatus(GiteaRepository gitea, Context<GiteaRepository> context, Exception e) {
@@ -252,9 +250,9 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 				&& resource.getSpec().isDeleteOnFinalize()){
 			LOG.info("Deleting repository");
 			try {
-				getUserSecret(resource)
-						.map(s ->  s.getData().get("token"))
-						.map(s -> "token " + new String(Base64.getDecoder().decode(s)).trim())
+				resource.associatedGitea(client)
+						.flatMap(g -> Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(g, client).get()))
+						.flatMap(GiteaAdminSecretDependentResource::getAdminToken)
 						.filter(t -> repositoryService.getByRepo(resource, t).isPresent())
 						.ifPresent(t -> repositoryService.delete(resource, t));
 			} catch (GiteaNotFoundException e) {

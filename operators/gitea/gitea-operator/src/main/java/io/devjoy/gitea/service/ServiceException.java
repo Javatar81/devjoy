@@ -1,4 +1,4 @@
-package io.devjoy.gitea.domain.service;
+package io.devjoy.gitea.service;
 
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 

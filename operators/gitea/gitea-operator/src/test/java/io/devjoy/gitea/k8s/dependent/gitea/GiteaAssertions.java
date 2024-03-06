@@ -12,7 +12,7 @@ import org.hamcrest.core.IsNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.GiteaAppIni;
+import io.devjoy.gitea.config.GiteaAppIni;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependentResource;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependentResource;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresSecretDependentResource;

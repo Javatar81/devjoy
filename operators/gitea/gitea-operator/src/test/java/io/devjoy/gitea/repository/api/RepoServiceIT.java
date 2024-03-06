@@ -3,7 +3,6 @@ package io.devjoy.gitea.repository.api;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -14,15 +13,10 @@ import org.eclipse.microprofile.rest.client.RestClientBuilder;
 import org.eclipse.microprofile.rest.client.RestClientDefinitionException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
 import org.openapi.quarkus.gitea_json.api.AdminApi;
-import org.openapi.quarkus.gitea_json.api.UserApi;
-import org.openapi.quarkus.gitea_json.model.CreateRepoOption;
 import org.openapi.quarkus.gitea_json.model.CreateUserOption;
-import org.openapi.quarkus.gitea_json.model.GenerateRepoOption;
 import org.openapi.quarkus.gitea_json.model.Repository;
 
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.TestEnvironment;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
@@ -33,6 +27,7 @@ import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
+import io.devjoy.gitea.service.RepositoryService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -74,26 +69,29 @@ class RepoServiceIT {
     void createRepo() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());
-    	RepoService repoService = RestClientBuilder.newBuilder().baseUri(new URI(baseUri)).build(RepoService.class);
-    	CreateRepoOption createRepo = new CreateRepoOption();
-    	createRepo.setDefaultBranch("main");
-    	createRepo.setName("createRepoViaApi");
+    	RepositoryService repoService = RestClientBuilder.newBuilder().baseUri(new URI(baseUri)).build(RepositoryService.class);
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
     		Secret adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
 			assertNotNull(adminSecret);
 			assertions.assertGiteaDeployment(gitea);
 			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN)));
 			String auth = "token " + token;
-			Repository repository = repoService.create(auth, createRepo);
+			GiteaRepository repo = new GiteaRepository();
+			repo.setMetadata(new ObjectMetaBuilder().withName("createRepoViaApi").build());
+			GiteaRepositorySpec spec = new GiteaRepositorySpec();
+			spec.setUser(gitea.getSpec().getAdminUser());
+			spec.setVisibility(Visibility.PUBLIC);
+			repo.setSpec(spec);
+			Repository repository = repoService.create(repo, token, baseUri);
 			assertNotNull(repository);
-			repoService.deleteByUserAndName(auth, gitea.getSpec().getAdminUser(), createRepo.getName());
-			assertRepoDeleted(repoService, createRepo.getName(), auth);
+			repoService.delete(gitea.getSpec().getAdminUser(), repo.getMetadata().getName(), auth, baseUri);
+			assertRepoDeleted(repoService, repo.getMetadata().getName(), auth, baseUri);
     	});
     }
 
-	private void assertRepoDeleted(RepoService repoService, String repoName, String auth) {
+	private void assertRepoDeleted(RepositoryService repoService, String repoName, String auth, String baseUri) {
 		try {
-			repoService.getByUserAndName(auth, gitea.getSpec().getAdminUser(), repoName);
+			repoService.getByUserAndName(gitea.getSpec().getAdminUser(), repoName, auth, baseUri);
 		} catch (WebApplicationException e) {
 			assertEquals(404, e.getResponse().getStatus());
 		}
@@ -103,12 +101,8 @@ class RepoServiceIT {
     void createRepoForOtherUser() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());
-    	RepoService repoService = getService(baseUri, RepoService.class);
+    	RepositoryService repoService = getService(baseUri, RepositoryService.class);
     	AdminApi userService = getService(baseUri, AdminApi.class);
-    	
-    	CreateRepoOption createRepo = new CreateRepoOption();
-    	createRepo.setDefaultBranch("main");
-    	createRepo.setName("createRepoViaApi");
     	
     	String username = "test123";
     	CreateUserOption createUser = new CreateUserOption();
@@ -127,10 +121,16 @@ class RepoServiceIT {
 			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN)));
 			String auth = "token " + token;
 			userService.adminCreateUser(createUser);
-			Repository repository = repoService.createRepositoryOnBehalf(auth, username, createRepo);
+			GiteaRepository repo = new GiteaRepository();
+			repo.setMetadata(new ObjectMetaBuilder().withName("createRepoViaUsr").build());
+			GiteaRepositorySpec spec = new GiteaRepositorySpec();
+			spec.setUser(username);
+			spec.setVisibility(Visibility.PUBLIC);
+			repo.setSpec(spec);
+			Repository repository = repoService.create(repo, token, baseUri);
 			assertNotNull(repository);
-			repoService.deleteByUserAndName(auth, username, createRepo.getName());
-			assertRepoDeleted(repoService, createRepo.getName(), auth);
+			repoService.delete(username, repo.getMetadata().getName(), auth, baseUri);
+			assertRepoDeleted(repoService, repo.getMetadata().getName(), auth, baseUri);
     	});
     }
     

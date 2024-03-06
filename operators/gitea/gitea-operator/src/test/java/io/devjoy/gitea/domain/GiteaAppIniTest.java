@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 
+import io.devjoy.gitea.config.GiteaAppIni;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;

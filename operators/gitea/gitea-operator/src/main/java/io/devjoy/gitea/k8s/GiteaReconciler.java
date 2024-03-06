@@ -6,9 +6,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.AuthenticationService;
-import io.devjoy.gitea.domain.service.ServiceException;
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependentResource;
@@ -35,6 +32,7 @@ import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependentResource
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
@@ -87,18 +85,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
 	private final OpenShiftClient client;
-	private final UserService userService;
-	private final AuthenticationService authService;
 	private final GiteaStatusUpdater updater;
-	private final PasswordService passwordService;
 	private final GiteaAdminSecretDiscriminator adminSecretDiscriminator = new GiteaAdminSecretDiscriminator();
 
-	public GiteaReconciler(OpenShiftClient client, UserService userService, AuthenticationService authService, GiteaStatusUpdater updater, PasswordService pwService) {
+	public GiteaReconciler(OpenShiftClient client, GiteaStatusUpdater updater, PasswordService pwService) {
 		this.client = client;
-		this.userService = userService;
-		this.authService = authService;
 		this.updater = updater;
-		this.passwordService = pwService;
 	}
 
 	@Override
@@ -117,9 +109,6 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		emptyPasswordStatus(resource);
 		removeAdmPwFromSpecIfInSecret(resource, context, state);
 		reconcileTrustMap(resource);
-		if (resource.getSpec().isSso()) {
-			//reconcileAuthenticationSource(resource);
-		}
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
@@ -188,15 +177,6 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			client.configMaps().inNamespace(resource.getMetadata().getNamespace()).create(newTrustMap);
 			return newTrustMap;
 		});
-	}
-
-	private void reconcileAuthenticationSource(Gitea resource) {
-		LOG.info("reconcile authentication");
-		authService.getAuthenticationSourceId(resource).ifPresentOrElse(id -> 
-			authService.updateAuthenticationSource(resource, id)
-		, () -> 
-			authService.registerAuthenticationSource(resource)
-		);
 	}
 
 	@Override

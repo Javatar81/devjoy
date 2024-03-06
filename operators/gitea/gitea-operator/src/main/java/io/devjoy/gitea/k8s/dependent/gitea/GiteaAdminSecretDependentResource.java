@@ -12,10 +12,10 @@ import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.GiteaApiService;
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.service.GiteaApiService;
+import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;

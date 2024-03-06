@@ -1,4 +1,4 @@
-package io.devjoy.gitea.domain.service;
+package io.devjoy.gitea.service;
 
 import java.net.URI;
 import java.net.URISyntaxException;

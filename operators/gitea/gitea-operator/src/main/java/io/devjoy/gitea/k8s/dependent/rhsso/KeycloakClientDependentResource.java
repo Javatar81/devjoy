@@ -11,9 +11,8 @@ import org.keycloak.v1alpha1.KeycloakClientSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.domain.service.AuthenticationService;
-import io.devjoy.gitea.domain.service.GiteaApiService;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -32,8 +31,6 @@ public class KeycloakClientDependentResource extends CRUDKubernetesDependentReso
 	PasswordService passwordService;
 	@Inject
 	GiteaApiService giteaApiService;
-	@Inject
-	AuthenticationService authenticationService;
 	
 	public KeycloakClientDependentResource() {
 		super(KeycloakClient.class);

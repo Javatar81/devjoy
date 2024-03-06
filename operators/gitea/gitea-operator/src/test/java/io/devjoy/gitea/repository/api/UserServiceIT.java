@@ -16,7 +16,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.openapi.quarkus.gitea_json.model.User;
 
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.TestEnvironment;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
@@ -26,14 +25,15 @@ import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
+import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.quarkus.runtime.util.StringUtil;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.WebApplicationException;
@@ -64,23 +64,18 @@ class UserServiceIT {
         client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
 	}
     
-    private Optional<String> getAdminToken(Gitea gitea) {
-    	return Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(gitea, client).get())
-    			.map(g -> g.getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN))
-    			.filter(t -> !StringUtil.isNullOrEmpty(t));
-    }
-    
     @Test
     void getUserNotExists() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		assertNotNull(GiteaAdminSecretDependentResource.getResource(gitea, client).get());
-    		Optional<String> adminToken = getAdminToken(gitea);
+    		Secret secret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		assertNotNull(secret);
+    		Optional<String> adminToken = GiteaAdminSecretDependentResource.getAdminToken(secret);
     		assertFalse(adminToken.isEmpty());
     		assertions.assertGiteaDeployment(gitea);
     		try {
     			userService.getUser(gitea, "bvlsasfas", adminToken.get()).isEmpty();
     		} catch (WebApplicationException e) {
-    			assertEquals(e.getResponse().getStatus(), 404);
+    			assertEquals(404, e.getResponse().getStatus());
     		}
     	});	
     }
@@ -88,8 +83,10 @@ class UserServiceIT {
     @Test
     void createUser() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		assertNotNull(GiteaAdminSecretDependentResource.getResource(gitea, client).get());
-    		Optional<String> adminToken = getAdminToken(gitea);
+    		Secret secret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		assertNotNull(secret);
+    		
+    		Optional<String> adminToken = GiteaAdminSecretDependentResource.getAdminToken(secret);
     		assertFalse(adminToken.isEmpty());
     		assertions.assertGiteaDeployment(gitea);
     		Optional<User> userCr = userService.createUser(gitea, "mytestusr", adminToken.get());

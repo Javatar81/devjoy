@@ -6,15 +6,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.concurrent.TimeUnit;
 
-import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.devjoy.gitea.domain.service.GiteaApiService;
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
@@ -24,6 +21,8 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.service.GiteaApiService;
+import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;

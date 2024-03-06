@@ -15,14 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import io.devjoy.gitea.domain.service.AuthenticationService;
-import io.devjoy.gitea.domain.service.GiteaApiService;
-import io.devjoy.gitea.domain.service.GiteaPodExecService;
-import io.devjoy.gitea.domain.service.ServiceException;
-import io.devjoy.gitea.domain.service.UserService;
 import io.devjoy.gitea.k8s.GiteaStatusUpdater;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
-import io.devjoy.gitea.repository.service.RepositoryService;
+import io.devjoy.gitea.service.GiteaApiService;
+import io.devjoy.gitea.service.RepositoryService;
+import io.devjoy.gitea.service.ServiceException;
+import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -42,11 +40,7 @@ class GiteaRepositoryReconcilerTest {
 	@Mock
 	PasswordService passwordService;
 	@Mock
-	GiteaPodExecService execService;
-	@Mock
 	UserService userService;
-	@Mock
-	AuthenticationService authService;
 	@Mock
 	GiteaApiService giteaApiService;
 	@Mock

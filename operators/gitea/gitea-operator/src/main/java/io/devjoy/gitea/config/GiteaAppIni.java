@@ -1,4 +1,4 @@
-package io.devjoy.gitea.domain;
+package io.devjoy.gitea.config;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
