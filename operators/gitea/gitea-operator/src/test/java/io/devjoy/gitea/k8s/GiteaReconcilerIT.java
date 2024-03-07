@@ -39,10 +39,6 @@ public class GiteaReconcilerIT {
 	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
 	TestEnvironment env = new TestEnvironment(client);
 	GiteaApiService apiService = new GiteaApiService(client);
-	{
-		apiService.setAccessMode(accessMode);
-		
-	}
 	
 	UserService userService = new UserService(apiService);
 	
@@ -57,6 +53,10 @@ public class GiteaReconcilerIT {
 	@AfterEach
 	void tearDown() {
 		client.resources(Gitea.class).inNamespace(getTargetNamespace()).delete();
+	}
+	
+	public GiteaReconcilerIT() {
+		apiService.setAccessMode(accessMode);
 	}
 
 	Gitea createDefault(String name) {
@@ -182,11 +182,7 @@ public class GiteaReconcilerIT {
 			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
 			assertThat(adminSecret, is(IsNull.notNullValue()));
 			assertThat(GiteaAdminSecretDependentResource.getAdminPassword(adminSecret).get(), is(changedPassword));
-			//System.out.println(GiteaAdminSecretDependentResource.getAdminPassword(adminSecret).get());
-			//Check if Admin can login by trying to create a token with the new password
 			assertThat(userService.createAccessToken(gitea, gitea.getSpec().getAdminUser(), changedPassword, "testpwchg", UserService.SCOPE_WRITE_REPO).isEmpty(), is(false));
-			//AccessToken token = tokenService.createUserToken("http://" + host, gitea.getSpec().getAdminUser(), changedPassword);
-			//assertThat(token,  is(IsNull.notNullValue()));
         });
 	}
 
