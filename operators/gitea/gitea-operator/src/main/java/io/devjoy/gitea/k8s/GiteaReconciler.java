@@ -17,6 +17,7 @@ import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceAccountDependentResource;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaTrustMapDependentResource;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfigMapDependentResource;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependentResource;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependentResource;
@@ -36,9 +37,6 @@ import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -57,6 +55,7 @@ import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
 
 @ControllerConfiguration(dependents = { @Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependentResource.class),
+		@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependentResource.class),
 		@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependentResource.class),
 		@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependentResource.class),
 		@Dependent(type = GiteaServiceAccountDependentResource.class),
@@ -82,14 +81,11 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	public static final String CSV_METADATA_VERSION = "0.3.0";
 	public static final String CSV_METADATA_NAME = "gitea-operator-bundle.v" + CSV_METADATA_VERSION;
 	public static final String CSV_CONTAINER_IMAGE = "quay.io/devjoy/gitea-operator:" + CSV_METADATA_VERSION;
-	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "gitea-trust-bundle";
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
-	private final OpenShiftClient client;
 	private final GiteaStatusUpdater updater;
 	private final GiteaAdminSecretDiscriminator adminSecretDiscriminator = new GiteaAdminSecretDiscriminator();
 
-	public GiteaReconciler(OpenShiftClient client, GiteaStatusUpdater updater, PasswordService pwService) {
-		this.client = client;
+	public GiteaReconciler(GiteaStatusUpdater updater) {
 		this.updater = updater;
 	}
 
@@ -108,7 +104,6 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 		emptyPasswordStatus(resource);
 		removeAdmPwFromSpecIfInSecret(resource, context, state);
-		reconcileTrustMap(resource);
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
@@ -152,31 +147,6 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 					.withStatus("true")
 					.build());
 		}
-	}
-
-	// TODO Replace by dependent
-	private ConfigMap reconcileTrustMap(Gitea resource) {
-		LOG.info("Reconciling trust map");
-		Optional<ConfigMap> trustMap = Optional.ofNullable(client.configMaps().inNamespace(resource.getMetadata().getNamespace()).withName(GITEA_TRUST_BUNDLE_MAP_NAME).get());
-		return trustMap.orElseGet(() -> {
-			LOG.info("Creating trust map");
-			ConfigMap newTrustMap = new ConfigMapBuilder()
-					.withNewMetadata()
-						.withName(GITEA_TRUST_BUNDLE_MAP_NAME)
-						.withOwnerReferences(new OwnerReferenceBuilder()
-								.withUid(resource.getMetadata().getUid())
-								.withKind(resource.getKind())
-								.withApiVersion(resource.getApiVersion())
-								.withName(resource.getMetadata().getName())
-								.build())
-						.addToLabels("config.openshift.io/inject-trusted-cabundle", "true")
-						.addToLabels("devjoy.io/cm.role", "trustmap")
-						//.addToAnnotations("service.beta.openshift.io/inject-cabundle", "true")
-					.endMetadata()
-					.build();
-			client.configMaps().inNamespace(resource.getMetadata().getNamespace()).create(newTrustMap);
-			return newTrustMap;
-		});
 	}
 
 	@Override

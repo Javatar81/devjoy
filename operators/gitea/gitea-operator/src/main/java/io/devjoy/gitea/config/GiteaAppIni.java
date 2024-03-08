@@ -103,9 +103,7 @@ public class GiteaAppIni {
     }
 
     public GiteaIniSection getSection(String name) {
-    	return sections.computeIfAbsent(name, k -> 
-    		new GiteaIniSection(k)
-    	);
+    	return sections.computeIfAbsent(name, GiteaIniSection::new);
     }
 
     public Object setProperty(String key, Object value) {

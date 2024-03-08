@@ -222,6 +222,7 @@ public class GiteaReconcilerIT {
 		spec.getPostgres().setImage("registry.redhat.io/rhel8/postgresql-12");
 		spec.getPostgres().setImageTag("latest");
 		spec.getPostgres().setVolumeSize("8Gi");
+		spec.getPostgres().setSsl(true);
 		//TODO Overrides
 		GiteaConfigOverrides over = spec.getConfigOverrides();
 		over.getActions().put("ENABLED", "true");

@@ -11,7 +11,7 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = PostgresConfigMapDependentResource.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = PostgresConfigMapDiscriminator.class, labelSelector = PostgresConfigMapDependentResource.LABEL_SELECTOR)
 public class PostgresConfigMapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, Gitea>{
 	private static final String LABEL_KEY = "devjoy.io/configmap.type";
 	private static final String LABEL_VALUE = "gitea-postgres";
