@@ -15,16 +15,16 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 
-@KubernetesDependent(resourceDiscriminator = PostgresSecretDiscriminator.class, labelSelector = PostgresSecretDependentResource.LABEL_SELECTOR)
-public class PostgresSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(PostgresSecretDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = PostgresSecretDiscriminator.class, labelSelector = PostgresSecretDependent.LABEL_SELECTOR)
+public class PostgresSecretDependent extends CRUDKubernetesDependentResource<Secret, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(PostgresSecretDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/secret.target";
 	private static final String LABEL_VALUE = "postgres";
 	public static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	@Inject
 	PostgresConfig config;
 	
-	public PostgresSecretDependentResource() {
+	public PostgresSecretDependent() {
 		super(Secret.class);
 		
 	}

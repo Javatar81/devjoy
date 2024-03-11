@@ -6,39 +6,37 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientReconcileCondition;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaPvcDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaPvcDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteReconcileCondition;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceAccountDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaTrustMapDependentResource;
-import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfigMapDependentResource;
-import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependentResource;
-import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependentResource;
-import io.devjoy.gitea.k8s.dependent.postgres.PostgresSecretDependentResource;
-import io.devjoy.gitea.k8s.dependent.postgres.PostgresServiceDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorGroupDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceAccountDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaTrustMapDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfigMapDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresSecretDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresServiceDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorGroupDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorReconcileCondition;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakReconcileCondition;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.service.ServiceException;
-import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
@@ -54,26 +52,26 @@ import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.ws.rs.WebApplicationException;
 
-@ControllerConfiguration(dependents = { @Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependentResource.class),
-		@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependentResource.class),
-		@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependentResource.class),
-		@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependentResource.class),
-		@Dependent(type = GiteaServiceAccountDependentResource.class),
-		@Dependent(name = "giteaService", type = GiteaServiceDependentResource.class), 
-		@Dependent(reconcilePrecondition = GiteaRouteReconcileCondition.class,name= "giteaRoute", type = GiteaRouteDependentResource.class),
-		@Dependent(name = "giteaPvc", type = GiteaPvcDependentResource.class), 
-		@Dependent(name = "postgresService", type = PostgresServiceDependentResource.class),
-		@Dependent(name = "postgresSecret", type = PostgresSecretDependentResource.class), 
-		@Dependent(name = "postgresPvc", type = PostgresPvcDependentResource.class),
-		@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependentResource.class), 
-		@Dependent(name = "postgresConfig", type = PostgresConfigMapDependentResource.class), 
-		@Dependent(reconcilePrecondition = GiteaOAuthClientReconcileCondition.class, type = GiteaOAuthClientDependentResource.class),
-		@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
-		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependentResource.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
-		@Dependent(type = KeycloakDependentResource.class, activationCondition = KeycloakReconcileCondition.class), 
-		@Dependent(type = KeycloakRealmDependentResource.class, activationCondition = KeycloakReconcileCondition.class), 
-		@Dependent(type = KeycloakClientDependentResource.class, activationCondition = KeycloakReconcileCondition.class) 
-		
+@ControllerConfiguration(dependents = { 
+		@Dependent(name = "giteaConfigSecret", type = GiteaConfigSecretDependent.class),
+		@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependent.class),
+		@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependent.class),
+		@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependent.class),
+		@Dependent(name = "giteaServiceAccount", type = GiteaServiceAccountDependent.class),
+		@Dependent(name = "giteaService", type = GiteaServiceDependent.class), 
+		@Dependent(name = "giteaRoute", type = GiteaRouteDependent.class, reconcilePrecondition = GiteaRouteReconcileCondition.class),
+		@Dependent(name = "giteaPvc", type = GiteaPvcDependent.class), 
+		@Dependent(name = "giteaOAuthClient", type = GiteaOAuthClientDependent.class, reconcilePrecondition = GiteaOAuthClientReconcileCondition.class),
+		@Dependent(name = "postgresService", type = PostgresServiceDependent.class),
+		@Dependent(name = "postgresSecret", type = PostgresSecretDependent.class), 
+		@Dependent(name = "postgresPvc", type = PostgresPvcDependent.class),
+		@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependent.class), 
+		@Dependent(name = "postgresConfig", type = PostgresConfigMapDependent.class), 
+		@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
+		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
+		@Dependent(name = "keycloak", type = KeycloakDependent.class, activationCondition = KeycloakReconcileCondition.class), 
+		@Dependent(name = "keycloakRealm", type = KeycloakRealmDependent.class, activationCondition = KeycloakReconcileCondition.class), 
+		@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class) 	
 })
 @RBACRule(apiGroups = "route.openshift.io", resources = {"routes/custom-host"}, verbs = {"create","patch"})
 @CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME, version = GiteaReconciler.CSV_METADATA_VERSION, displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = GiteaReconciler.CSV_CONTAINER_IMAGE, others= {}))
@@ -129,7 +127,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			UpdateControlState<Gitea> state) {
 		
 		Optional<Secret> adminSecret = context.getSecondaryResource(Secret.class, adminSecretDiscriminator);
-		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependentResource::getAdminPassword);
+		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependent::getAdminPassword);
 		Optional<String> adminPasswordInSpec = Optional.ofNullable(resource.getSpec())
 				.map(s -> s.getAdminPassword())
 				.filter(pw -> !StringUtil.isNullOrEmpty(pw));

@@ -16,12 +16,12 @@ import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
 @KubernetesDependent(resourceDiscriminator = GiteaRouteDiscriminator.class)
-public class GiteaRouteDependentResource extends CRUDKubernetesDependentResource<Route, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaRouteDependentResource.class);
+public class GiteaRouteDependent extends CRUDKubernetesDependentResource<Route, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaRouteDependent.class);
 	@Inject
 	OpenShiftClient ocpClient;
 	
-	public GiteaRouteDependentResource() {
+	public GiteaRouteDependent() {
 		super(Route.class);
 	}
 	

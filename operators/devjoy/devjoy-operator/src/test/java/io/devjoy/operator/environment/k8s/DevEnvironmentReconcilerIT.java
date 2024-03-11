@@ -10,7 +10,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependent;
 import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -40,7 +40,7 @@ public class DevEnvironmentReconcilerIT {
         client.resource(env).create();
         await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
             
-            final var giteaDeployment = GiteaDeploymentDependentResource.getResource(GiteaDependentResource.getResource(client, env).get(), client).get();
+            final var giteaDeployment = GiteaDeploymentDependent.getResource(GiteaDependentResource.getResource(client, env).get(), client).get();
             assertThat(giteaDeployment, is(IsNull.notNullValue()));
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
             assertThat(giteaDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));

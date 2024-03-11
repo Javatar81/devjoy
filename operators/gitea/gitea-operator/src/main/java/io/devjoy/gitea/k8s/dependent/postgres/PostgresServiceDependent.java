@@ -8,15 +8,15 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = PostgresServiceDiscriminator.class, labelSelector = PostgresServiceDependentResource.LABEL_SELECTOR)
-public class PostgresServiceDependentResource extends CRUDKubernetesDependentResource<Service, Gitea>{
+@KubernetesDependent(resourceDiscriminator = PostgresServiceDiscriminator.class, labelSelector = PostgresServiceDependent.LABEL_SELECTOR)
+public class PostgresServiceDependent extends CRUDKubernetesDependentResource<Service, Gitea>{
 	private static final String LABEL_KEY = "devjoy.io/svc.target";
 	private static final String LABEL_VALUE = "postgres";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	private static final String OCP_SERVICE_CERTIFICATE_LABEL = "service.beta.openshift.io/serving-cert-secret-name";
 	
 	
-	public PostgresServiceDependentResource() {
+	public PostgresServiceDependent() {
 		super(Service.class);
 	}
 	

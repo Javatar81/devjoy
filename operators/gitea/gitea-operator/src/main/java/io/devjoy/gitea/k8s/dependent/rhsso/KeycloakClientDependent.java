@@ -23,16 +23,16 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 @KubernetesDependent
-public class KeycloakClientDependentResource extends CRUDKubernetesDependentResource<KeycloakClient, Gitea> {
+public class KeycloakClientDependent extends CRUDKubernetesDependentResource<KeycloakClient, Gitea> {
 	private static final int SECRET_LENGTH = 12;
 	private static final String LABEL_DEVJOY_APP = "app.devjoy.io/gitea";
-	private static final Logger LOG = LoggerFactory.getLogger(KeycloakClientDependentResource.class);
+	private static final Logger LOG = LoggerFactory.getLogger(KeycloakClientDependent.class);
 	@Inject
 	PasswordService passwordService;
 	@Inject
 	GiteaApiService giteaApiService;
 	
-	public KeycloakClientDependentResource() {
+	public KeycloakClientDependent() {
 		super(KeycloakClient.class);
 	}
 	

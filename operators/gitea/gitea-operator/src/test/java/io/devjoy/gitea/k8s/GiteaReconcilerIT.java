@@ -12,11 +12,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
@@ -98,7 +98,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
+			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(10));
         });
 	}
@@ -115,7 +115,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
+			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
         });
 	}
@@ -133,9 +133,9 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			assertThat(KeycloakDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
-			assertThat(KeycloakRealmDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
-			assertThat(KeycloakClientDependentResource.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			assertThat(KeycloakDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			assertThat(KeycloakRealmDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			assertThat(KeycloakClientDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
 		});
 	}
 
@@ -154,7 +154,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client);
+			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(gitea.getSpec().getAdminPassword()));
         });
 	}
@@ -179,9 +179,9 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
-			final var adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client).get();
 			assertThat(adminSecret, is(IsNull.notNullValue()));
-			assertThat(GiteaAdminSecretDependentResource.getAdminPassword(adminSecret).get(), is(changedPassword));
+			assertThat(GiteaAdminSecretDependent.getAdminPassword(adminSecret).get(), is(changedPassword));
 			assertThat(userService.createAccessToken(gitea, gitea.getSpec().getAdminUser(), changedPassword, "testpwchg", UserService.SCOPE_WRITE_REPO).isEmpty(), is(false));
         });
 	}

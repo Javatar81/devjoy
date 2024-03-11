@@ -14,10 +14,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class KeycloakOperatorGroupDependentResource extends CRUDKubernetesDependentResource<OperatorGroup, Gitea>{
-	private static final Logger LOG = LoggerFactory.getLogger(KeycloakOperatorGroupDependentResource.class);
+public class KeycloakOperatorGroupDependent extends CRUDKubernetesDependentResource<OperatorGroup, Gitea>{
+	private static final Logger LOG = LoggerFactory.getLogger(KeycloakOperatorGroupDependent.class);
 	
-	public KeycloakOperatorGroupDependentResource() {
+	public KeycloakOperatorGroupDependent() {
 		super(OperatorGroup.class);
 	}
 	

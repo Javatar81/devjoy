@@ -6,8 +6,9 @@ import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class GiteaTrustMapDiscriminator extends ResourceIDMatcherDiscriminator<ConfigMap, Gitea> {
+	
 	public GiteaTrustMapDiscriminator() {
-		super(p -> new ResourceID(GiteaTrustMapDependentResource.getName(p), p.getMetadata().getNamespace()));
+		super(p -> new ResourceID(GiteaTrustMapDependent.getName(p), p.getMetadata().getNamespace()));
 	}
 
 }

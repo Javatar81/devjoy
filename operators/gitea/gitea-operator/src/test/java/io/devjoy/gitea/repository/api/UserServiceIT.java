@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.openapi.quarkus.gitea_json.model.User;
 
 import io.devjoy.gitea.k8s.TestEnvironment;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
@@ -67,9 +67,9 @@ class UserServiceIT {
     @Test
     void getUserNotExists() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		Secret secret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		Secret secret = GiteaAdminSecretDependent.getResource(gitea, client).get();
     		assertNotNull(secret);
-    		Optional<String> adminToken = GiteaAdminSecretDependentResource.getAdminToken(secret);
+    		Optional<String> adminToken = GiteaAdminSecretDependent.getAdminToken(secret);
     		assertFalse(adminToken.isEmpty());
     		assertions.assertGiteaDeployment(gitea);
     		try {
@@ -83,10 +83,10 @@ class UserServiceIT {
     @Test
     void createUser() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		Secret secret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		Secret secret = GiteaAdminSecretDependent.getResource(gitea, client).get();
     		assertNotNull(secret);
     		
-    		Optional<String> adminToken = GiteaAdminSecretDependentResource.getAdminToken(secret);
+    		Optional<String> adminToken = GiteaAdminSecretDependent.getAdminToken(secret);
     		assertFalse(adminToken.isEmpty());
     		assertions.assertGiteaDeployment(gitea);
     		Optional<User> userCr = userService.createUser(gitea, "mytestusr", adminToken.get());

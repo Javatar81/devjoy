@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.Optional;
 
 import org.apache.http.client.utils.URIBuilder;
-import org.openapi.quarkus.gitea_json.model.Repository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,9 +34,9 @@ import jakarta.ws.rs.WebApplicationException;
  * not stored in this secret. 
  *
  */
-@KubernetesDependent(resourceDiscriminator = GiteaAdminSecretDiscriminator.class, labelSelector = GiteaAdminSecretDependentResource.SELECTOR)
-public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaAdminSecretDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = GiteaAdminSecretDiscriminator.class, labelSelector = GiteaAdminSecretDependent.SELECTOR)
+public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<Secret, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaAdminSecretDependent.class);
 	public static final String DATA_KEY_USERNAME = "user";
 	public static final String DATA_KEY_PASSWORD = "password";
 	public static final String DATA_KEY_TOKEN = "token";
@@ -59,7 +58,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 	GiteaApiService giteaApiService;
 	GiteaDeploymentDiscriminator deploymentDiscriminator = new GiteaDeploymentDiscriminator();
 	
-	public GiteaAdminSecretDependentResource() {
+	public GiteaAdminSecretDependent() {
 		super(Secret.class);
 		
 	}
@@ -96,7 +95,7 @@ public class GiteaAdminSecretDependentResource extends CRUDKubernetesDependentRe
 		} else if(!passwordFromSpec.isEmpty() && !passwordFromSecret.isEmpty() && !passwordFromSecret.equals(passwordFromSpec)) {
 			LOG.info("Password changed.");
 			passwordFromSpec.ifPresent(pw -> getSecondaryResource(primary, context)
-					.flatMap(GiteaAdminSecretDependentResource::getAdminToken)
+					.flatMap(GiteaAdminSecretDependent::getAdminToken)
 					.ifPresent(token -> userService.changeUserPassword(primary, adminUser, pw, token)));
 		}
 		

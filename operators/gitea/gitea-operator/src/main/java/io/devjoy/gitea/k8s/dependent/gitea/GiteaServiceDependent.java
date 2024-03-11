@@ -13,14 +13,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = GiteaDeploymentDiscriminator.class,labelSelector = GiteaServiceDependentResource.LABEL_SELECTOR)
-public class GiteaServiceDependentResource extends CRUDKubernetesDependentResource<Service, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaServiceDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = GiteaDeploymentDiscriminator.class,labelSelector = GiteaServiceDependent.LABEL_SELECTOR)
+public class GiteaServiceDependent extends CRUDKubernetesDependentResource<Service, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaServiceDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/svc.target";
 	private static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
-	public GiteaServiceDependentResource() {
+	public GiteaServiceDependent() {
 		super(Service.class);
 	}
 

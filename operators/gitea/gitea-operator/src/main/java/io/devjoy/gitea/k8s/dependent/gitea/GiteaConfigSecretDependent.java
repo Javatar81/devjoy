@@ -25,9 +25,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = GiteaConfigSecretDiscriminator.class, labelSelector = GiteaConfigSecretDependentResource.LABEL_SELECTOR)
-public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentResource<Secret, Gitea>{
-	static final Logger LOG = LoggerFactory.getLogger(GiteaConfigSecretDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = GiteaConfigSecretDiscriminator.class, labelSelector = GiteaConfigSecretDependent.LABEL_SELECTOR)
+public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<Secret, Gitea>{
+	static final Logger LOG = LoggerFactory.getLogger(GiteaConfigSecretDependent.class);
 	static final String SECTION_DATABASE = "database";
 	static final String SECTION_MIGRATIONS = "migrations";
 	static final String SECTION_SERVER = "server";
@@ -112,7 +112,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 	@Inject
 	OpenShiftClient ocpClient;
 	
-	public GiteaConfigSecretDependentResource() {
+	public GiteaConfigSecretDependent() {
 		super(Secret.class);
 	}
 
@@ -150,7 +150,7 @@ public class GiteaConfigSecretDependentResource extends CRUDKubernetesDependentR
 		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
 		configureDatabase(primary, iniConfiguration);
 		if((primary.getSpec() == null || primary.getSpec().isIngressEnabled()) && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
-			Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(primary, ocpClient)
+			Optional<Route> route = Optional.ofNullable(GiteaRouteDependent.getResource(primary, ocpClient)
 				.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
 			route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
 		}

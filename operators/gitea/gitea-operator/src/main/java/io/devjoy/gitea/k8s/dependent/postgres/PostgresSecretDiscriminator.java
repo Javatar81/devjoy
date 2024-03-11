@@ -1,19 +1,14 @@
 package io.devjoy.gitea.k8s.dependent.postgres;
 
-import java.util.Optional;
-
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class PostgresSecretDiscriminator implements ResourceDiscriminator<Secret, Gitea>{
+public class PostgresSecretDiscriminator extends ResourceIDMatcherDiscriminator<Secret, Gitea> {
+	
+	public PostgresSecretDiscriminator() {
+		super(p -> new ResourceID(PostgresSecretDependent.getName(p), p.getMetadata().getNamespace()));
+	}
 
-    @Override
-    public Optional<Secret> distinguish(Class<Secret> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName(PostgresSecretDependentResource.getName(primary)).get());
-    }
-
-
-    
 }

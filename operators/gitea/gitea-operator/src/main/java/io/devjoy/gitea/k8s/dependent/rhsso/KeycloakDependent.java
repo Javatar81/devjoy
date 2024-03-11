@@ -15,9 +15,9 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class KeycloakDependentResource extends CRUDKubernetesDependentResource<Keycloak, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(KeycloakDependentResource.class);
-	public KeycloakDependentResource() {
+public class KeycloakDependent extends CRUDKubernetesDependentResource<Keycloak, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(KeycloakDependent.class);
+	public KeycloakDependent() {
 		super(Keycloak.class);
 	}
 	

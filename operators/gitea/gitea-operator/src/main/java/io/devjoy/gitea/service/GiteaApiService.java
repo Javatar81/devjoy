@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.openshift.api.model.Route;
@@ -41,7 +41,7 @@ public class GiteaApiService {
 	}
 	
 	public Optional<String> getRouterBaseUri(Gitea gitea) {
-		Optional<Route> route = Optional.ofNullable(GiteaRouteDependentResource.getResource(gitea, client)
+		Optional<Route> route = Optional.ofNullable(GiteaRouteDependent.getResource(gitea, client)
 		    	.waitUntilCondition(c -> c != null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
 		return route.map(r -> getRouterBaseUri(gitea, r));
 	}
@@ -63,6 +63,6 @@ public class GiteaApiService {
 	 * @return
 	 */
 	public String getLocalBaseUri(Gitea resource) {
-		return String.format("http://%s.%s.svc.cluster.local:3000", GiteaServiceDependentResource.getName(resource), resource.getMetadata().getNamespace());
+		return String.format("http://%s.%s.svc.cluster.local:3000", GiteaServiceDependent.getName(resource), resource.getMetadata().getNamespace());
 	}
 }

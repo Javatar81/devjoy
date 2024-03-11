@@ -11,7 +11,7 @@ import org.keycloak.v1alpha1.keycloakrealmspec.realm.IdentityProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -24,14 +24,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 @KubernetesDependent
-public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResource<KeycloakRealm, Gitea> {
+public class KeycloakRealmDependent extends CRUDKubernetesDependentResource<KeycloakRealm, Gitea> {
 	private static final String LABEL_DEVJOY_APP = "app.devjoy.io/gitea";
-	private static final Logger LOG = LoggerFactory.getLogger(KeycloakRealmDependentResource.class);
+	private static final Logger LOG = LoggerFactory.getLogger(KeycloakRealmDependent.class);
 	@Inject
 	OpenShiftClient ocpClient;
 	@Inject
 	PasswordService passwordService;
-	public KeycloakRealmDependentResource() {
+	public KeycloakRealmDependent() {
 		super(KeycloakRealm.class);
 		
 	}
@@ -50,7 +50,7 @@ public class KeycloakRealmDependentResource extends CRUDKubernetesDependentResou
 		spec.getRealm().setDisplayName(primary.getMetadata().getName());
 		
 		LOG.info("Waiting for oauthClient");
-		Optional<OAuthClient> oauthClient = Optional.ofNullable(GiteaOAuthClientDependentResource.getResource(primary, ocpClient)
+		Optional<OAuthClient> oauthClient = Optional.ofNullable(GiteaOAuthClientDependent.getResource(primary, ocpClient)
 			.waitUntilCondition(Objects::nonNull, 30, TimeUnit.SECONDS));
 		LOG.info("OauthClient present? {}", oauthClient.isPresent());
 		

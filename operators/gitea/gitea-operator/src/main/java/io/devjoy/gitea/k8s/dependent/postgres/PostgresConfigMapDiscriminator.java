@@ -6,8 +6,9 @@ import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 public class PostgresConfigMapDiscriminator extends ResourceIDMatcherDiscriminator<ConfigMap, Gitea> {
+	
 	public PostgresConfigMapDiscriminator() {
-		super(p -> new ResourceID(PostgresConfigMapDependentResource.getName(p), p.getMetadata().getNamespace()));
+		super(p -> new ResourceID(PostgresConfigMapDependent.getName(p), p.getMetadata().getNamespace()));
 	}
 
 }

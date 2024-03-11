@@ -13,14 +13,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = GiteaPvcDiscriminator.class, labelSelector = GiteaPvcDependentResource.LABEL_SELECTOR)
-public class GiteaPvcDependentResource extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaPvcDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = GiteaPvcDiscriminator.class, labelSelector = GiteaPvcDependent.LABEL_SELECTOR)
+public class GiteaPvcDependent extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaPvcDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/pvc.target";
 	private static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
-	public GiteaPvcDependentResource() {
+	public GiteaPvcDependent() {
 		super(PersistentVolumeClaim.class);
 		
 	}

@@ -9,8 +9,8 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependentResource;
-import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependentResource;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependent;
+import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.util.PasswordService;
@@ -18,20 +18,18 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.OAuthClient;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.Matcher;
 import io.javaoperatorsdk.operator.processing.dependent.Updater;
-import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = GiteaOAuthClientDependentResource.LABEL_SELECTOR)
-public class GiteaOAuthClientDependentResource extends KubernetesDependentResource<OAuthClient, Gitea> implements Creator<OAuthClient, Gitea>, Updater<OAuthClient, Gitea>, Matcher<OAuthClient, Gitea> {
+@KubernetesDependent(labelSelector = GiteaOAuthClientDependent.LABEL_SELECTOR)
+public class GiteaOAuthClientDependent extends KubernetesDependentResource<OAuthClient, Gitea> implements Creator<OAuthClient, Gitea>, Updater<OAuthClient, Gitea>, Matcher<OAuthClient, Gitea> {
 	private static final String OAUTH2_CALLBACK = "/user/oauth2/test/callback";
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaOAuthClientDependentResource.class);
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaOAuthClientDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/oauthclient.target";
 	private static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
@@ -42,11 +40,9 @@ public class GiteaOAuthClientDependentResource extends KubernetesDependentResour
 	@Inject
 	PasswordService passwordService;
 	
-	public GiteaOAuthClientDependentResource() {
+	public GiteaOAuthClientDependent() {
 		super(OAuthClient.class);
 	}
-
-	
 
 	/*
 	 * We override this to get resource via client because it seems not to be cached.
@@ -71,14 +67,14 @@ public class GiteaOAuthClientDependentResource extends KubernetesDependentResour
 		apiService.getRouterBaseUri(primary).ifPresent(uri -> redirectURIs.add(uri + callbackPath));
 		redirectURIs.add(apiService.getLocalBaseUri(primary) + callbackPath);
 		if (primary.getSpec() != null && primary.getSpec().isSso()) {
-			Optional<String> keycloakUrl = Optional.ofNullable(KeycloakDependentResource.getResource(primary, ocpClient)
+			Optional<String> keycloakUrl = Optional.ofNullable(KeycloakDependent.getResource(primary, ocpClient)
 					.waitUntilCondition(c -> c!= null && c.getStatus() != null && !StringUtil.isNullOrEmpty(c.getStatus().getExternalURL()), 180, TimeUnit.SECONDS))
 					.map(k -> k.getStatus().getExternalURL());
 			keycloakUrl.ifPresent(url -> 
-				redirectURIs.add(String.format("%s/auth/realms/%s/broker/%s/endpoint", url, KeycloakRealmDependentResource.resourceName(primary), KeycloakRealmDependentResource.alias(primary)))	
+				redirectURIs.add(String.format("%s/auth/realms/%s/broker/%s/endpoint", url, KeycloakRealmDependent.resourceName(primary), KeycloakRealmDependent.alias(primary)))	
 			);
 		}
-		Optional<OAuthClient> existingClient = Optional.ofNullable(GiteaOAuthClientDependentResource.getResource(primary, ocpClient).get());
+		Optional<OAuthClient> existingClient = Optional.ofNullable(GiteaOAuthClientDependent.getResource(primary, ocpClient).get());
 		existingClient.ifPresentOrElse(c -> {
 			if (StringUtil.isNullOrEmpty(c.getSecret())) {
 				client.setSecret(passwordService.generateNewPassword(12));

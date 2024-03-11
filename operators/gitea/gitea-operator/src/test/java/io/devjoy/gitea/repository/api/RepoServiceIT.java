@@ -18,9 +18,9 @@ import org.openapi.quarkus.gitea_json.model.CreateUserOption;
 import org.openapi.quarkus.gitea_json.model.Repository;
 
 import io.devjoy.gitea.k8s.TestEnvironment;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
@@ -67,14 +67,14 @@ class RepoServiceIT {
   
     //@Test
     void createRepo() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
-    	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
+    	Route route = GiteaRouteDependent.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());
     	RepositoryService repoService = RestClientBuilder.newBuilder().baseUri(new URI(baseUri)).build(RepositoryService.class);
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		Secret adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		Secret adminSecret = GiteaAdminSecretDependent.getResource(gitea, client).get();
 			assertNotNull(adminSecret);
 			assertions.assertGiteaDeployment(gitea);
-			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN)));
+			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependent.DATA_KEY_TOKEN)));
 			String auth = "token " + token;
 			GiteaRepository repo = new GiteaRepository();
 			repo.setMetadata(new ObjectMetaBuilder().withName("createRepoViaApi").build());
@@ -99,7 +99,7 @@ class RepoServiceIT {
     
     //@Test
     void createRepoForOtherUser() throws IllegalStateException, RestClientDefinitionException, URISyntaxException {
-    	Route route = GiteaRouteDependentResource.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
+    	Route route = GiteaRouteDependent.getResource(gitea, client).waitUntilCondition(r -> !r.getStatus().getIngress().isEmpty() && r.getStatus().getIngress().get(0).getHost() != null, 60, TimeUnit.SECONDS);
     	String baseUri = String.format("http://%s/api/v1", route.getStatus().getIngress().get(0).getHost());
     	RepositoryService repoService = getService(baseUri, RepositoryService.class);
     	AdminApi userService = getService(baseUri, AdminApi.class);
@@ -115,10 +115,10 @@ class RepoServiceIT {
     	createUser.setMustChangePassword(false);
     	
     	await().ignoreException(NullPointerException.class).atMost(120, TimeUnit.SECONDS).untilAsserted(() -> {
-    		Secret adminSecret = GiteaAdminSecretDependentResource.getResource(gitea, client).get();
+    		Secret adminSecret = GiteaAdminSecretDependent.getResource(gitea, client).get();
     		assertNotNull(adminSecret);
 			assertions.assertGiteaDeployment(gitea);
-			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependentResource.DATA_KEY_TOKEN)));
+			String token = new String(java.util.Base64.getDecoder().decode(adminSecret.getData().get(GiteaAdminSecretDependent.DATA_KEY_TOKEN)));
 			String auth = "token " + token;
 			userService.adminCreateUser(createUser);
 			GiteaRepository repo = new GiteaRepository();

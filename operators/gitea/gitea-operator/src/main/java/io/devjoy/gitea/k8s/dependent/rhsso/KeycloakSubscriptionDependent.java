@@ -12,10 +12,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class KeycloakSubscriptionDependentResource extends CRUDKubernetesDependentResource<Subscription, Gitea>{
-	private static final Logger LOG = LoggerFactory.getLogger(KeycloakSubscriptionDependentResource.class);
+public class KeycloakSubscriptionDependent extends CRUDKubernetesDependentResource<Subscription, Gitea>{
+	private static final Logger LOG = LoggerFactory.getLogger(KeycloakSubscriptionDependent.class);
 	
-	public KeycloakSubscriptionDependentResource() {
+	public KeycloakSubscriptionDependent() {
 		super(Subscription.class);
 	}
 	

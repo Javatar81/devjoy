@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.GiteaReconciler;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependentResource;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaNotFoundException;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
@@ -93,8 +93,8 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
 			assureGiteaLabelsSet(resource, g, state);
 			
-			Optional<Repository> repo = Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(g, client).get())
-				.flatMap(GiteaAdminSecretDependentResource::getAdminToken)
+			Optional<Repository> repo = Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
+				.flatMap(GiteaAdminSecretDependent::getAdminToken)
 				.flatMap(t -> {
 					assureUserCreated(resource, g, t);
 					return assureRepositoryExists(resource, context, g, t);
@@ -251,8 +251,8 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			LOG.info("Deleting repository");
 			try {
 				resource.associatedGitea(client)
-						.flatMap(g -> Optional.ofNullable(GiteaAdminSecretDependentResource.getResource(g, client).get()))
-						.flatMap(GiteaAdminSecretDependentResource::getAdminToken)
+						.flatMap(g -> Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get()))
+						.flatMap(GiteaAdminSecretDependent::getAdminToken)
 						.filter(t -> repositoryService.getByRepo(resource, t).isPresent())
 						.ifPresent(t -> repositoryService.delete(resource, t));
 			} catch (GiteaNotFoundException e) {
@@ -267,7 +267,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		try {
 			URL url = URI.create(externalCloneUrl).toURL();
 			Optional<Service> giteaService = Optional
-					.ofNullable(GiteaServiceDependentResource.getResource(gitea, client).get());
+					.ofNullable(GiteaServiceDependent.getResource(gitea, client).get());
 			return giteaService.map(s -> String.format("http://%s.%s.svc.cluster.local:%d%s", s.getMetadata().getName(),
 					s.getMetadata().getNamespace(), s.getSpec().getPorts().stream()
 							.filter(p -> "gitea".equals(p.getName())).map(ServicePort::getPort).findAny().orElse(80),

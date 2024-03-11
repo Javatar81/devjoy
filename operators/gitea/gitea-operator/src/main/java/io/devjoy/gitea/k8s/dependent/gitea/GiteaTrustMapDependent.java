@@ -9,14 +9,14 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-@KubernetesDependent(resourceDiscriminator = GiteaTrustMapDiscriminator.class, labelSelector = GiteaServiceDependentResource.LABEL_SELECTOR)
-public class GiteaTrustMapDependentResource extends KubernetesDependentResource<ConfigMap, Gitea> implements Creator<ConfigMap, Gitea>, GarbageCollected<Gitea>{
+@KubernetesDependent(resourceDiscriminator = GiteaTrustMapDiscriminator.class, labelSelector = GiteaServiceDependent.LABEL_SELECTOR)
+public class GiteaTrustMapDependent extends KubernetesDependentResource<ConfigMap, Gitea> implements Creator<ConfigMap, Gitea>, GarbageCollected<Gitea>{
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "-trust-bundle";
 	private static final String LABEL_KEY = "devjoy.io/cm.role";
 	private static final String LABEL_VALUE = "trustmap";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
-	public GiteaTrustMapDependentResource() {
+	public GiteaTrustMapDependent() {
 		super(ConfigMap.class);
 	}
 	

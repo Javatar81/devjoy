@@ -1,19 +1,14 @@
 package io.devjoy.gitea.k8s.dependent.gitea;
 
-import java.util.Optional;
-
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class GiteaPvcDiscriminator implements ResourceDiscriminator<PersistentVolumeClaim, Gitea>{
+public class GiteaPvcDiscriminator extends ResourceIDMatcherDiscriminator<PersistentVolumeClaim, Gitea> {
 
-    @Override
-    public Optional<PersistentVolumeClaim> distinguish(Class<PersistentVolumeClaim> resource, Gitea primary, Context<Gitea> context) {
-        return Optional.ofNullable(context.getClient().persistentVolumeClaims().inNamespace(primary.getMetadata().getNamespace()).withName(GiteaPvcDependentResource.getName(primary)).get());
-    }
-
-
+    public GiteaPvcDiscriminator() {
+		super(p -> new ResourceID(GiteaPvcDependent.getName(p), p.getMetadata().getNamespace()));
+	}
     
 }

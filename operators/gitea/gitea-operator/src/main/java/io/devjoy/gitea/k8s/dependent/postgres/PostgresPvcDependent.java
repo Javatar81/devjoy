@@ -13,14 +13,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = PostgresPvcDiscriminator.class, labelSelector = PostgresPvcDependentResource.LABEL_SELECTOR)
-public class PostgresPvcDependentResource extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
-	private static final Logger LOG = LoggerFactory.getLogger(PostgresPvcDependentResource.class);
+@KubernetesDependent(resourceDiscriminator = PostgresPvcDiscriminator.class, labelSelector = PostgresPvcDependent.LABEL_SELECTOR)
+public class PostgresPvcDependent extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
+	private static final Logger LOG = LoggerFactory.getLogger(PostgresPvcDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/pvc.target";
 	private static final String LABEL_VALUE = "postgres";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	
-	public PostgresPvcDependentResource() {
+	public PostgresPvcDependent() {
 		super(PersistentVolumeClaim.class);
 		
 	}

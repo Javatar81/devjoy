@@ -15,10 +15,10 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent
-public class GiteaServiceAccountDependentResource extends CRUDKubernetesDependentResource<ServiceAccount, Gitea> implements Matcher<ServiceAccount, Gitea>{
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaServiceAccountDependentResource.class);
+public class GiteaServiceAccountDependent extends CRUDKubernetesDependentResource<ServiceAccount, Gitea> implements Matcher<ServiceAccount, Gitea>{
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaServiceAccountDependent.class);
 	
-	public GiteaServiceAccountDependentResource() {
+	public GiteaServiceAccountDependent() {
 		super(ServiceAccount.class);
 	}
 	
