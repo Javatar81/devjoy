@@ -14,8 +14,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = WebhookSecretDependentResource.LABEL_TYPE_SELECTOR)
-public class WebhookSecretDependentResource extends CRUDKubernetesDependentResource<Secret, DevEnvironment>{
+@KubernetesDependent(labelSelector = WebhookSecretDependent.LABEL_TYPE_SELECTOR)
+public class WebhookSecretDependent extends CRUDKubernetesDependentResource<Secret, DevEnvironment>{
 	private static final String KEY_WEBHOOK_SECRET = "webhook-secret";
 	private static final String LABEL_TYPE_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_TYPE_VALUE = "webhook";
@@ -24,7 +24,7 @@ public class WebhookSecretDependentResource extends CRUDKubernetesDependentResou
 	@Inject
 	PasswordService passwordService;
 	
-	public WebhookSecretDependentResource() {
+	public WebhookSecretDependent() {
 		super(Secret.class);
 	}
 	

@@ -16,14 +16,14 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = AdditionalDeployResourcesConfigmapDiscriminator.class, labelSelector = AdditionalDeployResourcesConfigmapDependentResource.LABEL_SELECTOR)
-public class AdditionalDeployResourcesConfigmapDependentResource extends CRUDKubernetesDependentResource<ConfigMap, DevEnvironment>{
+@KubernetesDependent(resourceDiscriminator = AdditionalDeployResourcesConfigmapDiscriminator.class, labelSelector = AdditionalDeployResourcesConfigmapDependent.LABEL_SELECTOR)
+public class AdditionalDeployResourcesConfigmapDependent extends CRUDKubernetesDependentResource<ConfigMap, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/configmap.type";
 	private static final String LABEL_VALUE = "additionalresources-deploy";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	private ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
 	
-	public AdditionalDeployResourcesConfigmapDependentResource() {
+	public AdditionalDeployResourcesConfigmapDependent() {
 		super(ConfigMap.class);
 	}
 	@Override

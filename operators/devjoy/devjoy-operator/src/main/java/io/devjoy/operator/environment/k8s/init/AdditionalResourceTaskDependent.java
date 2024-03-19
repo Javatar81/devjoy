@@ -11,15 +11,15 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = AdditionalResourceTaskDiscriminator.class, labelSelector = AdditionalResourceTaskDependentResource.LABEL_SELECTOR)
-public class AdditionalResourceTaskDependentResource extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
+@KubernetesDependent(resourceDiscriminator = AdditionalResourceTaskDiscriminator.class, labelSelector = AdditionalResourceTaskDependent.LABEL_SELECTOR)
+public class AdditionalResourceTaskDependent extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/task.type";
 	private static final String LABEL_VALUE = "additionalresources";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	@Inject
 	TektonClient tektonClient;
 	
-	public AdditionalResourceTaskDependentResource() {
+	public AdditionalResourceTaskDependent() {
 		super(Task.class);
 	}
 	

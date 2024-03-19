@@ -1,21 +1,14 @@
 package io.devjoy.operator.environment.k8s.init;
 
-import java.util.Optional;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
-import io.fabric8.tekton.client.DefaultTektonClient;
-import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.Task;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class HelmCreateTaskDiscriminator implements ResourceDiscriminator<Task, DevEnvironment>{
+public class HelmCreateTaskDiscriminator extends ResourceIDMatcherDiscriminator<Task, DevEnvironment> {
     
-    TektonClient tektonClient = new DefaultTektonClient();
-    
-    @Override
-    public Optional<Task> distinguish(Class<Task> resource, DevEnvironment primary, Context<DevEnvironment> context) {
-        return Optional.ofNullable(tektonClient.v1()
-            .tasks().inNamespace(primary.getMetadata().getNamespace()).withName(HelmCreateTaskDependentResource.getName()).get());
-    }
+	public HelmCreateTaskDiscriminator() {
+		super(p -> new ResourceID(HelmCreateTaskDependent.getName(), p.getMetadata().getNamespace()));
+	}
+	
 }

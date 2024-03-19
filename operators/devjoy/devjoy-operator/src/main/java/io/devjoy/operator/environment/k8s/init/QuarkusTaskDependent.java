@@ -11,34 +11,30 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = HelmCreateTaskDiscriminator.class,labelSelector = HelmCreateTaskDependentResource.LABEL_SELECTOR)
-public class HelmCreateTaskDependentResource extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
+@KubernetesDependent(resourceDiscriminator = QuarkusTaskDiscriminator.class,labelSelector = QuarkusTaskDependent.LABEL_SELECTOR)
+public class QuarkusTaskDependent extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/task.type";
-	private static final String LABEL_VALUE = "helm-create";
+	private static final String LABEL_VALUE = "quarkus";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 	@Inject
 	TektonClient tektonClient;
 	
-	public HelmCreateTaskDependentResource() {
+	public QuarkusTaskDependent() {
 		super(Task.class);
 	}
 	
 	@Override
 	public Task create(Task target, DevEnvironment primary, Context<DevEnvironment> context) {
 		Optional<Task> existingTask = Optional.ofNullable(tektonClient.v1()
-				.tasks().withName(getName()).get());
+				.tasks().withName("quarkus-create").get());
 		return existingTask.orElseGet(() -> super.create(target, primary, context));
 	}
-
-    public static String getName() {
-        return "helm-create";
-    }
 	
 	@Override
 	protected Task desired(DevEnvironment primary, Context<DevEnvironment> context) {
 		Task task = tektonClient.v1()
 				.tasks()
-				.load(getClass().getClassLoader().getResourceAsStream("deploy/helm-create-task.yaml"))
+				.load(getClass().getClassLoader().getResourceAsStream("init/quarkus-create-task.yaml"))
 				.item();
 		task.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (task.getMetadata().getLabels() == null) {
@@ -48,4 +44,3 @@ public class HelmCreateTaskDependentResource extends CRUDKubernetesDependentReso
 		return task;
 	}
 }
-

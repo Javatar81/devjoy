@@ -6,22 +6,22 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependentResource;
-import io.devjoy.operator.environment.k8s.build.BuildPipelineDependentResource;
-import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependentResource;
+import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependent;
+import io.devjoy.operator.environment.k8s.build.BuildPipelineDependent;
+import io.devjoy.operator.environment.k8s.build.BuildPushTriggerTemplateDependent;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
-import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependentResource;
+import io.devjoy.operator.environment.k8s.build.GiteaPushTriggerBindingDependent;
 import io.devjoy.operator.environment.k8s.build.TriggerBindingActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerTemplateActivationCondition;
-import io.devjoy.operator.environment.k8s.build.WebhookSecretDependentResource;
-import io.devjoy.operator.environment.k8s.deploy.AdditionalDeployResourcesConfigmapDependentResource;
+import io.devjoy.operator.environment.k8s.build.WebhookSecretDependent;
+import io.devjoy.operator.environment.k8s.deploy.AdditionalDeployResourcesConfigmapDependent;
 import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
-import io.devjoy.operator.environment.k8s.deploy.InitDeployPipelineDependentResource;
-import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependentResource;
-import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependentResource;
-import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependentResource;
-import io.devjoy.operator.environment.k8s.init.InitPipelineDependentResource;
+import io.devjoy.operator.environment.k8s.deploy.InitDeployPipelineDependent;
+import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependent;
+import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependent;
+import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependent;
+import io.devjoy.operator.environment.k8s.init.InitPipelineDependent;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -39,19 +39,19 @@ import io.quarkus.runtime.util.StringUtil;
 
 @ControllerConfiguration(
 	    dependents = {
-	        @Dependent(activationCondition = PipelineActivationCondition.class, type = BuildPipelineDependentResource.class),
-	        @Dependent(activationCondition = TriggerTemplateActivationCondition.class, type = BuildPushTriggerTemplateDependentResource.class),
-	        @Dependent(activationCondition = EventListenerActivationCondition.class, type = BuildEventListenerDependentResource.class),
-	        @Dependent(type = WebhookSecretDependentResource.class),
+	        @Dependent(activationCondition = PipelineActivationCondition.class, type = BuildPipelineDependent.class),
+	        @Dependent(activationCondition = TriggerTemplateActivationCondition.class, type = BuildPushTriggerTemplateDependent.class),
+	        @Dependent(activationCondition = EventListenerActivationCondition.class, type = BuildEventListenerDependent.class),
+	        @Dependent(type = WebhookSecretDependent.class),
 			@Dependent(type = GiteaDependentResource.class),
-	        @Dependent(activationCondition = TriggerBindingActivationCondition.class, type = GiteaPushTriggerBindingDependentResource.class),
-	        @Dependent(type = AdditionalResourcesConfigmapDependentResource.class),
-	        @Dependent(activationCondition = PipelineActivationCondition.class, type = InitPipelineDependentResource.class),
-			@Dependent(activationCondition = PipelineActivationCondition.class, type = InitDeployPipelineDependentResource.class),
+	        @Dependent(activationCondition = TriggerBindingActivationCondition.class, type = GiteaPushTriggerBindingDependent.class),
+	        @Dependent(type = AdditionalResourcesConfigmapDependent.class),
+	        @Dependent(activationCondition = PipelineActivationCondition.class, type = InitPipelineDependent.class),
+			@Dependent(activationCondition = PipelineActivationCondition.class, type = InitDeployPipelineDependent.class),
 			@Dependent(activationCondition = ArgoActivationCondition.class, type = ArgoCDDependentResource.class),
-	        @Dependent(activationCondition = TaskActivationCondition.class, type = AdditionalResourceTaskDependentResource.class),
-			@Dependent(type = AdditionalDeployResourcesConfigmapDependentResource.class),
-	        @Dependent(activationCondition = TaskActivationCondition.class, type = HelmCreateTaskDependentResource.class),
+	        @Dependent(activationCondition = TaskActivationCondition.class, type = AdditionalResourceTaskDependent.class),
+			@Dependent(type = AdditionalDeployResourcesConfigmapDependent.class),
+	        @Dependent(activationCondition = TaskActivationCondition.class, type = HelmCreateTaskDependent.class),
 	    })
 
 

@@ -1,21 +1,14 @@
 package io.devjoy.operator.environment.k8s.init;
 
-import java.util.Optional;
-
 import io.devjoy.operator.environment.k8s.DevEnvironment;
-import io.fabric8.tekton.client.DefaultTektonClient;
-import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.Pipeline;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
-public class InitPipelineDiscriminator implements ResourceDiscriminator<Pipeline, DevEnvironment>{
+public class InitPipelineDiscriminator extends ResourceIDMatcherDiscriminator<Pipeline, DevEnvironment> {
     
-	TektonClient tektonClient = new DefaultTektonClient();
+	public InitPipelineDiscriminator() {
+		super(p -> new ResourceID(InitPipelineDependent.getName(p), p.getMetadata().getNamespace()));
+	}
     
-    @Override
-    public Optional<Pipeline> distinguish(Class<Pipeline> resource, DevEnvironment primary, Context<DevEnvironment> context) {
-        return Optional.ofNullable(tektonClient.v1()
-            .pipelines().inNamespace(primary.getMetadata().getNamespace()).withName(InitPipelineDependentResource.getName(primary)).get());
-    }
 }

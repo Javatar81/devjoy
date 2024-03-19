@@ -19,11 +19,11 @@ import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition
 import io.devjoy.operator.environment.k8s.build.TriggerBindingActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerTemplateActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
-import io.devjoy.operator.project.k8s.deploy.ApplicationDependentResource;
+import io.devjoy.operator.project.k8s.deploy.ApplicationDependent;
 import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;
-import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
-import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependentResource;
-import io.devjoy.operator.project.k8s.init.InitPipelineRunDependentResource;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
+import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependent;
+import io.devjoy.operator.project.k8s.init.InitPipelineRunDependent;
 import io.devjoy.operator.project.k8s.init.PipelineRunActivationCondition;
 import io.fabric8.kubernetes.api.model.Condition;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
@@ -48,11 +48,11 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
-@ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependentResource.class),
-		@Dependent(type = GitopsRepositoryDependentResource.class),
-		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, activationCondition = ApplicationActivationCondition.class,type = ApplicationDependentResource.class),
-		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitPipelineRunDependentResource.class),
-		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependentResource.class)
+@ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependent.class),
+		@Dependent(type = GitopsRepositoryDependent.class),
+		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, activationCondition = ApplicationActivationCondition.class,type = ApplicationDependent.class),
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitPipelineRunDependent.class),
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependent.class)
 		})
 @RBACRule(apiGroups = "config.openshift.io", resources = {"ingresses"}, verbs = {"get"}, resourceNames = {"cluster"})
 @CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME)
@@ -115,7 +115,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					|| StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) 
 					&& supportsRequiredPipelinesApi()) {
 					LOG.info("Setting workspace factory url");
-					PipelineRun pipelineRun = InitPipelineRunDependentResource.getResource(tektonClient, resource)
+					PipelineRun pipelineRun = InitPipelineRunDependent.getResource(tektonClient, resource)
 						.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
 						onPipelineRunComplete(pipelineRun, resource, context);
 					ctrl.patchStatus();

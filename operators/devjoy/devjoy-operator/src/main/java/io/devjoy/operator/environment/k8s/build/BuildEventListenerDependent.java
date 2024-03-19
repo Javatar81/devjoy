@@ -19,12 +19,12 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 @KubernetesDependent
-public class BuildEventListenerDependentResource extends CRUDKubernetesDependentResource<EventListener, DevEnvironment>{
+public class BuildEventListenerDependent extends CRUDKubernetesDependentResource<EventListener, DevEnvironment>{
 	private static final Logger LOG = LoggerFactory.getLogger(DevEnvironmentReconciler.class);
 	@Inject
 	TektonClient tektonClient;
 	
-	public BuildEventListenerDependentResource() {
+	public BuildEventListenerDependent() {
 		super(EventListener.class);
 	}
 
@@ -47,8 +47,8 @@ public class BuildEventListenerDependentResource extends CRUDKubernetesDependent
 						.filter(p -> "secretRef".equals(p.getName()))
 						.findFirst()
 							.map(sref -> (Map<String, String>) sref.getValue())
-							.ifPresent(sref -> sref.put("secretName", WebhookSecretDependentResource.getName(primary))));
-			t.getTemplate().setRef(BuildPushTriggerTemplateDependentResource.getName(primary));
+							.ifPresent(sref -> sref.put("secretName", WebhookSecretDependent.getName(primary))));
+			t.getTemplate().setRef(BuildPushTriggerTemplateDependent.getName(primary));
 		});
 		return eventListener;
 	}

@@ -1,20 +1,17 @@
 package io.devjoy.operator.project.k8s.init;
 
-import java.util.Optional;
-
 import io.devjoy.operator.project.k8s.Project;
-import io.fabric8.tekton.client.DefaultTektonClient;
-import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.quarkus.runtime.util.StringUtil;
 
-public class InitPipelineRunDiscriminator implements ResourceDiscriminator<PipelineRun, Project>{
-	TektonClient tektonClient = new DefaultTektonClient();
-    
-    @Override
-    public Optional<PipelineRun> distinguish(Class<PipelineRun> resource, Project primary, Context<Project> context) {
-        return Optional.ofNullable(tektonClient.v1()
-            .pipelineRuns().inNamespace(primary.getOwningEnvironment(context.getClient()).map(env -> env.getMetadata().getNamespace()).orElseGet(() -> primary.getMetadata().getNamespace())).withName(InitPipelineRunDependentResource.getName(primary)).get());
-    }
+public class InitPipelineRunDiscriminator extends ResourceIDMatcherDiscriminator<PipelineRun, Project> {
+	
+	public InitPipelineRunDiscriminator() {
+		super(p -> new ResourceID(InitPipelineRunDependent.getName(p),
+				!StringUtil.isNullOrEmpty(p.getSpec().getEnvironmentNamespace()) ? p.getSpec().getEnvironmentNamespace()
+						: p.getMetadata().getNamespace()));
+	}
+
 }

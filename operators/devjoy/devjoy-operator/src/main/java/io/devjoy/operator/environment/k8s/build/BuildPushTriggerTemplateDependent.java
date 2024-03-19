@@ -17,11 +17,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 @KubernetesDependent
-public class BuildPushTriggerTemplateDependentResource extends CRUDKubernetesDependentResource<TriggerTemplate, DevEnvironment>{
+public class BuildPushTriggerTemplateDependent extends CRUDKubernetesDependentResource<TriggerTemplate, DevEnvironment>{
 	@Inject
 	TektonClient tektonClient;
 	
-	public BuildPushTriggerTemplateDependentResource() {
+	public BuildPushTriggerTemplateDependent() {
 		super(TriggerTemplate.class);
 	}
 

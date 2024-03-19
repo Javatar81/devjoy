@@ -10,7 +10,7 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
-import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependentResource;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -33,8 +33,8 @@ import jakarta.inject.Inject;
  *
  */
 @KubernetesDependent(resourceDiscriminator = InitDeployPipelineRunDiscriminator.class)
-public class InitDeployPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
-	private static final Logger LOG = LoggerFactory.getLogger(InitDeployPipelineRunDependentResource.class);
+public class InitDeployPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
+	private static final Logger LOG = LoggerFactory.getLogger(InitDeployPipelineRunDependent.class);
 	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
 	
 	@Inject
@@ -43,7 +43,7 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 	@Inject
 	OpenShiftClient ocpClient;
 	
-	public InitDeployPipelineRunDependentResource() {
+	public InitDeployPipelineRunDependent() {
 		super(PipelineRun.class);
 	}
 	
@@ -63,7 +63,7 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 		if (StringUtil.isNullOrEmpty(cloneUrl)) {
 			cloneUrl = context.getClient().resources(GiteaRepository.class)
 					.inNamespace(primary.getMetadata().getNamespace())
-					.withName(primary.getMetadata().getName() + GitopsRepositoryDependentResource.REPO_POSTFIX)
+					.withName(primary.getMetadata().getName() + GitopsRepositoryDependent.REPO_POSTFIX)
 					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)
 					.getStatus().getCloneUrl();
 		}
@@ -126,7 +126,7 @@ public class InitDeployPipelineRunDependentResource extends KubernetesDependentR
 	private static PipelineRun getPipelineRunFromYaml(TektonClient tektonClient) {
 		return tektonClient.v1()
 				.pipelineRuns()
-				.load(InitPipelineRunDependentResource.class.getClassLoader().getResourceAsStream("deploy/init-deploy-plr.yaml"))
+				.load(InitPipelineRunDependent.class.getClassLoader().getResourceAsStream("deploy/init-deploy-plr.yaml"))
 				.item();
 	}
 	

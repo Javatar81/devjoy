@@ -20,14 +20,14 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDNoGCKuber
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
 @KubernetesDependent()
-public class ApplicationDependentResource extends CRUDNoGCKubernetesDependentResource<Application, Project>{
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationDependentResource.class);
+public class ApplicationDependent extends CRUDNoGCKubernetesDependentResource<Application, Project>{
+    private static final Logger LOG = LoggerFactory.getLogger(ApplicationDependent.class);
     private final GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
     
     @ConfigProperty(name = "io.devjoy.gitea.api.access.mode")
     String accessMode;
     
-    public ApplicationDependentResource() {
+    public ApplicationDependent() {
         super(Application.class);
     }
 

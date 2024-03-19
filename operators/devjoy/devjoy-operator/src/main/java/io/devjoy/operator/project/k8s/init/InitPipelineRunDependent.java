@@ -33,12 +33,12 @@ import jakarta.inject.Inject;
  *
  */
 @KubernetesDependent(resourceDiscriminator = InitPipelineRunDiscriminator.class)
-public class InitPipelineRunDependentResource extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project>{
-	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependentResource.class);
+public class InitPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project>{
+	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependent.class);
 	@Inject
 	TektonClient tektonClient;
 	
-	public InitPipelineRunDependentResource() {
+	public InitPipelineRunDependent() {
 		super(PipelineRun.class);
 	}
 	
@@ -133,7 +133,7 @@ public class InitPipelineRunDependentResource extends KubernetesDependentResourc
 	private static PipelineRun getPipelineRunFromYaml(TektonClient tektonClient) {
 		return tektonClient.v1()
 				.pipelineRuns()
-				.load(InitPipelineRunDependentResource.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
+				.load(InitPipelineRunDependent.class.getClassLoader().getResourceAsStream("init/init-project-plr.yaml"))
 				.item();
 	}
 	

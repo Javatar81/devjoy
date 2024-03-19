@@ -9,11 +9,11 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import jakarta.inject.Inject;
 
 @KubernetesDependent
-public class GiteaPushTriggerBindingDependentResource extends CRUDKubernetesDependentResource<TriggerBinding, DevEnvironment>{
+public class GiteaPushTriggerBindingDependent extends CRUDKubernetesDependentResource<TriggerBinding, DevEnvironment>{
 	@Inject
 	TektonClient tektonClient;
 	
-	public GiteaPushTriggerBindingDependentResource() {
+	public GiteaPushTriggerBindingDependent() {
 		super(TriggerBinding.class);
 	}
 	

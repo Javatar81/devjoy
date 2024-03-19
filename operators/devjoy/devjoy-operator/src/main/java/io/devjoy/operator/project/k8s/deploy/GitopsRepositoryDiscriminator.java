@@ -1,17 +1,16 @@
 package io.devjoy.operator.project.k8s.deploy;
 
-import java.util.Optional;
-
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.operator.project.k8s.Project;
-import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceDiscriminator;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
 
 
-public class GitopsRepositoryDiscriminator implements ResourceDiscriminator<GiteaRepository, Project>{
+public class GitopsRepositoryDiscriminator extends ResourceIDMatcherDiscriminator<GiteaRepository, Project> {
+    
+	public GitopsRepositoryDiscriminator() {
+		super(p -> new ResourceID(GitopsRepositoryDependent.getName(p), p.getMetadata().getNamespace()));
+	}
    
-    public Optional<GiteaRepository> distinguish(Class<GiteaRepository> resource, Project primary, Context<Project> context) {
-        return Optional.ofNullable(context.getClient().resources(GiteaRepository.class).inNamespace(primary.getMetadata().getNamespace()).withName(GitopsRepositoryDependentResource.getName(primary)).get());
-    }
 }
 

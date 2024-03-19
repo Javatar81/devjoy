@@ -10,8 +10,8 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernete
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = BuildPipelineDiscriminator.class, labelSelector = BuildPipelineDependentResource.LABEL_TYPE_SELECTOR)
-public class BuildPipelineDependentResource extends CRUDKubernetesDependentResource<Pipeline, DevEnvironment>{
+@KubernetesDependent(resourceDiscriminator = BuildPipelineDiscriminator.class, labelSelector = BuildPipelineDependent.LABEL_TYPE_SELECTOR)
+public class BuildPipelineDependent extends CRUDKubernetesDependentResource<Pipeline, DevEnvironment>{
 	public static final String LABEL_KEY = "devjoy.io/pipeline.type";
 	public static final String LABEL_VALUE = "build";
 	static final String LABEL_TYPE_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
@@ -19,7 +19,7 @@ public class BuildPipelineDependentResource extends CRUDKubernetesDependentResou
 	@Inject
 	TektonClient tektonClient;
 	
-	public BuildPipelineDependentResource() {
+	public BuildPipelineDependent() {
 		super(Pipeline.class);
 	}
 	
