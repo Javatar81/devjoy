@@ -1,7 +1,6 @@
 package io.devjoy.gitea.service;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -12,7 +11,6 @@ import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.quarkus.runtime.util.StringUtil;
 import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
@@ -41,8 +39,7 @@ public class GiteaApiService {
 	}
 	
 	public Optional<String> getRouterBaseUri(Gitea gitea) {
-		Optional<Route> route = Optional.ofNullable(GiteaRouteDependent.getResource(gitea, client)
-		    	.waitUntilCondition(c -> c != null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
+		Optional<Route> route = Optional.ofNullable(GiteaRouteDependent.getResource(gitea, client).get());
 		return route.map(r -> getRouterBaseUri(gitea, r));
 	}
 	

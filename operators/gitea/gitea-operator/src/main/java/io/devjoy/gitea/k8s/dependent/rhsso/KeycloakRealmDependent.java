@@ -1,9 +1,7 @@
 package io.devjoy.gitea.k8s.dependent.rhsso;
 
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.keycloak.v1alpha1.KeycloakRealm;
 import org.keycloak.v1alpha1.KeycloakRealmSpec;
@@ -11,7 +9,6 @@ import org.keycloak.v1alpha1.keycloakrealmspec.realm.IdentityProviders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -48,10 +45,8 @@ public class KeycloakRealmDependent extends CRUDKubernetesDependentResource<Keyc
 		spec.getRealm().setRealm(name);
 		spec.getRealm().setId(name);
 		spec.getRealm().setDisplayName(primary.getMetadata().getName());
-		
-		LOG.info("Waiting for oauthClient");
-		Optional<OAuthClient> oauthClient = Optional.ofNullable(GiteaOAuthClientDependent.getResource(primary, ocpClient)
-			.waitUntilCondition(Objects::nonNull, 30, TimeUnit.SECONDS));
+	
+		Optional<OAuthClient> oauthClient = context.getSecondaryResource(OAuthClient.class);
 		LOG.info("OauthClient present? {}", oauthClient.isPresent());
 		
 		oauthClient.ifPresent(oauth -> 

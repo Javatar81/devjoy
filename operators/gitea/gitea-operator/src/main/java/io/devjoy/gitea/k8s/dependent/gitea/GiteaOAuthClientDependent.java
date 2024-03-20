@@ -6,6 +6,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.keycloak.v1alpha1.Keycloak;
+import org.keycloak.v1alpha1.KeycloakStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,9 +69,10 @@ public class GiteaOAuthClientDependent extends KubernetesDependentResource<OAuth
 		apiService.getRouterBaseUri(primary).ifPresent(uri -> redirectURIs.add(uri + callbackPath));
 		redirectURIs.add(apiService.getLocalBaseUri(primary) + callbackPath);
 		if (primary.getSpec() != null && primary.getSpec().isSso()) {
-			Optional<String> keycloakUrl = Optional.ofNullable(KeycloakDependent.getResource(primary, ocpClient)
-					.waitUntilCondition(c -> c!= null && c.getStatus() != null && !StringUtil.isNullOrEmpty(c.getStatus().getExternalURL()), 180, TimeUnit.SECONDS))
-					.map(k -> k.getStatus().getExternalURL());
+			
+			Optional<String> keycloakUrl = context.getSecondaryResource(Keycloak.class)
+					.map(Keycloak::getStatus)
+					.map(KeycloakStatus::getExternalURL);
 			keycloakUrl.ifPresent(url -> 
 				redirectURIs.add(String.format("%s/auth/realms/%s/broker/%s/endpoint", url, KeycloakRealmDependent.resourceName(primary), KeycloakRealmDependent.alias(primary)))	
 			);

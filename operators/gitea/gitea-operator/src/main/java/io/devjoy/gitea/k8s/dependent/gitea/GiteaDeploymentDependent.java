@@ -7,6 +7,7 @@ import java.util.Optional;
 import org.keycloak.v1alpha1.Keycloak;
 import org.keycloak.v1alpha1.KeycloakClient;
 import org.keycloak.v1alpha1.KeycloakRealm;
+import org.keycloak.v1alpha1.KeycloakStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,7 +152,8 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 	
 	private Optional<String> discoverUrl(Context<Gitea> ctx) {
 		Optional<String> externalURL = ctx.getSecondaryResource(Keycloak.class)
-				.map(k -> k.getStatus().getExternalURL());
+				.map(Keycloak::getStatus)
+				.map(KeycloakStatus::getExternalURL);
 		return externalURL.flatMap(url -> ctx.getSecondaryResource(KeycloakRealm.class)
 				.map(r -> r.getMetadata().getName())
 				.map(realm -> String.format("%s/auth/realms/%s/.well-known/openid-configuration", url, realm)));

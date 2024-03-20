@@ -112,6 +112,8 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 	@Inject
 	OpenShiftClient ocpClient;
 	
+	private GiteaRouteDiscriminator routeDiscriminator = new GiteaRouteDiscriminator();
+	
 	public GiteaConfigSecretDependent() {
 		super(Secret.class);
 	}
@@ -150,9 +152,8 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
 		configureDatabase(primary, iniConfiguration);
 		if((primary.getSpec() == null || primary.getSpec().isIngressEnabled()) && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
-			Optional<Route> route = Optional.ofNullable(GiteaRouteDependent.getResource(primary, ocpClient)
-				.waitUntilCondition(c -> c!= null && !StringUtil.isNullOrEmpty(c.getSpec().getHost()), 30, TimeUnit.SECONDS));
-			route.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
+			context.getSecondaryResource(Route.class, routeDiscriminator)
+				.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
 		}
 		configureServer(iniConfiguration);
 		iniConfiguration.getSection(SECTION_MIGRATIONS).setProperty("ALLOW_LOCALNETWORKS", "false");
