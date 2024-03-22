@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.GiteaReconciler;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaNotFoundException;
@@ -142,7 +141,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	}
 
 	private void assureUserCreated(GiteaRepository resource, Gitea g, String token) {
-		LOG.info("Assure user {} is created {}", resource.getSpec().getUser(), token);
+		LOG.info("Assure user {} is created", resource.getSpec().getUser());
 		Optional<Long> userId = userService.getUser(g, resource.getSpec().getUser(), token).map(User::getId)
 			.map(id -> {LOG.info("User with id {} exists", id); return id;})
 			.or(() -> userService.createUser(g, resource.getSpec().getUser(), token)
