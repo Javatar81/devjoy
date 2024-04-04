@@ -1,16 +1,17 @@
 package io.devjoy.operator.project.k8s.init;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
+import io.devjoy.operator.project.k8s.SourceRepositoryDiscriminator;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
@@ -37,6 +38,7 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependent.class);
 	@Inject
 	TektonClient tektonClient;
+	private SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
 	
 	public InitPipelineRunDependent() {
 		super(PipelineRun.class);
@@ -53,17 +55,14 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 		pipelineRun.getMetadata().setNamespace(devEnvironment.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Defining desired run {} referencing {}", name, pipelineRun.getSpec().getPipelineRef().getName());
-		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
-		if (StringUtil.isNullOrEmpty(cloneUrl)) {
-			cloneUrl = context.getClient().resources(GiteaRepository.class)
-					.inNamespace(primary.getMetadata().getNamespace())
-					.withName(primary.getMetadata().getName())
-					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)
-					.getStatus().getCloneUrl();
-		}
+		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
+			.filter(url -> !StringUtil.isNullOrEmpty(url))
+			.or(() -> context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator).map(GiteaRepository::getStatus)
+					.map(GiteaRepositoryStatus::getCloneUrl))
+			.map(url -> pipelineRun.getSpec().getParams()
+					.add(new ParamBuilder().withName("git_url").withNewValue(url).build()))
+			.orElseThrow(() -> new IllegalStateException("Git url is not yet available"));
 		String user = primary.getSpec().getOwner().getUser();
-		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("git_url").withNewValue(cloneUrl).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_user").withNewValue(user).build());
 		pipelineRun.getSpec().getParams()

@@ -1,16 +1,15 @@
 package io.devjoy.operator.project.k8s.init;
 
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
+import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
-import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -39,9 +38,9 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 	
 	@Inject
 	TektonClient tektonClient;
-
 	@Inject
 	OpenShiftClient ocpClient;
+	
 	
 	public InitDeployPipelineRunDependent() {
 		super(PipelineRun.class);
@@ -59,17 +58,14 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		LOG.info("Run {} will be started in namespace {}", name, pipelineRun.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Defining run {} referencing pipeline {}", name, pipelineRun.getSpec().getPipelineRef().getName());
-		String cloneUrl = primary.getSpec().getExistingRepositoryCloneUrl();
-		if (StringUtil.isNullOrEmpty(cloneUrl)) {
-			cloneUrl = context.getClient().resources(GiteaRepository.class)
-					.inNamespace(primary.getMetadata().getNamespace())
-					.withName(primary.getMetadata().getName() + GitopsRepositoryDependent.REPO_POSTFIX)
-					.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCloneUrl()), 1, TimeUnit.MINUTES)
-					.getStatus().getCloneUrl();
-		}
+		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
+				.filter(url -> !StringUtil.isNullOrEmpty(url))
+				.or(() -> context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).map(GiteaRepository::getStatus)
+						.map(GiteaRepositoryStatus::getCloneUrl))
+				.map(url -> pipelineRun.getSpec().getParams()
+						.add(new ParamBuilder().withName("git_url").withNewValue(url).build()))
+				.orElseThrow(() -> new IllegalStateException("Git url is not yet available"));
 		String user = primary.getSpec().getOwner().getUser();
-		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("git_url").withNewValue(cloneUrl).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_user").withNewValue(user).build());
 		pipelineRun.getSpec().getParams()
@@ -87,7 +83,7 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(), baseDomain)).build());
 		
-		Optional<GiteaRepository> gitopsRepo = Optional.ofNullable(context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).get());
+		Optional<GiteaRepository> gitopsRepo = context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator);
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
 

@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import io.argoproj.v1alpha1.Application;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.util.UpdateControlState;
-import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
@@ -18,12 +17,15 @@ import io.devjoy.operator.environment.k8s.PipelineActivationCondition;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerBindingActivationCondition;
 import io.devjoy.operator.environment.k8s.build.TriggerTemplateActivationCondition;
+import io.devjoy.operator.environment.k8s.deploy.ArgoActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationDependent;
 import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
 import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependent;
+import io.devjoy.operator.project.k8s.init.GitopsRepositoryReadyPostcondition;
 import io.devjoy.operator.project.k8s.init.InitPipelineRunDependent;
+import io.devjoy.operator.project.k8s.init.SourceRepositoryReadyPostcondition;
 import io.devjoy.operator.project.k8s.init.PipelineRunActivationCondition;
 import io.fabric8.kubernetes.api.model.Condition;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
@@ -48,11 +50,11 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
-@ControllerConfiguration(dependents = { @Dependent(type = SourceRepositoryDependent.class),
-		@Dependent(type = GitopsRepositoryDependent.class),
+@ControllerConfiguration(dependents = { @Dependent(name="sourceRepository", readyPostcondition = SourceRepositoryReadyPostcondition.class, type = SourceRepositoryDependent.class),
+		@Dependent(name="gitopsRepository", readyPostcondition = GitopsRepositoryReadyPostcondition.class, type = GitopsRepositoryDependent.class),
 		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, activationCondition = ApplicationActivationCondition.class,type = ApplicationDependent.class),
-		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitPipelineRunDependent.class),
-		@Dependent(activationCondition = PipelineRunActivationCondition.class, type = InitDeployPipelineRunDependent.class)
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, dependsOn = "sourceRepository", type = InitPipelineRunDependent.class),
+		@Dependent(activationCondition = PipelineRunActivationCondition.class, dependsOn = "gitopsRepository", type = InitDeployPipelineRunDependent.class)
 		})
 @RBACRule(apiGroups = "config.openshift.io", resources = {"ingresses"}, verbs = {"get"}, resourceNames = {"cluster"})
 @CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME)
