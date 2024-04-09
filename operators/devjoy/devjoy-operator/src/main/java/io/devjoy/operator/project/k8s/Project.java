@@ -23,7 +23,6 @@ public class Project extends CustomResource<ProjectSpec, ProjectStatus> implemen
 	
 	@JsonIgnore
 	public Optional<DevEnvironment> getOwningEnvironment(KubernetesClient client) {
-		Optional<DevEnvironment> env = Optional.empty();
 		//TODO Replace Name? No not here
 		//TODO Handle if only one is null
 		String envNamespace = StringUtil.isNullOrEmpty(this.getSpec().getEnvironmentNamespace()) ? this.getMetadata().getNamespace() : this.getSpec().getEnvironmentNamespace();
@@ -43,6 +42,11 @@ public class Project extends CustomResource<ProjectSpec, ProjectStatus> implemen
 				return Optional.empty();
 			}
 		});
+	}
+	
+	@Override
+	protected ProjectSpec initSpec() {
+		return new ProjectSpec();
 	}
 }
 

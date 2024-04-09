@@ -3,9 +3,10 @@ package io.devjoy.operator.project.k8s;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
@@ -17,8 +18,11 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependent;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependent;
+import io.fabric8.knative.internal.pkg.apis.duck.v1beta1.Addressable;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.tekton.triggers.v1beta1.EventListener;
+import io.fabric8.tekton.triggers.v1beta1.EventListenerStatus;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -26,7 +30,7 @@ import io.quarkus.runtime.util.StringUtil;
 
 @KubernetesDependent(resourceDiscriminator = SourceRepositoryDiscriminator.class)
 public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
-
+	private static final Logger LOG = LoggerFactory.getLogger(SourceRepositoryDependent.class);
 	private static final String ENVIRONMENT_NAME_LABEL_KEY = "devjoy.io/environment.name";
 	private static final String ENVIRONMENT_NAMESPACE_LABEL_KEY = "devjoy.io/environment.namespace";
 
@@ -37,6 +41,7 @@ public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<G
 
 	@Override
 	protected GiteaRepository desired(Project primary, Context<Project> context) {
+		LOG.info("Reconciling source repo for project {} ", primary.getMetadata().getName());
 		GiteaRepository repository = new GiteaRepository();
 		ObjectMetaBuilder metaBuilder = new ObjectMetaBuilder()
 			.withName(getName(primary))
@@ -97,10 +102,10 @@ public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<G
 	}
 	
 	private String getEventListenerUrl(DevEnvironment env, KubernetesClient client) {
-		return BuildEventListenerDependent.getResource(env, client)
-				.waitUntilCondition(el -> el != null && el.getStatus() != null && !StringUtil.isNullOrEmpty(el.getStatus().getAddress().getUrl()),
-						10, TimeUnit.SECONDS)
-				.getStatus().getAddress().getUrl();
+		return Optional.ofNullable(BuildEventListenerDependent.getResource(env, client).get())
+				.map(EventListener::getStatus)
+				.map(EventListenerStatus::getAddress)
+				.map(Addressable::getUrl).orElse("");
 	}
 
 }

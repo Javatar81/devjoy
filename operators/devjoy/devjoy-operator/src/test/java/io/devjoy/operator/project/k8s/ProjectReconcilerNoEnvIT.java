@@ -1,7 +1,7 @@
 package io.devjoy.operator.project.k8s;
 
 import static org.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.util.List;
@@ -13,7 +13,6 @@ import org.junit.jupiter.api.Test;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 public class ProjectReconcilerNoEnvIT {

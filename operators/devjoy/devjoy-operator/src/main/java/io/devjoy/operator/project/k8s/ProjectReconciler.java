@@ -2,7 +2,6 @@ package io.devjoy.operator.project.k8s;
 
 import java.time.LocalDateTime;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,11 +21,11 @@ import io.devjoy.operator.project.k8s.deploy.ApplicationActivationCondition;
 import io.devjoy.operator.project.k8s.deploy.ApplicationDependent;
 import io.devjoy.operator.project.k8s.deploy.ApplicationReconcileCondition;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
-import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependent;
 import io.devjoy.operator.project.k8s.init.GitopsRepositoryReadyPostcondition;
+import io.devjoy.operator.project.k8s.init.InitDeployPipelineRunDependent;
 import io.devjoy.operator.project.k8s.init.InitPipelineRunDependent;
-import io.devjoy.operator.project.k8s.init.SourceRepositoryReadyPostcondition;
 import io.devjoy.operator.project.k8s.init.PipelineRunActivationCondition;
+import io.devjoy.operator.project.k8s.init.SourceRepositoryReadyPostcondition;
 import io.fabric8.kubernetes.api.model.Condition;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
@@ -117,9 +116,8 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					|| StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) 
 					&& supportsRequiredPipelinesApi()) {
 					LOG.info("Setting workspace factory url");
-					PipelineRun pipelineRun = InitPipelineRunDependent.getResource(tektonClient, resource)
-						.waitUntilCondition(r -> r != null && r.getStatus() != null && !StringUtil.isNullOrEmpty(r.getStatus().getCompletionTime()), 10, TimeUnit.MINUTES);
-						onPipelineRunComplete(pipelineRun, resource, context);
+					Optional.ofNullable(InitPipelineRunDependent.getResource(tektonClient, resource).get())
+						.ifPresent(pr -> onPipelineRunComplete(pr, resource, context));
 					ctrl.patchStatus();
 				}
 
@@ -230,14 +228,15 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 	}
 
 	private void onPipelineRunComplete(PipelineRun pipelineRun, Project resource, Context<Project> context) {
-		resource.getStatus().getInitStatus().setPipelineRunConditions(pipelineRun.getStatus().getConditions());
-		resource.getStatus().getInitStatus().setMessage("Init pipeline run complete.");
-		Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator);
-		repository.ifPresent(r -> {
-			String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
-			resource.getStatus().getWorkspace().setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
-		});
-		
+		if (resource.getStatus() != null) {
+			resource.getStatus().getInitStatus().setPipelineRunConditions(pipelineRun.getStatus().getConditions());
+			resource.getStatus().getInitStatus().setMessage("Init pipeline run complete.");
+			Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator);
+			repository.ifPresent(r -> {
+				String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
+				resource.getStatus().getWorkspace().setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
+			});
+		}
 	}
 	
 	private String getDevSpacesUrl() {
