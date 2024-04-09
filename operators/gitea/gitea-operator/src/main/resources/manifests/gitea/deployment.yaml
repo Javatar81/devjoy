@@ -4,6 +4,7 @@ metadata:
   name: "gitea"
   labels:
     app.kubernetes.io/component: git-server
+    app.openshift.io/runtime: git
 spec:
   replicas: 1
   selector:
@@ -19,7 +20,6 @@ spec:
       serviceAccountName: "gitea"
       containers:
       - name: gitea
-        # Will be "quay.io/rhpds/gitea:1.21"
         image: "quay.io/rhpds/gitea:1.21"
         imagePullPolicy: Always
         env:

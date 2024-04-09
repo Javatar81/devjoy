@@ -4,6 +4,7 @@ metadata:
   name: postgresql-
   labels:
     app.kubernetes.io/component: database
+    app.openshift.io/runtime: postgresql
 spec:
   replicas: 1
   selector:
