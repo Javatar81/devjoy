@@ -3,10 +3,13 @@ package io.devjoy.gitea.service;
 import java.util.Optional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.repository.k8s.GiteaRepositoryReconciler;
 import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
@@ -15,6 +18,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class GiteaApiService {
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	@ConfigProperty(name = "io.devjoy.gitea.api.access.mode") 
 	ApiAccessMode accessMode;
 	private final OpenShiftClient client;
@@ -31,6 +35,7 @@ public class GiteaApiService {
 
 
 	public Optional<String> getBaseUri(Gitea gitea) {
+		LOG.info("Determine {} base uri", accessMode);
 		if (accessMode == ApiAccessMode.EXTERNAL && (gitea.getSpec() == null || gitea.getSpec().isIngressEnabled()) && client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)) {
 			return getRouterBaseUri(gitea);
 		} else {

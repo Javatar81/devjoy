@@ -8,9 +8,9 @@ import org.openapi.quarkus.gitea_json.model.CreateHookOption.TypeEnum;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.k8s.domain.GiteaLabels;
 import io.devjoy.gitea.repository.domain.Visibility;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
-import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryLabels;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositorySpec;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
@@ -59,9 +59,9 @@ public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<G
 				labels.put(ENVIRONMENT_NAME_LABEL_KEY, e.getMetadata().getName());
 			}
 			if (e.getSpec() != null && e.getSpec().getGitea() != null) {
-				labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
+				labels.put(GiteaLabels.LABEL_GITEA_NAME, e.getSpec().getGitea().getResourceName());
 			}
-			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());
+			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE, e.getMetadata().getNamespace());
 		});
 		repository.getMetadata().setLabels(labels);
 		

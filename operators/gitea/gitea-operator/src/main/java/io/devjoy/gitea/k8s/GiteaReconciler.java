@@ -157,7 +157,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
-					.withType(serviceException.getErrorConditionType().toString())
+					.withType(serviceException.getGiteaErrorConditionType().toString())
 					.withMessage("Error")
 					.withLastTransitionTime(LocalDateTime.now().toString())
 					.withReason(serviceException.getMessage() + additionalInfo)

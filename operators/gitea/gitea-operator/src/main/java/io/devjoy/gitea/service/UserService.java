@@ -3,6 +3,8 @@ package io.devjoy.gitea.service;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import org.apache.http.client.utils.URIBuilder;
@@ -63,18 +65,48 @@ public class UserService {
 		});
 	}
 	
-	public Optional<User> createUser(Gitea gitea, String userName, String token) {
-		return createUser(gitea, userName, token, Optional.empty());
+	public List<User> getAllUsers(Gitea gitea, String token) {
+		List<User> noResult = Collections.emptyList();
+		return apiService.getBaseUri(gitea).map(uri -> {
+			try {
+				return getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminSearchUsers(null, null, 0, 1000);
+			} catch (URISyntaxException e) {
+				LOG.error(ERROR_IN_REST_CLIENT, e);
+				return noResult;
+			} catch (WebApplicationException e) {
+				if (e.getResponse().getStatus() == 404) {
+					return noResult;
+				} else {
+					throw e;
+				}
+			} 
+		}).orElse(noResult);
 	}
+	
+	public Optional<User> createUser(Gitea gitea, String userName, String token) {
+		return createUser(gitea, userName, token);
+	}
+	
 	
 	public Optional<User> createUser(Gitea gitea, String userName, String token, Optional<String> email) {
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
+
+			User user = new User();
+			user.setEmail(email.orElse(userName + "@example.com"));
+			user.setFullName(userName);
+			user.setLoginName(userName);
+			return createUser(gitea, user, token);
+		});
+	}
+	
+	public Optional<User> createUser(Gitea gitea, User user, String token) {
+		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
 				CreateUserOption createUser = new CreateUserOption();
-				createUser.setEmail(email.orElse(userName + "@example.com"));
-				createUser.setFullName(userName);
-				createUser.setLoginName(userName);
-				createUser.setUsername(userName);
+				createUser.setEmail(user.getEmail());
+				createUser.setFullName(user.getFullName());
+				createUser.setLoginName(user.getLoginName());
+				createUser.setUsername(user.getLoginName());
 				createUser.setMustChangePassword(true);
 				createUser.setPassword("devjoypw");
 				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), AdminApi.class, token).adminCreateUser(createUser));

@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+
 import org.openapi.quarkus.gitea_json.model.Repository;
 import org.openapi.quarkus.gitea_json.model.User;
 import org.slf4j.Logger;
@@ -22,11 +23,11 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.k8s.GiteaReconciler;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
+import io.devjoy.gitea.k8s.domain.GiteaLabels;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaNotFoundException;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryConditionType;
-import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryLabels;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.gitea.repository.k8s.model.SecretReferenceSpec;
 import io.devjoy.gitea.repository.k8s.model.WebhookSpec;
@@ -180,16 +181,14 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 	private void assureGiteaLabelsSet(GiteaRepository resource, Gitea g, UpdateControlState<GiteaRepository> state) {
 		LOG.info("Assure labels set");
 		Map<String, String> labels = resource.getMetadata().getLabels();
-		if (!labels.containsKey(GiteaRepositoryLabels.LABEL_GITEA_NAME)) {
+		if (!labels.containsKey(GiteaLabels.LABEL_GITEA_NAME)) {
 			LOG.info("Setting labels");
-			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAME,
+			labels.put(GiteaLabels.LABEL_GITEA_NAME,
 					g.getMetadata().getName());
-			labels.put(GiteaRepositoryLabels.LABEL_GITEA_NAMESPACE,
+			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE,
 					g.getMetadata().getNamespace());
 			state.updateResourceAndStatus();
-		} else {
-			state.updateStatus();
-		}
+		} 
 	}
 
 	@SuppressWarnings("unchecked")
@@ -223,7 +222,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			}
 			gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
-					.withType(serviceException.getErrorConditionType().toString())
+					.withType(serviceException.getGiteaErrorConditionType().toString())
 					.withMessage("Error")
 					.withLastTransitionTime(LocalDateTime.now().toString())
 					.withReason(serviceException.getMessage() + additionalInfo)

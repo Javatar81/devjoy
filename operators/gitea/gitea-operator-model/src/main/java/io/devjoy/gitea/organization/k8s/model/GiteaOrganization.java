@@ -1,4 +1,4 @@
-package io.devjoy.gitea.repository.k8s.model;
+package io.devjoy.gitea.organization.k8s.model;
 
 import java.util.List;
 import java.util.Map;
@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.devjoy.gitea.k8s.domain.GiteaLabels;
 import io.devjoy.gitea.k8s.model.Gitea;
+import io.devjoy.gitea.repository.k8s.model.GiteaNotFoundException;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -18,16 +19,9 @@ import io.quarkus.runtime.util.StringUtil;
 
 @Version("v1alpha1")
 @Group("devjoy.io")
-public class GiteaRepository extends CustomResource<GiteaRepositorySpec, GiteaRepositoryStatus> implements Namespaced {
+public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, GiteaOrganizationStatus> implements Namespaced {
+	private static final long serialVersionUID = 3714578510003972432L;
 
-	private static final long serialVersionUID = -8205693419808373306L;
-	
-	@Override
-	public void setSpec(GiteaRepositorySpec spec) {
-		// TODO Auto-generated method stub
-		super.setSpec(spec);
-	}
-	
 	@JsonIgnore
 	public Optional<Gitea> associatedGitea(KubernetesClient client) {
 		Map<String, String> labels = getMetadata().getLabels();
@@ -48,7 +42,7 @@ public class GiteaRepository extends CustomResource<GiteaRepositorySpec, GiteaRe
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {
 				
-				throw new GiteaNotFoundException(String.format("Cannot determine unique Gitea in namespace %s. Expected 1 but was %d. Create a Gitea resource before you create a repository.", giteaNamespace, giteasInSameNamespace.size())
+				throw new GiteaNotFoundException(String.format("Cannot determine unique Gitea in namespace %s. Expected 1 but was %d. Create a Gitea resource before you create an organization.", giteaNamespace, giteasInSameNamespace.size())
 				, giteaNamespace);
 			}
 		}
@@ -58,6 +52,9 @@ public class GiteaRepository extends CustomResource<GiteaRepositorySpec, GiteaRe
 		return !StringUtil.isNullOrEmpty(meta.getLabels().get(GiteaLabels.LABEL_GITEA_NAME)) 
 			&& !StringUtil.isNullOrEmpty(meta.getLabels().get(GiteaLabels.LABEL_GITEA_NAMESPACE));
 	}
-
+	
+	@Override
+	protected GiteaOrganizationSpec initSpec() {
+		return new GiteaOrganizationSpec();
+	}
 }
-

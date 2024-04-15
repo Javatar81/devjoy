@@ -1,8 +1,8 @@
-package io.devjoy.gitea.repository.k8s.model;
+package io.devjoy.gitea.k8s.domain;
 
-public class GiteaRepositoryLabels {
+public class GiteaLabels {
 	
-	private GiteaRepositoryLabels() {}
+	private GiteaLabels() {}
 	public static final String LABEL_GITEA_NAMESPACE = "devjoy.io/gitea.namespace";
 	public static final String LABEL_GITEA_NAME = "devjoy.io/gitea.name";
 }
