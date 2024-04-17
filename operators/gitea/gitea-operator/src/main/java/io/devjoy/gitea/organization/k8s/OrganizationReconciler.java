@@ -1,12 +1,9 @@
 package io.devjoy.gitea.organization.k8s;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -25,14 +22,11 @@ import io.devjoy.gitea.organization.k8s.dependent.GiteaOrganizationOwnerDependen
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganization;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationConditionType;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationStatus;
-import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.OperatorException;
-import io.javaoperatorsdk.operator.api.config.dependent.DependentResourceSpec;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
@@ -43,13 +37,10 @@ import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult.Operation;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
-import jakarta.ws.rs.WebApplicationException;
 
 @ControllerConfiguration(dependents = { 
 		@Dependent(name = "giteaAdminSecretRo", type = GiteaAdminSecretReadonlyDependent.class, readyPostcondition = GiteaAdminSecretReadyPostcondition.class, useEventSourceWithName = OrganizationReconciler.ADMIN_SECRET_EVENT_SOURCE),
@@ -112,7 +103,7 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 	private void assureGiteaLabelsSet(GiteaOrganization resource, Gitea g, UpdateControlState<GiteaOrganization> state) {
 		Map<String, String> labels = resource.getMetadata().getLabels();
 		if (!labels.containsKey(GiteaLabels.LABEL_GITEA_NAME)) {
-			LOG.info("Setting labels");
+			LOG.debug("Setting labels");
 			labels.put(GiteaLabels.LABEL_GITEA_NAME,
 					g.getMetadata().getName());
 			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE,
@@ -147,12 +138,11 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 		        context);
 		LOG.debug("Informer source created");
 		return Map.of(ADMIN_SECRET_EVENT_SOURCE, cmES);
-		//return Collections.emptyMap();
 	}
 	
 	private String indexKey(String secretName, String namespace) {
 		if(LOG.isDebugEnabled()) {
-			LOG.debug("index key {}", secretName + "#" + namespace);
+			LOG.info("index key {}", secretName + "#" + namespace);
 		}
 	    return secretName + "#" + namespace;
 	  }
@@ -172,7 +162,7 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 			aoe.getAggregatedExceptions().entrySet().stream()
 				.filter(e -> e.getValue() instanceof ServiceException)
 				.forEach(e -> {
-					LOG.info("Status updated");
+					LOG.debug("Status updated");
 					resource.getStatus().getConditions().add(new ConditionBuilder()
 							.withObservedGeneration(resource.getStatus().getObservedGeneration())
 							.withType(GiteaOrganizationConditionType.GITEA_API_ERROR.getValue())

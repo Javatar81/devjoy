@@ -37,7 +37,7 @@ public class OrganizationService {
 	public List<Organization> getAllOrgs(Gitea gitea, String token) {
 		List<Organization> noResult = Collections.emptyList();
 		return apiService.getBaseUri(gitea).map(uri -> {
-			LOG.info("getAllOrgs with uri=≈{}", uri);
+			LOG.info("getAllOrgs with uri={}", uri);
 			try {
 				return getDynamicUrlClient(new URIBuilder(uri).build(), AdminApi.class, token).adminGetAllOrgs(0, 1000);
 			} catch (URISyntaxException e) {
@@ -48,10 +48,29 @@ public class OrganizationService {
 	}
 	
 	public Optional<Organization> get(Gitea gitea, String orgName, String token) {
-		return apiService.getBaseUri(gitea).map(uri -> {
-			LOG.info("Get org {} with uri=≈{}", orgName, uri);
+		return apiService.getBaseUri(gitea).flatMap(uri -> {
+			LOG.info("Get org {} with uri={}", orgName, uri);
 			try {
-				return getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgGet(orgName);
+				return Optional.of(getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgGet(orgName));
+			} catch (URISyntaxException e) {
+				LOG.error("", e);
+				throw new ServiceException("Repository cannot be found via API", e);
+			} catch (WebApplicationException e) {
+				if (e.getResponse().getStatus() == 404) {
+					return Optional.empty();
+				} else {
+					throw new ServiceException(String.format("Org cannot be created via API error code=%s message=%s",
+							e.getResponse().getStatus(), e.getResponse().readEntity(APIError.class).getMessage()), e, GiteaOrganizationConditionType.GITEA_API_ERROR);
+				}
+			}
+		});
+	}
+	
+	public void delete(Gitea gitea, String orgName, String token) {
+		apiService.getBaseUri(gitea).ifPresent(uri -> {
+			LOG.info("Delete org {} with uri={}", orgName, uri);
+			try {
+				getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgDelete(orgName);
 			} catch (URISyntaxException e) {
 				LOG.error("", e);
 				throw new ServiceException("Repository cannot be found via API", e);

@@ -18,7 +18,9 @@ public class GiteaAdminSecretReadonlyDependent extends KubernetesDependentResour
 	@Override
 	protected ReconcileResult<Secret> reconcile(GiteaOrganization primary, Secret actualResource,
 			Context<GiteaOrganization> context) {
-		LOG.info("Reconcile {}", actualResource.getMetadata().getName());
+		if (actualResource != null && actualResource.getMetadata() != null) {
+			LOG.info("Reconcile {}", actualResource.getMetadata().getName());
+		}
 		return super.reconcile(primary, actualResource, context);
 	}
 

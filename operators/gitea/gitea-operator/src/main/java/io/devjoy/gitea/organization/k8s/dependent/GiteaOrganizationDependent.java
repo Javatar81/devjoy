@@ -1,8 +1,6 @@
 package io.devjoy.gitea.organization.k8s.dependent;
 
 import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -21,9 +19,7 @@ import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePoll
 import jakarta.inject.Inject;
 
 public class GiteaOrganizationDependent extends PerResourcePollingDependentResource<Organization, GiteaOrganization> 
-	implements /*DependentResourceWithExplicitState<ExternalResource, ExternalStateCustomResource, ConfigMap>,*/
-	 	Creator<Organization, GiteaOrganization>, //Deleter<GiteaOrganization>,
-		Updater<Organization, GiteaOrganization> {
+	implements Creator<Organization, GiteaOrganization>, Updater<Organization, GiteaOrganization> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaOrganizationDependent.class);
 	@Inject
 	OrganizationService orgService;
@@ -56,10 +52,9 @@ public class GiteaOrganizationDependent extends PerResourcePollingDependentResou
 		return primary.associatedGitea(client).flatMap(g -> 
 		Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 			.flatMap(GiteaAdminSecretDependent::getAdminToken)
-			.flatMap(t -> {
-				LOG.info("Admin token available");
-				return orgService.create(g, primary.getSpec().getOwner(),t, desired);
-			})
+			.flatMap(t -> 
+				orgService.create(g, primary.getSpec().getOwner(),t, desired)
+			)
 		).orElseThrow(() -> new IllegalStateException("Gitea must be available before org can be created"));
 	  }
 
@@ -69,23 +64,34 @@ public class GiteaOrganizationDependent extends PerResourcePollingDependentResou
 		return primary.associatedGitea(client).flatMap(g -> 
 			Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
-				.flatMap(t -> {
-					LOG.info("Admin token available");
-					return orgService.update(g, primary.getMetadata().getName(), t, desired);
-				})
+				.flatMap(t -> 
+					orgService.update(g, primary.getMetadata().getName(), t, desired)
+				)
 			).orElseThrow(() -> new IllegalStateException("Gitea must be available before org can be created"));
 	}
+	
+	@Override
+	public void delete(GiteaOrganization primary, Context<GiteaOrganization> context) {
+		LOG.debug("Deleting org {}", primary.getMetadata().getName());
+		primary.associatedGitea(client).ifPresent(g -> 
+		Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
+			.flatMap(GiteaAdminSecretDependent::getAdminToken)
+			.ifPresent(t -> 
+				orgService.delete(g, primary.getSpec().getOwner(), t)
+			)
+		);
+	}
 
+	
 	@Override
 	public Set<Organization> fetchResources(GiteaOrganization primaryResource) {
 		LOG.debug("Fetching organization resources");
 		Optional<Organization> org = primaryResource.associatedGitea(client).flatMap(g -> 
 			Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
-				.flatMap(t -> {
-					LOG.debug("Admin token available");
-					return orgService.get(g, primaryResource.getMetadata().getName(),t);
-				})
+				.flatMap(t -> 
+					orgService.get(g, primaryResource.getMetadata().getName(),t)
+				)
 		);
 		return org.map(Set::of).orElse(Collections.emptySet());
 	}

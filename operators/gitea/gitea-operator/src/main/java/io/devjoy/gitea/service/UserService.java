@@ -50,6 +50,7 @@ public class UserService {
 	
 	public Optional<User> getUser(Gitea gitea, String userName, String token) {
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
+			LOG.debug("Get user {} with uri={}", userName, uri);
 			try {
 				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), UserApi.class, token).userGet(userName));
 			} catch (URISyntaxException e) {
@@ -102,6 +103,7 @@ public class UserService {
 	public Optional<User> createUser(Gitea gitea, User user, String token) {
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
+				LOG.debug("Create user {} with uri={}", user.getLogin(), uri);
 				CreateUserOption createUser = new CreateUserOption();
 				createUser.setEmail(user.getEmail());
 				createUser.setFullName(user.getFullName());
@@ -134,11 +136,11 @@ public class UserService {
 	
 	
 	public Optional<AccessToken> createAdminAccessToken(Gitea gitea, String userName, String password, String tokenName) {
-		return createAccessToken(gitea, userName, password, tokenName, SCOPE_WRITE_REPO, SCOPE_WRITE_USER, SCOPE_WRITE_ADMIN);
+		return createAccessToken(gitea, userName, password, tokenName, SCOPE_WRITE_REPO, SCOPE_WRITE_USER, SCOPE_WRITE_ADMIN,SCOPE_WRITE_ORGANIZATION);
 	}
 	
 	public Optional<AccessToken> createAccessToken(Gitea gitea, String userName, String password, String tokenName, String ... scopes) {
-		LOG.info("Creating token {} for user {} with scopes {}", tokenName, userName, Arrays.asList(scopes));
+		LOG.debug("Creating token {} for user {} with scopes {}", tokenName, userName, Arrays.asList(scopes));
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
 				CreateAccessTokenOption createToken = new CreateAccessTokenOption();
