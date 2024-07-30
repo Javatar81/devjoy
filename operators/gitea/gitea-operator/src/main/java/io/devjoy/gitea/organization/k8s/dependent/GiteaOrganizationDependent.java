@@ -18,6 +18,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Updater;
 import io.javaoperatorsdk.operator.processing.dependent.external.PerResourcePollingDependentResource;
 import jakarta.inject.Inject;
 
+//TODO Implement deleter
 public class GiteaOrganizationDependent extends PerResourcePollingDependentResource<Organization, GiteaOrganization> 
 	implements Creator<Organization, GiteaOrganization>, Updater<Organization, GiteaOrganization> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaOrganizationDependent.class);
@@ -48,7 +49,7 @@ public class GiteaOrganizationDependent extends PerResourcePollingDependentResou
 	public Organization create(Organization desired,
 			GiteaOrganization primary,
 	      Context<GiteaOrganization> context) {
-		
+		LOG.info("Creating org {}", primary.getMetadata().getName());
 		return primary.associatedGitea(client).flatMap(g -> 
 		Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 			.flatMap(GiteaAdminSecretDependent::getAdminToken)

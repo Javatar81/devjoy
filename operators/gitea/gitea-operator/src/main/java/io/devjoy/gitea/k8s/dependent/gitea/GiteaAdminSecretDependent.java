@@ -45,7 +45,7 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 	public static final String DATA_KEY_GIT_CREDENTIALS = ".git-credentials";
 	private static final String LABEL_TYPE_KEY = "devjoy.io/secret.type";
 	private static final String LABEL_TYPE_VALUE = "admin";
-	static final String LABEL_TYPE_SELECTOR = LABEL_TYPE_KEY + "=" + LABEL_TYPE_VALUE;
+	public static final String LABEL_TYPE_SELECTOR = LABEL_TYPE_KEY + "=" + LABEL_TYPE_VALUE;
 	private static final String LABEL_KEY = "devjoy.io/secret.target";
 	private static final String LABEL_VALUE = "gitea";
 	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
@@ -65,7 +65,11 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 	}
 
 	public static String getName(Gitea primary) {
-		return (primary.getSpec() != null ? primary.getSpec().getAdminUser().toLowerCase() : "devjoyadmin") + "-git-secret";
+		return getName(primary.getSpec() != null ? primary.getSpec().getAdminUser().toLowerCase() : "devjoyadmin");
+	}
+	
+	public static String getName(String admin) {
+		return admin + "-git-secret";
 	}
 
 	@Override

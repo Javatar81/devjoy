@@ -85,7 +85,7 @@ public class UserService {
 	}
 	
 	public Optional<User> createUser(Gitea gitea, String userName, String token) {
-		return createUser(gitea, userName, token);
+		return createUser(gitea, userName, token, Optional.empty());
 	}
 	
 	

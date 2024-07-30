@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -108,6 +109,8 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 					g.getMetadata().getName());
 			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE,
 					g.getMetadata().getNamespace());
+			labels.put(GiteaLabels.LABEL_GITEA_ADMIN,
+					g.getSpec().getAdminUser());
 			state.updateResourceAndStatus();
 		} 
 	}
@@ -115,19 +118,23 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 	@Override
 	public Map<String, io.javaoperatorsdk.operator.processing.event.source.EventSource> prepareEventSources(
 			EventSourceContext<GiteaOrganization> context) {
+		
 		LOG.debug("Prepare event sources");
-		context.getPrimaryCache().addIndexer(ADMIN_SECRET_INDEX, (primary -> primary.associatedGitea(context.getClient())
-				.map(g -> List.of(indexKey(GiteaAdminSecretDependent.getName(g), primary.getMetadata().getNamespace())))
+		context.getPrimaryCache().addIndexer(ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getMetadata().getLabels().get(GiteaLabels.LABEL_GITEA_ADMIN))
+				.map(adm -> List.of(indexKey(GiteaAdminSecretDependent.getName(adm), primary.getMetadata().getNamespace())))
 				.orElse(Collections.emptyList())));
 		LOG.debug("Indexer added");
 		var cmES = new InformerEventSource<>(InformerConfiguration
 		        .from(Secret.class, context)
+		        .withLabelSelector(GiteaAdminSecretDependent.LABEL_TYPE_SELECTOR)
 		        // if there is a many-to-many relationship (thus no direct owner reference)
 		        // PrimaryToSecondaryMapper needs to be added
 		        .withPrimaryToSecondaryMapper(
 		            (PrimaryToSecondaryMapper<GiteaOrganization>) p -> 
-		            	p.associatedGitea(context.getClient()).map(g -> 
-		            		Set.of(new ResourceID(GiteaAdminSecretDependent.getName(g), p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
+		            	//p.associatedGitea(context.getClient()).map(g -> 
+		            	//	Set.of(new ResourceID(GiteaAdminSecretDependent.getName(g), p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
+		            Optional.ofNullable(p.getMetadata().getLabels().get(GiteaLabels.LABEL_GITEA_ADMIN)).map(adm -> 
+		            Set.of(new ResourceID(GiteaAdminSecretDependent.getName(adm), p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
 		        // the index is used to trigger reconciliation of related custom resources if secret
 		        // changes
 		        .withSecondaryToPrimaryMapper(cm -> context.getPrimaryCache()
@@ -142,10 +149,10 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 	
 	private String indexKey(String secretName, String namespace) {
 		if(LOG.isDebugEnabled()) {
-			LOG.info("index key {}", secretName + "#" + namespace);
+			LOG.debug("index key {}", secretName + "#" + namespace);
 		}
 	    return secretName + "#" + namespace;
-	  }
+	}
 
 
 	@Override

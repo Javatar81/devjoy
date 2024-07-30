@@ -17,11 +17,19 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
 		<quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-		<quarkus.version>3.8.1</quarkus.version>
+		<quarkus.version>3.8.3</quarkus.version>
 		<surefire-plugin.version>3.1.2</surefire-plugin.version>
+		<kubernetes-client.version>6.11.0</kubernetes-client.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+		        <groupId>io.fabric8</groupId>
+		        <artifactId>kubernetes-client-bom</artifactId>
+		        <version>${kubernetes-client.version}</version>
+		        <type>pom</type>
+		        <scope>import</scope>
+		      </dependency>
 			<dependency>
 				<groupId>${quarkus.platform.group-id}</groupId>
 				<artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -32,7 +40,7 @@
 			<dependency>
 				<groupId>io.quarkiverse.operatorsdk</groupId>
 				<artifactId>quarkus-operator-sdk-bom</artifactId>
-				<version>6.6.3</version>
+				<version>6.6.7</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

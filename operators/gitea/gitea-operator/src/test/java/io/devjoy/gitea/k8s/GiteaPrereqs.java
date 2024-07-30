@@ -13,11 +13,11 @@ public class GiteaPrereqs {
 
     public void assureKeycloakCrdsInstalled() {
         LOG.error("Assure Keycloak CRDs installed");
-        if (client.apiextensions().getApiGroup("keycloak.org") == null) {
+   /*     if (client.apiextensions().getApiGroup("keycloak.org") == null) {
             LOG.error("Keycloak CRDs not available. Will be installed.");
             Keycloak keycloak = client.resources(Keycloak.class)
 				.load(getClass().getClassLoader().getResourceAsStream("crds/keycloak/keycloak.yaml")).item();
             client.resource(keycloak).create();
-        }
+        }*/
     }
 }

@@ -5,7 +5,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import java.util.Iterator;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -37,7 +36,6 @@ import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.ws.rs.WebApplicationException;
 
 @QuarkusTest
 public class GiteaOrganizationReconcilerIT {

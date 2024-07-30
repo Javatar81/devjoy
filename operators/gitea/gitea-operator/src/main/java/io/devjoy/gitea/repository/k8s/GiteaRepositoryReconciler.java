@@ -97,7 +97,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
 				.flatMap(t -> {
 					assureUserCreated(resource, g, t);
-					return assureRepositoryExists(resource, context, g, t);
+					return assureRepositoryExists(resource, context, g, t, state);
 				});
 			
 			//Optional<Repository> repo = assureRepositoryExists(resource, context, g);
@@ -152,10 +152,15 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		}
 	}
 
-	private Optional<Repository> assureRepositoryExists(GiteaRepository resource, Context<GiteaRepository> context, Gitea g, String token) {
+	private Optional<Repository> assureRepositoryExists(GiteaRepository resource, Context<GiteaRepository> context, Gitea g, String token, UpdateControlState<GiteaRepository> state) {
 		LOG.info("Assure repository {} is created", resource.getMetadata().getName());
 		Optional<Repository> repository = apiService.getBaseUri(g).map(uri -> {
+			
+			boolean repoExisted = repositoryService.getByUserAndName(resource.getSpec().getUser(), resource.getMetadata().getName(), token, uri).isEmpty();
 			Repository repo = repositoryService.createIfNotExists(resource, token, uri);
+			if(!repoExisted) {
+				state.patchStatus();
+			}
 			var secrets = Optional.ofNullable(resource.getSpec().getWebhooks()).map(w -> w.stream().map(WebhookSpec::getSecretRef)).map(this::assureWebhookSecretsExist);
 			
 			secrets.ifPresent(s -> repositoryService.createWebHooks(resource, s, token, uri));		
