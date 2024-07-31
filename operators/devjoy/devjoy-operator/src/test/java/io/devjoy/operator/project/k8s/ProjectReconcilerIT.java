@@ -30,8 +30,12 @@ public class ProjectReconcilerIT {
 
     @AfterEach
 	void tearDown() {
-		client.resources(DevEnvironment.class).inNamespace(getTargetNamespace()).delete();
-        client.resources(Project.class).inNamespace(getTargetNamespace()).delete();
+    	while (!client.resources(Project.class).inNamespace(getTargetNamespace()).list().getItems().isEmpty()) {    		
+    		client.resources(Project.class).inNamespace(getTargetNamespace()).delete();
+    	}
+    	while (!client.resources(DevEnvironment.class).inNamespace(getTargetNamespace()).list().getItems().isEmpty()) {    
+    		client.resources(DevEnvironment.class).inNamespace(getTargetNamespace()).delete();
+    	}
 	}
 
     @Test
