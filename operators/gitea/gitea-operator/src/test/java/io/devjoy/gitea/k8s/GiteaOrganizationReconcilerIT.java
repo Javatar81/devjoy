@@ -25,6 +25,7 @@ import io.devjoy.gitea.organization.domain.OrganizationVisibility;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganization;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationConditionType;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationSpec;
+import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.service.OrganizationService;
 import io.devjoy.gitea.service.UserService;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
@@ -35,18 +36,16 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 
 @QuarkusTest
 public class GiteaOrganizationReconcilerIT {
 
 	static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
-
-	@Inject
-	OrganizationService orgService;
-	@Inject
-	UserService userService;
+	GiteaApiService apiService = new GiteaApiService(client);
+	UserService userService = new UserService(apiService);
+	OrganizationService orgService = new OrganizationService(apiService);
+	
 	
     @BeforeAll
 	static void beforeAllTests() {
