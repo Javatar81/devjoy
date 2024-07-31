@@ -65,11 +65,11 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 	}
 
 	public static String getName(Gitea primary) {
-		return getName(primary.getSpec() != null ? primary.getSpec().getAdminUser().toLowerCase() : "devjoyadmin");
+		return getName(primary.getSpec() != null ? primary.getSpec().getAdminUser() : "devjoyadmin");
 	}
 	
 	public static String getName(String admin) {
-		return admin + "-git-secret";
+		return admin.toLowerCase() + "-git-secret";
 	}
 
 	@Override
