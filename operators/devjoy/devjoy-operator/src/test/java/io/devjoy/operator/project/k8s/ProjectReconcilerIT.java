@@ -49,7 +49,7 @@ public class ProjectReconcilerIT {
         spec.setOwner(owner);
         QuarkusSpec quarkusSpec = new QuarkusSpec();
         quarkusSpec.setEnabled(true);
-        quarkusSpec.setExtensions(List.of("quarkus-resteasy-reactive-jackson", "quarkus-jdbc-postgresql"));
+        quarkusSpec.setExtensions(List.of("quarkus-rest"));
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();

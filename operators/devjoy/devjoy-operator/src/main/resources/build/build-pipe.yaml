@@ -47,9 +47,6 @@ spec:
           workspace: auth
     - name: build-jar
       params:
-        - name: MAVEN_IMAGE
-          value: >-
-            image-registry.openshift-image-registry.svc:5000/openshift/java:latest
         - name: GOALS
           value:
             - clean

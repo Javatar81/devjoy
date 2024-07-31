@@ -25,6 +25,10 @@ spec:
       type: string
       description: The blank-separated list of quarkus extensions
       default: ""
+    - name: quarkus_maven_plugin_version
+      type: string
+      description: The version of the quarkus maven plugin
+      default: "3.9.2"
     - name: additional_maven_params
       type: array
       description: Additional params for the quarkus maven plugin
@@ -32,12 +36,9 @@ spec:
   tasks:
     - name: quarkus-create
       params:
-        - name: MAVEN_IMAGE
-          value: >-
-            registry.redhat.io/ubi8/openjdk-17@sha256:aa53206031afff34f8c83b8cc491d853bc78d88a16bf19a3e09ed1841af4cdc7
         - name: GOALS
           value:
-            - io.quarkus.platform:quarkus-maven-plugin:3.6.7:create
+            - io.quarkus.platform:quarkus-maven-plugin:$(params.quarkus_maven_plugin_version):create
             - -DprojectGroupId=$(params.quarkus_group_id)
             - -DprojectArtifactId=$(params.quarkus_artifact_id)
             - -Dextensions=$(params.quarkus_extensions)

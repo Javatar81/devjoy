@@ -4,6 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import io.devjoy.gitea.k8s.domain.GiteaLabels;
@@ -21,13 +24,15 @@ import io.quarkus.runtime.util.StringUtil;
 @Group("devjoy.io")
 public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, GiteaOrganizationStatus> implements Namespaced {
 	private static final long serialVersionUID = 3714578510003972432L;
-
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaOrganization.class);
+	
 	@JsonIgnore
 	public Optional<Gitea> associatedGitea(KubernetesClient client) {
 		Map<String, String> labels = getMetadata().getLabels();
 		String giteaName = labels.get(GiteaLabels.LABEL_GITEA_NAME);
 		String giteaNamespace = labels.get(GiteaLabels.LABEL_GITEA_NAMESPACE);
 		if (associatedGiteaLabelsSet(getMetadata())) {
+			LOG.debug("Labels found");
 			return Optional
 					.ofNullable(client.resources(Gitea.class).inNamespace(giteaNamespace)
 							.withName(giteaName).get());
@@ -35,9 +40,11 @@ public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, Git
 			giteaNamespace = !StringUtil.isNullOrEmpty(giteaNamespace)
 					? giteaNamespace
 					: getMetadata().getNamespace();
+			LOG.debug("Labels not found. Trying to find exactly on Gitea instance in namespace.");
 			List<Gitea> giteasInSameNamespace = client.resources(Gitea.class).inNamespace(giteaNamespace).list()
 					.getItems();
 			if (giteasInSameNamespace.size() == 1) {
+				LOG.debug("Gitea found");
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {

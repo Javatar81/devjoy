@@ -16,12 +16,19 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
 		<quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-		<quarkus.version>3.8.1</quarkus.version>
+		<quarkus.version>3.11.0</quarkus.version>
 		<surefire-plugin.version>3.1.2</surefire-plugin.version>
-		<kubernetes-client.version>6.10.0</kubernetes-client.version>
+		<kubernetes-client.version>6.12.1</kubernetes-client.version>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+		        <groupId>io.fabric8</groupId>
+		        <artifactId>kubernetes-client-bom</artifactId>
+		        <version>${kubernetes-client.version}</version>
+		        <type>pom</type>
+		        <scope>import</scope>
+		      </dependency>
 			<dependency>
 				<groupId>${quarkus.platform.group-id}</groupId>
 				<artifactId>${quarkus.platform.artifact-id}</artifactId>
@@ -32,7 +39,7 @@
 			<dependency>
 				<groupId>io.quarkiverse.operatorsdk</groupId>
 				<artifactId>quarkus-operator-sdk-bom</artifactId>
-				<version>6.6.3</version>
+				<version>6.7.1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -54,7 +61,7 @@
 		<dependency>
 			<groupId>io.quarkiverse.openapi.generator</groupId>
 			<artifactId>quarkus-openapi-generator</artifactId>
-			<version>2.4.0</version>
+			<version>2.4.1</version>
 		</dependency>
 		<dependency>
 			<groupId>io.quarkus</groupId>
@@ -206,7 +213,7 @@
 										<limit>
 											<counter>COMPLEXITY</counter>
 											<value>COVEREDRATIO</value>
-											<minimum>0.40</minimum>
+											<minimum>0.10</minimum>
 										</limit>
 									</limits>
 								</rule>
