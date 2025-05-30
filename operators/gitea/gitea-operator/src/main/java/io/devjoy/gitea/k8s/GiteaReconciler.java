@@ -37,6 +37,10 @@ import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.openshift.api.model.Route;
+import io.fabric8.openshift.api.model.RouteSpec;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
@@ -82,9 +86,10 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
 	private final GiteaStatusUpdater updater;
 	private final GiteaAdminSecretDiscriminator adminSecretDiscriminator = new GiteaAdminSecretDiscriminator();
-
-	public GiteaReconciler(GiteaStatusUpdater updater) {
+	private final OpenShiftClient client;
+	public GiteaReconciler(GiteaStatusUpdater updater, OpenShiftClient client) {
 		this.updater = updater;
+		this.client = client;
 	}
 
 	@Override
@@ -102,11 +107,25 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 		emptyPasswordStatus(resource);
 		removeAdmPwFromSpecIfInSecret(resource, context, state);
+		updateHost(resource, state);
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
 		}
 		return updateCtrl;
+	}
+
+	private void updateHost(Gitea resource, UpdateControlState<Gitea> state) {
+		Optional.ofNullable(GiteaRouteDependent.getResource(resource, client).get())
+			.map(Route::getSpec)
+			.map(RouteSpec::getHost)
+			.ifPresent(h -> {
+				if (!h.equals(resource.getStatus().getHost())) {
+					resource.getStatus().setHost(h);
+					state.patchStatus();
+				}
+			});
+		;
 	}
 
 	private void emptyPasswordStatus(Gitea resource) {

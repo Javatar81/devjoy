@@ -9,7 +9,7 @@ import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-@KubernetesDependent(resourceDiscriminator = GiteaTrustMapDiscriminator.class, labelSelector = GiteaServiceDependent.LABEL_SELECTOR)
+@KubernetesDependent(resourceDiscriminator = GiteaTrustMapDiscriminator.class, labelSelector = GiteaTrustMapDependent.LABEL_SELECTOR)
 public class GiteaTrustMapDependent extends KubernetesDependentResource<ConfigMap, Gitea> implements Creator<ConfigMap, Gitea>, GarbageCollected<Gitea>{
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "-trust-bundle";
 	private static final String LABEL_KEY = "devjoy.io/cm.role";

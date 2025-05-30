@@ -12,4 +12,4 @@ spec:
   enableCaptcha: false
   allowCreateOrganization: false
   adminEmail: devjoyadmin@example.com
-  ssl: false
+  ssl: true
