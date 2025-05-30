@@ -1,0 +1,58 @@
+[
+  
+  {
+    "type": "console.navigation/section",
+    "properties": {
+      "id": "devjoy",
+      "perspective": "dev",
+      "name": "Devjoy"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "path": "/devjoy",
+      "exact": true,
+      "loader": {
+        "$codeRef": "DevEnvironmentPage"
+      }
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/project",
+      "component": { "$codeRef": "DevProjectPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "project",
+      "name": "%plugin__console-plugin-template~Project%",
+      "href": "/project",
+      "perspective": "dev",
+      "section": "devjoy"
+    }
+  },
+  {
+    "type": "console.page/route",
+    "properties": {
+      "exact": true,
+      "path": "/devenv",
+      "component": { "$codeRef": "DevEnvironmentPage" }
+    }
+  },
+  {
+    "type": "console.navigation/href",
+    "properties": {
+      "id": "devenv",
+      "name": "%plugin__console-plugin-template~Dev Environment%",
+      "href": "/devenv",
+      "perspective": "dev",
+      "section": "devjoy"
+    }
+  }
+  
+]
