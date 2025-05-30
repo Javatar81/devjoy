@@ -29,5 +29,4 @@ public class Config {
 	public String getUserTokenName(String userName) {
 		return TOKEN_NAME;
 	}
-
 }

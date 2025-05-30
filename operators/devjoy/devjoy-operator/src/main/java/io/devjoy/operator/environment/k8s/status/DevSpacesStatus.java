@@ -1,4 +1,4 @@
-package io.devjoy.operator.environment.k8s;
+package io.devjoy.operator.environment.k8s.status;
 
 public class DevSpacesStatus {
 	private String factoryBaseUrl;
