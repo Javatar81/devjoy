@@ -1,9 +1,16 @@
 package io.devjoy.operator.project.k8s.deploy;
 
 import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Optional;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
@@ -26,7 +33,12 @@ public class ApplicationDependent extends CRUDNoGCKubernetesDependentResource<Ap
     
     @ConfigProperty(name = "io.devjoy.gitea.api.access.mode")
     String accessMode;
-    
+    @ConfigProperty(name = "quarkus.tls.trust-all")
+    boolean trustAll;
+    private TrustManager[] trustAllCerts = new TrustManager[]{
+        new TrustAllTrustManager()
+    };
+
     public ApplicationDependent() {
         super(Application.class);
     }
@@ -39,12 +51,19 @@ public class ApplicationDependent extends CRUDNoGCKubernetesDependentResource<Ap
             String cloneUrl = ApiAccessMode.INTERNAL.toString().equals(accessMode) ? r.getStatus().getInternalCloneUrl() : r.getStatus().getCloneUrl();
             try {
                 URI uri = new URI(cloneUrl.replace(".git", "/raw/branch/main/bootstrap/argo-application.yaml"));
+                var con = (HttpURLConnection) uri.toURL().openConnection();
+                if (trustAll && con instanceof HttpsURLConnection secureCon) {
+                    LOG.warn("Using insecure HTTPS connection. Only use this in dev mode!");
+                    SSLContext sslTrustAll = SSLContext.getInstance("SSL");
+                    sslTrustAll.init(null, trustAllCerts, new java.security.SecureRandom());
+                    secureCon.setSSLSocketFactory(sslTrustAll.getSocketFactory());
+                } 
                 Application app = context.getClient().resources(Application.class)
-                    .load(uri.toURL().openStream())
+                    .load(con.getInputStream())
                     .item();
                 LOG.info("Loaded state from git {}.", uri); 
                 return app;
-            } catch (URISyntaxException | IOException e) {
+            } catch (URISyntaxException | IOException | KeyManagementException | NoSuchAlgorithmException e) {
                 LOG.error("Error with repo raw uri", e);
                 return null;
             }

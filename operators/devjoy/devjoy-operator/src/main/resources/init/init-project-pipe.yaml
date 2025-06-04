@@ -64,32 +64,41 @@ spec:
         - name: CONTEXT_DIR
           value: .
       taskRef:
-        kind: ClusterTask
-        name: maven
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: maven
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: src
-        - name: maven-settings
+        - name: maven_settings
           workspace: mvn-settings
     - name: git-init
       params:
-        - name: BASE_IMAGE
-          value: >-
-            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
             git -C $(params.quarkus_artifact_id) init && git -C $(params.quarkus_artifact_id) config http.sslVerify false && git -C $(params.quarkus_artifact_id) checkout -b main
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       runAfter:
         - quarkus-create
       workspaces:
@@ -117,49 +126,55 @@ spec:
           workspace: additional-resources
     - name: git-commit
       params:
-        - name: BASE_IMAGE
-          value: >-
-            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
             git -C $(params.quarkus_artifact_id) add . && git -C $(params.quarkus_artifact_id) commit -m "quarkus project generated"
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       runAfter:
         - git-additional-resources
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: src
     - name: git-push
       params:
-        - name: BASE_IMAGE
-          value: >-
-            docker.io/alpine/git:v2.26.2@sha256:23618034b0be9205d9cc0846eb711b12ba4c9b468efdd8a59aac1d7b1a23363f
         - name: GIT_SCRIPT
           value: |
             git -C $(params.quarkus_artifact_id) remote add origin $(params.git_url) && git -C $(params.quarkus_artifact_id) push -u origin main
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       runAfter:
         - git-commit
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: src

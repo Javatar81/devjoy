@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
@@ -36,6 +37,8 @@ import jakarta.inject.Inject;
 @KubernetesDependent(resourceDiscriminator = InitPipelineRunDiscriminator.class)
 public class InitPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project>{
 	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependent.class);
+	private boolean preferAdminAsGitUser = false;
+
 	@Inject
 	TektonClient tektonClient;
 	private SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
@@ -63,10 +66,14 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 					.add(new ParamBuilder().withName("git_url").withNewValue(url).build()))
 			.orElseThrow(() -> new IllegalStateException("Git url is not yet available"));
 		String user = primary.getSpec().getOwner().getUser();
+
+		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
+			.withName(user + "-git-secret").get() != null; 
+		Gitea gitea = GiteaDependentResource.getResource(context.getClient(), devEnvironment).get();
 		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("git_user").withNewValue(user).build());
+			.add(new ParamBuilder().withName("git_user").withNewValue(preferAdminAsGitUser ? gitea.getSpec().getAdminUser() : user).build());
 		pipelineRun.getSpec().getParams()
-			.add(new ParamBuilder().withName("git_user_email").withNewValue(getUserEmailOrDefault(primary)).build());
+			.add(new ParamBuilder().withName("git_user_email").withNewValue(getUserEmailOrDefault(primary, preferAdminAsGitUser, gitea)).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("quarkus_group_id").withNewValue(primary.getMetadata().getName()).build());
 		pipelineRun.getSpec().getParams()
@@ -83,13 +90,12 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 							.withNewValue(ext)
 									.build()));
 		
-		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
-			.withName(user + "-git-secret").get() != null; 
+		
 		String secretPrefix;
 		if (deprecatedUserSecretAvailable){
 			secretPrefix = user;
 		} else {
-			secretPrefix = GiteaDependentResource.getResource(context.getClient(), devEnvironment).get().getSpec().getAdminUser();
+			secretPrefix = gitea.getSpec().getAdminUser();
 		}
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
@@ -102,7 +108,7 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 			.filter(w -> "additional-resources".equals(w.getName()))
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));
 		if (devEnvironment.getSpec().getMavenSettingsPvc() != null) {
-			ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=$(workspaces.maven-settings.path)").build();
+			ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=/workspace/maven_settings)").build();
 			pipelineRun.getSpec().getParams()
 				.add(new ParamBuilder().withName("additional_maven_params").withValue(mavenRepoPath).build());
 			pipelineRun.getSpec().getWorkspaces().stream()
@@ -117,12 +123,22 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 		return pipelineRun;
 	}
 
-	private String getUserEmailOrDefault(Project primary) {
-		if (primary.getSpec().getOwner() != null && primary.getSpec().getOwner().getUserEmail() != null) {
-			return primary.getSpec().getOwner().getUserEmail();
+	private String getUserEmailOrDefault(Project primary, boolean preferAdminAsGitUser, Gitea gitea) {
+		if(preferAdminAsGitUser) {
+			if (gitea.getSpec().getAdminEmail() != null) {
+				return gitea.getSpec().getAdminEmail();
+			} else {
+				return gitea.getSpec().getAdminUser()+ "@example.com";
+			}
 		} else {
-			return primary.getSpec().getOwner().getUser() + "@example.com";
+			if (primary.getSpec().getOwner() != null && primary.getSpec().getOwner().getUserEmail() != null) {
+				return primary.getSpec().getOwner().getUserEmail();
+			} else {
+				return primary.getSpec().getOwner().getUser() + "@example.com";
+			}
+			
 		}
+		
 	}
 	
 	static String getName(Project primary) {

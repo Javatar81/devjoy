@@ -98,7 +98,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					secretPrefix = user;
 					LOG.warn("You are running a Gitea operator version < 0.3.0. Please update.");
 				} else {
-					secretPrefix = GiteaDependentResource.getResource(context.getClient(), e).get().getSpec().getAdminUser();
+					secretPrefix = Optional.ofNullable(GiteaDependentResource.getResource(context.getClient(), e).get()).map(g -> g.getSpec().getAdminUser()).orElse(null);
 				}
 			
 			Optional<Secret> secret = Optional.ofNullable(GiteaDependentResource.getResource(client, e).get())
@@ -123,10 +123,16 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 
 				if (!supportsRequiredPipelinesApi() 
 					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString().equals(c.getType()))) {
+					
+					
+					boolean pipeActivationAvailable = PipelineActivationCondition.serverSupportsApi(client);
+					boolean triggerBindingAvailable = TriggerBindingActivationCondition.serverSupportsApi(client);
+					boolean eventListenerAvailable = EventListenerActivationCondition.serverSupportsApi(client);
+					boolean triggerTemplateAvailable = TriggerTemplateActivationCondition.serverSupportsApi(client);
 					Condition noPipelinesApi = new ConditionBuilder()
 						.withObservedGeneration(resource.getStatus().getObservedGeneration())
 						.withType(ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString())
-						.withMessage("Error")
+						.withMessage(String.format("PipelineActivation: %s, TriggerBindings: %s, EventListener: %s, TriggerTemplates: %s", pipeActivationAvailable, triggerBindingAvailable, eventListenerAvailable, triggerTemplateAvailable))
 						.withLastTransitionTime(LocalDateTime.now().toString())
 						.withReason("Required api for Tekton not available. Is OpenShift Pipelines installed?")
 						.withStatus("false")

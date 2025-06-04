@@ -118,17 +118,23 @@ spec:
         - name: GIT_SCRIPT
           value: |
             git init && git config http.sslVerify false && git checkout -b main
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       runAfter:
         - helm-create
         - add-argo-application
@@ -144,19 +150,25 @@ spec:
         - name: GIT_SCRIPT
           value: |
             git add . && git commit -m "deployment artifacts generated"
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       runAfter:
         - git-init
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: src
@@ -168,19 +180,25 @@ spec:
         - name: GIT_SCRIPT
           value: |
             git remote add origin $(params.git_url) && git push -u origin main
-        - name: USER_HOME
-          value: /root
         - name: VERBOSE
           value: 'true'
         - name: GIT_USER_NAME
           value: "$(params.git_user)"
         - name: GIT_USER_EMAIL
           value: "$(params.git_user_email)"
+        - name: DELETE_EXISTING
+          value: false
       runAfter:
         - git-commit
       taskRef:
-        kind: ClusterTask
-        name: git-cli
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-cli
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: src

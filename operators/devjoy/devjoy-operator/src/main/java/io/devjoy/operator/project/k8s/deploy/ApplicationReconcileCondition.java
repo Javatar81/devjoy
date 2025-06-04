@@ -32,28 +32,16 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
     private final GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
     String accessMode;
     boolean trustAll;
+    private TrustManager[] trustAllCerts = new TrustManager[]{
+        new TrustAllTrustManager()
+    };
 
     public ApplicationReconcileCondition() {
         accessMode = ConfigProvider.getConfig().getConfigValue("io.devjoy.gitea.api.access.mode").getValue();
         trustAll = Boolean.valueOf(ConfigProvider.getConfig().getConfigValue("quarkus.tls.trust-all").getValue());
     }
 
-    private TrustManager[] trustAllCerts = new TrustManager[]{
-        new X509TrustManager() {
-            @Override
-            public X509Certificate[] getAcceptedIssuers() {
-                return null;
-            }
-            @Override
-            public void checkClientTrusted(X509Certificate[] certs, String authType) {
-                // Do nothing - trust all clients
-            }
-            @Override
-            public void checkServerTrusted(X509Certificate[] certs, String authType) {
-                // Do nothing - trust all servers
-            }
-        }
-    };
+    
     
     
     @Override
@@ -70,9 +58,8 @@ public class ApplicationReconcileCondition implements Condition<Application, Pro
                 URI uri = new URI(url.replace(".git", "/raw/branch/main/bootstrap/argo-application.yaml"));
                 var con = (HttpURLConnection) uri.toURL().openConnection();
                 LOG.warn("Trust all is {}", trustAll);
-                if (trustAll && con instanceof HttpsURLConnection) {
+                if (trustAll && con instanceof HttpsURLConnection secureCon) {
                     LOG.warn("Using insecure HTTPS connection. Only use this in dev mode!");
-                    HttpsURLConnection secureCon = (HttpsURLConnection) con;
                     SSLContext sslTrustAll = SSLContext.getInstance("SSL");
                     sslTrustAll.init(null, trustAllCerts, new java.security.SecureRandom());
                     secureCon.setSSLSocketFactory(sslTrustAll.getSocketFactory());

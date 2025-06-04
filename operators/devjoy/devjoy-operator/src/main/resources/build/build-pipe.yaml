@@ -17,29 +17,30 @@ spec:
   tasks:
     - name: git-clone
       params:
-        - name: url
+        - name: URL
           value: >-
             $(params.git_url)
-        - name: submodules
+        - name: SUBMODULES
           value: 'true'
-        - name: depth
+        - name: DEPTH
           value: '1'
-        - name: sslVerify
+        - name: SSL_VERIFY
           value: 'false'
-        - name: crtFileName
+        - name: CRT_FILENAME
           value: ca-bundle.crt
-        - name: deleteExisting
+        - name: DELETE_EXISTING
           value: 'true'
-        - name: verbose
+        - name: VERBOSE
           value: 'true'
-        - name: gitInitImage
-          value: >-
-            registry.redhat.io/openshift-pipelines/pipelines-git-init-rhel8@sha256:a538c423e7a11aae6ae582a411fdb090936458075f99af4ce5add038bb6983e8
-        - name: userHome
-          value: /tekton/home
       taskRef:
-        kind: ClusterTask
-        name: git-clone
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: output
           workspace: sources
@@ -59,12 +60,18 @@ spec:
       runAfter:
         - git-clone
       taskRef:
-        kind: ClusterTask
-        name: maven
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: maven
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: sources
-        - name: maven-settings
+        - name: maven_settings
           workspace: mvn-settings
     - name: build-and-push-image
       params:
@@ -89,8 +96,14 @@ spec:
       runAfter:
         - build-jar
       taskRef:
-        kind: ClusterTask
-        name: buildah
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: buildah
+          - name: namespace
+            value: openshift-pipelines
       workspaces:
         - name: source
           workspace: sources
