@@ -18,15 +18,19 @@ import jakarta.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
 public class GiteaApiService {
-	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
-	@ConfigProperty(name = "io.devjoy.gitea.api.access.mode") 
+	private static final Logger LOG = LoggerFactory.getLogger(GiteaApiService.class);
+	
+	
 	ApiAccessMode accessMode;
+
 	private final OpenShiftClient client;
 	
-	public GiteaApiService(OpenShiftClient client) {
+
+
+	public GiteaApiService(OpenShiftClient client,@ConfigProperty(name = "io.devjoy.gitea.api.access.mode") ApiAccessMode accessMode) {
 		this.client = client;
+		this.accessMode = accessMode;
 	}
-	
 
 	public void setAccessMode(ApiAccessMode accessMode) {
 		this.accessMode = accessMode;

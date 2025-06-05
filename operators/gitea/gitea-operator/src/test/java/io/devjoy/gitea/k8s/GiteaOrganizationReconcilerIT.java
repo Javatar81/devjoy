@@ -28,6 +28,7 @@ import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationSpec;
 import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.service.OrganizationService;
 import io.devjoy.gitea.service.UserService;
+import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
@@ -42,7 +43,7 @@ public class GiteaOrganizationReconcilerIT {
 
 	static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
-	GiteaApiService apiService = new GiteaApiService(client);
+	GiteaApiService apiService = new GiteaApiService(client, ApiAccessMode.EXTERNAL);
 	UserService userService = new UserService(apiService);
 	OrganizationService orgService = new OrganizationService(apiService);
 	
