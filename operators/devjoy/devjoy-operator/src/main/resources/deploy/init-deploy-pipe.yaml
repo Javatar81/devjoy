@@ -6,7 +6,10 @@ spec:
   params:
     - name: git_url
       type: string
-      description: Git clone URL
+      description: Git URL to push the target deploy repo 
+    - name: git_src_url
+      type: string
+      description: Git clone URL for the project sources
     - name: git_user
       type: string
       description: Git user
@@ -19,6 +22,9 @@ spec:
     - name: project_namespace
       type: string
       description: Name of the project namespace
+    - name: project_type
+      type: string
+      default: generic
     - name: environment_namespace
       type: string
       description: Name of the dev environment namespace
@@ -31,9 +37,169 @@ spec:
     - name: git_repository
       type: string
       description: The git repository
-
+    - name: maven_repo
+      type: string
+      description: Path to the maven repo
+      default: $HOME/.m2/repository/
   tasks:
+    - name: git-clone-src
+      when:
+      - input: "$(params.project_type)"
+        operator: in
+        values: ["quarkus"]
+      params:
+        - name: URL
+          value: >-
+            $(params.git_src_url)
+        - name: SUBMODULES
+          value: 'true'
+        - name: DEPTH
+          value: '1'
+        - name: SSL_VERIFY
+          value: 'false'
+        - name: CRT_FILENAME
+          value: ca-bundle.crt
+        - name: DELETE_EXISTING
+          value: 'true'
+        - name: VERBOSE
+          value: 'true'
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: git-clone
+          - name: namespace
+            value: openshift-pipelines
+      workspaces:
+        - name: output
+          workspace: src-project
+        - name: basic-auth
+          workspace: auth
+    - name: add-required-extensions
+      when:
+        - input: "$(params.project_type)"
+          operator: in
+          values: ["quarkus"]
+      params:
+        - name: GOALS
+          value:
+            - quarkus:add-extension 
+            - -Dextensions=helm,openshift
+            - -Dmaven.repo.local=$(params.maven_repo)
+        - name: MAVEN_MIRROR_URL
+          value: ''
+        - name: SERVER_USER
+          value: ''
+        - name: SERVER_PASSWORD
+          value: ''
+        - name: PROXY_USER
+          value: ''
+        - name: PROXY_PASSWORD
+          value: ''
+        - name: PROXY_PORT
+          value: ''
+        - name: PROXY_HOST
+          value: ''
+        - name: PROXY_NON_PROXY_HOSTS
+          value: ''
+        - name: PROXY_PROTOCOL
+          value: http
+        - name: CONTEXT_DIR
+          value: .
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: maven
+          - name: namespace
+            value: openshift-pipelines
+      runAfter:
+        - git-clone-src
+      workspaces:
+        - name: source
+          workspace: src-project
+        - name: maven_settings
+          workspace: mvn-settings
+    - name: quarkus-create-helm
+      when:
+      - input: "$(params.project_type)"
+        operator: in
+        values: ["quarkus"]
+      params:
+        - name: GOALS
+          value:
+            - clean
+            - package
+            - -Dmaven.repo.local=$(params.maven_repo)
+            - -DskipTests
+            - -Dquarkus.openshift.route.expose=true
+            - -Dquarkus.helm.repository.deployment-target=openshift
+            - -Dquarkus.helm.values.image.value=image-registry.openshift-image-registry.svc:5000/$(params.project_namespace)/$(params.project_name)
+        - name: MAVEN_MIRROR_URL
+          value: ''
+        - name: SERVER_USER
+          value: ''
+        - name: SERVER_PASSWORD
+          value: ''
+        - name: PROXY_USER
+          value: ''
+        - name: PROXY_PASSWORD
+          value: ''
+        - name: PROXY_PORT
+          value: ''
+        - name: PROXY_HOST
+          value: ''
+        - name: PROXY_NON_PROXY_HOSTS
+          value: ''
+        - name: PROXY_PROTOCOL
+          value: http
+        - name: CONTEXT_DIR
+          value: .
+      taskRef:
+        resolver: cluster
+        params:
+          - name: kind
+            value: task
+          - name: name
+            value: maven
+          - name: namespace
+            value: openshift-pipelines
+      runAfter:
+        - add-required-extensions
+      workspaces:
+        - name: source
+          workspace: src-project
+        - name: maven_settings
+          workspace: mvn-settings
+    - name: copy-chart
+      when:
+      - input: "$(params.project_type)"
+        operator: in
+        values: ["quarkus"]
+      params:
+        - name: SOURCE_FOLDER
+          value: target/helm/openshift/$(params.project_name)
+        - name: TARGET_FOLDER
+          value: apps
+      runAfter:
+        - quarkus-create-helm
+      taskRef:
+        kind: Task
+        name: copy
+      workspaces:
+        - name: target
+          workspace: src
+        - name: source
+          workspace: src-project
     - name: helm-create
+      when:
+      - input: "$(params.project_type)"
+        operator: in
+        values: ["generic"]
       taskRef:
         kind: Task
         name: helm-create
@@ -95,21 +261,6 @@ spec:
           workspace: src
         - name: source
           workspace: additional-resources
-    #- name: bootstrap
-    #  runAfter:
-    #    - add-argo-application
-    #    - add-helm-value-yaml
-    #  taskRef:
-    #    kind: ClusterTask
-    #    name: openshift-client
-    #  params:
-    #    - name: SCRIPT
-    #      value: oc apply -f bootstrap
-    #    - name: VERSION
-    #      value: latest
-    #  workspaces:
-    #    - name: manifest-dir
-    #      workspace: src
     - name: git-init
       params:
         - name: BASE_IMAGE
@@ -139,6 +290,7 @@ spec:
         - helm-create
         - add-argo-application
         - add-helm-value-yaml
+        - copy-chart
       workspaces:
         - name: source
           workspace: src
@@ -206,6 +358,8 @@ spec:
           workspace: auth
   workspaces:
     - name: src
+    - name: src-project
+      description: Stores the source file repo
     - name: auth
     - name: additional-resources
     - name: mvn-settings

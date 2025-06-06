@@ -27,6 +27,7 @@ import io.devjoy.operator.environment.k8s.deploy.ArgoCDDependentResource;
 import io.devjoy.operator.environment.k8s.deploy.InitDeployPipelineDependent;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourceTaskDependent;
 import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependent;
+import io.devjoy.operator.environment.k8s.init.CopyTaskDependent;
 import io.devjoy.operator.environment.k8s.init.HelmCreateTaskDependent;
 import io.devjoy.operator.environment.k8s.init.InitPipelineDependent;
 import io.devjoy.operator.environment.k8s.status.ArgoCdStatus;
@@ -66,6 +67,7 @@ import io.quarkus.runtime.util.StringUtil;
 			@Dependent(activationCondition = TaskActivationCondition.class, type = AdditionalResourceTaskDependent.class),
 			@Dependent(type = AdditionalDeployResourcesConfigmapDependent.class),
 			@Dependent(activationCondition = TaskActivationCondition.class, type = HelmCreateTaskDependent.class),
+			@Dependent(activationCondition = TaskActivationCondition.class, type = CopyTaskDependent.class),
 		})
 
 

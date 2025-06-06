@@ -1,0 +1,23 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: copy
+spec:
+  params:
+    - default: ''
+      description: The folder to copy from
+      name: SOURCE_FOLDER
+      type: string
+    - default: ''
+      description: The folder to copy to
+      name: TARGET_FOLDER
+      type: string
+  steps:
+    - computeResources: {}
+      image: 'quay.io/devjoy/gettext:latest'
+      name: copy-folder
+      script: mkdir -p ./$(params.TARGET_FOLDER) && cp -R $(workspaces.source.path)/$(params.SOURCE_FOLDER) ./$(params.TARGET_FOLDER)
+      workingDir: $(workspaces.target.path)
+  workspaces:
+    - name: source
+    - name: target

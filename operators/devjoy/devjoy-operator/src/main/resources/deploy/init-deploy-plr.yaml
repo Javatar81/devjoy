@@ -19,6 +19,17 @@ spec:
             requests:
               storage: 1Gi
           volumeMode: Filesystem
+    - name: src-project
+      volumeClaimTemplate:
+        metadata:
+          creationTimestamp: null
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+          volumeMode: Filesystem
     - name: auth
       secret:
         secretName: -git-secret  
@@ -26,6 +37,6 @@ spec:
       configMap:
         name: additional-resources-deploy-         
     - name: mvn-settings
-      emptyDir: {}               
+                    
    
       

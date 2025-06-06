@@ -29,10 +29,10 @@ spec:
       type: string
       description: The version of the quarkus maven plugin
       default: "3.9.2"
-    - name: additional_maven_params
-      type: array
-      description: Additional params for the quarkus maven plugin
-      default: []
+    - name: maven_repo
+      type: string
+      description: Path to the maven repo
+      default: $HOME/.m2/repository/
   tasks:
     - name: quarkus-create
       params:
@@ -42,7 +42,7 @@ spec:
             - -DprojectGroupId=$(params.quarkus_group_id)
             - -DprojectArtifactId=$(params.quarkus_artifact_id)
             - -Dextensions=$(params.quarkus_extensions)
-            - $(params.additional_maven_params)
+            - -Dmaven.repo.local=$(params.maven_repo)
         - name: MAVEN_MIRROR_URL
           value: ''
         - name: SERVER_USER

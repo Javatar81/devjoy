@@ -11,15 +11,20 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
+import io.devjoy.operator.project.k8s.SourceRepositoryDiscriminator;
 import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
 import io.fabric8.tekton.pipeline.v1.ParamBuilder;
+import io.fabric8.tekton.pipeline.v1.ParamValue;
+import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -36,6 +41,7 @@ import jakarta.inject.Inject;
 public class InitDeployPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(InitDeployPipelineRunDependent.class);
 	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
+	private SourceRepositoryDiscriminator srcRepoDiscriminator = new SourceRepositoryDiscriminator();
 	private boolean preferAdminAsGitUser = false;
 	
 	@Inject
@@ -60,13 +66,8 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		LOG.info("Run {} will be started in namespace {}", name, pipelineRun.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Defining run {} referencing pipeline {}", name, pipelineRun.getSpec().getPipelineRef().getName());
-		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
-				.filter(url -> !StringUtil.isNullOrEmpty(url))
-				.or(() -> context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator).map(GiteaRepository::getStatus)
-						.map(GiteaRepositoryStatus::getCloneUrl))
-				.map(url -> pipelineRun.getSpec().getParams()
-						.add(new ParamBuilder().withName("git_url").withNewValue(url).build()))
-				.orElseThrow(() -> new IllegalStateException("Git url is not yet available"));
+		setRepoUrl("git_url", primary, context, pipelineRun, gitopsRepoDiscriminator);
+		setRepoUrl("git_src_url", primary, context, pipelineRun, srcRepoDiscriminator);
 		String user = primary.getSpec().getOwner().getUser();
 		
 		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
@@ -81,6 +82,13 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 			.add(new ParamBuilder().withName("project_name").withNewValue(primary.getMetadata().getName()).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("project_namespace").withNewValue(primary.getMetadata().getNamespace()).build());
+		if (primary.getSpec().getQuarkus() != null && primary.getSpec().getQuarkus().isEnabled()) {
+			LOG.debug("We have a Quarkus project");
+			pipelineRun.getSpec().setStatus("PipelineRunPending");
+			pipelineRun.getSpec().getParams()
+				.add(new ParamBuilder().withName("project_type").withNewValue("quarkus").build());
+		}
+
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("environment_namespace").withNewValue(devEnvironment.getMetadata().getNamespace()).build());
 		pipelineRun.getSpec().getParams()
@@ -94,7 +102,18 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
 
-		
+		if (devEnvironment.getSpec().getMavenSettingsPvc() != null) {
+			ParamValue mavenRepoPath = new ParamValueBuilder().withStringVal("/workspace/maven_settings/repo").build();
+			pipelineRun.getSpec().getParams()
+				.add(new ParamBuilder().withName("maven_repo").withValue(mavenRepoPath).build());
+			pipelineRun.getSpec().getWorkspaces().stream()
+				.filter(w -> "mvn-settings".equals(w.getName()))
+				.forEach(w -> 
+					{
+						w.setEmptyDir(null);
+						w.setPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName(devEnvironment.getSpec().getMavenSettingsPvc()).build());
+					});
+		}
 		String secretPrefix;
 		if (deprecatedUserSecretAvailable){
 			secretPrefix = user;
@@ -111,6 +130,16 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));
 
 		return pipelineRun;
+	}
+
+	private void setRepoUrl(String param, Project primary, Context<Project> context, PipelineRun pipelineRun, ResourceIDMatcherDiscriminator<GiteaRepository, Project> discrimnator) {
+		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
+				.filter(url -> !StringUtil.isNullOrEmpty(url))
+				.or(() -> context.getSecondaryResource(GiteaRepository.class, discrimnator).map(GiteaRepository::getStatus)
+						.map(GiteaRepositoryStatus::getCloneUrl))
+				.map(url -> pipelineRun.getSpec().getParams()
+						.add(new ParamBuilder().withName(param).withNewValue(url).build()))
+				.orElseThrow(() -> new IllegalStateException("Git url is not yet available"));
 	}
 
 	private String getUserEmailOrDefault(Project primary, boolean preferAdminAsGitUser, Gitea gitea) {

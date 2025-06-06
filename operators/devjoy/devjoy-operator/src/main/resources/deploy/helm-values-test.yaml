@@ -85,3 +85,9 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+#Quarkus specific values
+app:
+  image: image-registry.openshift-image-registry.svc:5000/$ENVIRONMENT_NAMESPACE/$PROJECT
+  ports:
+    http: 8080

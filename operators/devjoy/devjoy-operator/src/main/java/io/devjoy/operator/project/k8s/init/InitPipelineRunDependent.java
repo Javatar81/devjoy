@@ -101,16 +101,13 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 			.filter(w -> "auth".equals(w.getName()))
 			.forEach(w -> w.getSecret().setSecretName(secretPrefix + "-git-secret"));
 
-
-
-
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "additional-resources".equals(w.getName()))
 			.forEach(w -> w.getConfigMap().setName(w.getConfigMap().getName() + devEnvironment.getMetadata().getName()));
 		if (devEnvironment.getSpec().getMavenSettingsPvc() != null) {
-			ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=/workspace/maven_settings)").build();
+			ParamValue mavenRepoPath = new ParamValueBuilder().withStringVal("/workspace/maven_settings/repo").build();
 			pipelineRun.getSpec().getParams()
-				.add(new ParamBuilder().withName("additional_maven_params").withValue(mavenRepoPath).build());
+				.add(new ParamBuilder().withName("maven_repo").withValue(mavenRepoPath).build());
 			pipelineRun.getSpec().getWorkspaces().stream()
 				.filter(w -> "mvn-settings".equals(w.getName()))
 				.forEach(w -> 

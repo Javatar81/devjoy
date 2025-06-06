@@ -1,5 +1,6 @@
 package io.devjoy.operator.project.k8s;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -35,6 +36,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
+import io.fabric8.tekton.pipeline.v1.ParamBuilder;
 import io.fabric8.tekton.pipeline.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -100,6 +102,29 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 				} else {
 					secretPrefix = Optional.ofNullable(GiteaDependentResource.getResource(context.getClient(), e).get()).map(g -> g.getSpec().getAdminUser()).orElse(null);
 				}
+
+			if (resource.getSpec().getQuarkus() != null && resource.getSpec().getQuarkus().isEnabled()) {
+				LOG.info("We have a Quarkus project");
+				Optional<PipelineRun> initAppPipeRun = Optional.ofNullable(InitDeployPipelineRunDependent.getResource(tektonClient, client, resource).get());
+				initAppPipeRun.ifPresent(prApp -> {
+					LOG.info("Init app pipe exists");
+					if (successCondition(prApp).isEmpty()){
+						LOG.info("Init app pipe has not succeeded yet");
+						Optional<PipelineRun> initProjPipeRun = Optional.ofNullable(InitPipelineRunDependent.getResource(tektonClient, resource).get());
+						LOG.info("Setting run status.");
+						LOG.info("Dependent pipeline run exists? {}", initProjPipeRun);
+						
+						initProjPipeRun.ifPresentOrElse(pr -> 
+								successCondition(pr)
+									.ifPresentOrElse(c -> setAppPipelineRunStatus(prApp, null)
+								,() -> 
+									setAppPipelineRunStatus(prApp, "PipelineRunPending"))
+									,() -> 
+									setAppPipelineRunStatus(prApp, "PipelineRunPending")
+						);
+					}
+					});
+			}
 			
 			Optional<Secret> secret = Optional.ofNullable(GiteaDependentResource.getResource(client, e).get())
 				.flatMap(g -> Optional.ofNullable(client.resources(Secret.class).inNamespace(g.getMetadata().getNamespace()).withName(
@@ -163,7 +188,25 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 				//return ctrl.getState();
 			});
 		});//.orElseGet(() -> ctrl.getState());
+		ctrl.rescheduleAfter(Duration.ofSeconds(10));
 		return ctrl.getState();
+	}
+
+	private void setAppPipelineRunStatus(PipelineRun pr, String status) {
+		if ((status == null && pr.getSpec().getStatus() != null) 
+			|| (status != null && !status.equals(pr.getSpec().getStatus()))) {
+			client.resource(pr).edit(ne -> pr.edit().editSpec().withStatus(status).endSpec().build());
+		}
+	}
+
+	private Optional<String> successCondition(PipelineRun pipelineRun) {
+		return Optional.ofNullable(pipelineRun.getStatus())
+			.flatMap(s -> s
+			.getConditions().stream()
+			.filter(c -> "Succeeded".equals(c.getType()))
+			.map(c -> c.getStatus())
+			.filter("True"::equals)
+			.findAny());
 	}
 
 	private boolean supportsRequiredPipelinesApi() {
