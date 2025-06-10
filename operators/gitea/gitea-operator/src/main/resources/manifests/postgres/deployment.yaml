@@ -34,7 +34,7 @@ spec:
             secretKeyRef:
               key: database-name
               name: "placeholder"
-        image: "registry.redhat.io/rhel8/postgresql-12:latest"
+        image: "registry.redhat.io/rhel9/postgresql-16:latest"
         imagePullPolicy: IfNotPresent
         livenessProbe:
           exec:
