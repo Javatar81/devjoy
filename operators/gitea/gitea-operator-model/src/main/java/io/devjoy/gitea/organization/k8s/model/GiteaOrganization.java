@@ -32,7 +32,6 @@ public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, Git
 		String giteaName = labels.get(GiteaLabels.LABEL_GITEA_NAME);
 		String giteaNamespace = labels.get(GiteaLabels.LABEL_GITEA_NAMESPACE);
 		if (associatedGiteaLabelsSet(getMetadata())) {
-			LOG.debug("Labels found");
 			return Optional
 					.ofNullable(client.resources(Gitea.class).inNamespace(giteaNamespace)
 							.withName(giteaName).get());
@@ -44,7 +43,6 @@ public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, Git
 			List<Gitea> giteasInSameNamespace = client.resources(Gitea.class).inNamespace(giteaNamespace).list()
 					.getItems();
 			if (giteasInSameNamespace.size() == 1) {
-				LOG.debug("Gitea found");
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {

@@ -11,6 +11,7 @@ import io.quarkus.runtime.annotations.RegisterForReflection;
 public class GiteaStatus extends ObservedGenerationAwareStatus {
 
 	private List<Condition> conditions = new ArrayList<>();
+	private String host;
 
 	public List<Condition> getConditions() {
 		return conditions;
@@ -19,5 +20,15 @@ public class GiteaStatus extends ObservedGenerationAwareStatus {
 	public void setConditions(List<Condition> conditions) {
 		this.conditions = conditions;
 	}
+
+	public String getHost() {
+		return host;
+	}
+
+	public void setHost(String host) {
+		this.host = host;
+	}
+
+	
 
 }

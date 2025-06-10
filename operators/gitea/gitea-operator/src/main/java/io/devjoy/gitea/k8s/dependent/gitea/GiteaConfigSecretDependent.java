@@ -13,6 +13,7 @@ import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfig;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaMailerSpec;
+import io.devjoy.gitea.util.PasswordService;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -111,6 +112,8 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 	PostgresConfig config;
 	@Inject
 	OpenShiftClient ocpClient;
+	@Inject
+	PasswordService passwordService;
 	
 	private GiteaRouteDiscriminator routeDiscriminator = new GiteaRouteDiscriminator();
 	
@@ -168,9 +171,24 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		if (primary.getSpec() != null){
 			addOverrides(primary, iniConfiguration);
 		}
+		String existingJwtSecret = getSecondaryResource(primary, context)
+			.map(Secret::getData)
+			.map(m -> m.get("app.ini"))
+			.map(d -> new String(Base64.getDecoder().decode(d)))
+			.map(GiteaAppIni::new)
+			.map(d -> d.getSection(SECTION_OAUTH2))
+			.map(sec -> (String) sec.getProperty("JWT_SECRET"))
+			.orElse("");
+
+		if (StringUtil.isNullOrEmpty(existingJwtSecret)) {
+			iniConfiguration.getSection(SECTION_OAUTH2).setProperty("JWT_SECRET", passwordService.generateSecret(43));
+		} else {
+			iniConfiguration.getSection(SECTION_OAUTH2).setProperty("JWT_SECRET", existingJwtSecret);
+		}
 		String finalAppIni = iniConfiguration.toString();
 		LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
 		//cm.getStringData().put("app.ini", finalAppIni);
+
 		cm.getStringData().clear();
 		cm.setData(new HashMap<>());
 		cm.getData().put("app.ini", new String(Base64.getEncoder().encode(

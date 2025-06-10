@@ -38,7 +38,7 @@ public class GiteaReconcilerIT {
 	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
 	TestEnvironment env = new TestEnvironment(client);
-	GiteaApiService apiService = new GiteaApiService(client);
+	GiteaApiService apiService = new GiteaApiService(client, accessMode);
 	
 	UserService userService = new UserService(apiService);
 	

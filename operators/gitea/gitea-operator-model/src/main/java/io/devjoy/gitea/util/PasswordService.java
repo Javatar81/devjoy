@@ -37,6 +37,25 @@ public class PasswordService {
 		return builder.toString();
 	}
 
+	public String generateSecret(@Min(10) int length) {
+		String upperCaseLetters = random(2, 65, 90);
+	    String lowerCaseLetters = random(2, 97, 122);
+	    String numbers = randomNumeric(2);
+	    String specialChar = "_-";
+	    String totalChars = randomAlphanumeric(length - 8);
+	    String combinedChars = upperCaseLetters.concat(lowerCaseLetters)
+	      .concat(numbers)
+	      .concat(specialChar)
+	      .concat(totalChars);
+	    List<Character> pwdChars = combinedChars.chars()
+	      .mapToObj(c -> (char) c)
+	      .collect(Collectors.toList());
+	    Collections.shuffle(pwdChars);
+	    return pwdChars.stream()
+	      .collect(StringBuilder::new, StringBuilder::append, StringBuilder::append)
+	      .toString();
+	}
+
 	public String generateNewPassword(@Min(10) int length) {
 		String upperCaseLetters = random(2, 65, 90);
 	    String lowerCaseLetters = random(2, 97, 122);

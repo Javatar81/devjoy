@@ -149,7 +149,7 @@ public class UserService {
 				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), UserApi.class, userName, password)
 						.userCreateToken(userName, createToken));
 			} catch (URISyntaxException e) {
-				LOG.error(ERROR_IN_REST_CLIENT);
+				LOG.error(ERROR_IN_REST_CLIENT, e);
 				return Optional.empty();
 			}
 		});
