@@ -23,6 +23,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
+import io.javaoperatorsdk.operator.processing.dependent.kubernetes.BooleanWithUndefined;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
@@ -83,13 +84,23 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		desired.getData().put(DATA_KEY_USERNAME, new String(Base64.getEncoder().encode(
 				adminUser.getBytes())));
-		
+
 		Optional<String> passwordFromSecret = getSecondaryResource(primary, context)
 			.map(s -> s.getData().get(DATA_KEY_PASSWORD))
 			.filter(pw -> !StringUtil.isNullOrEmpty(pw))
 			.map(pw -> new String(Base64.getDecoder().decode(pw)));
+		passwordFromSecret.ifPresent(pw -> LOG.debug("Password available from secret"));	
+		Optional<String> extraAdminSecretName = Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null);
+		String extraAdminSecretPasswordKey = primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretPasswordKey() : DATA_KEY_PASSWORD;
+		Optional<String> passwordFromExtraSecret =	extraAdminSecretName
+			.flatMap(extraSecretName -> Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName(extraSecretName).get()))
+			.map(s -> s.getData().get(extraAdminSecretPasswordKey))
+			.filter(pw -> !StringUtil.isNullOrEmpty(pw))
+			.map(pw -> new String(Base64.getDecoder().decode(pw)));
 		
-		if (passwordFromSpec.isEmpty() && passwordFromSecret.isEmpty()) {
+		extraAdminSecretName.ifPresent(n -> LOG.debug("Extra secret name is {}", n));	
+		passwordFromExtraSecret.ifPresent(pw -> LOG.debug("Password available from extra secret"));	
+		if (passwordFromExtraSecret.isEmpty() && passwordFromSpec.isEmpty() && passwordFromSecret.isEmpty()) {
 			LOG.info("No password set. Generating new one.");
 			String newPassword = passwordService.generateNewPassword(Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminPasswordLength).orElse(10));
 			if(primary.getSpec() == null) {
@@ -97,15 +108,20 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 			}
 			primary.getSpec().setAdminPassword(newPassword);
 			passwordFromSpec = Optional.of(newPassword);
-		} else if(!passwordFromSpec.isEmpty() && !passwordFromSecret.isEmpty() && !passwordFromSecret.equals(passwordFromSpec)) {
+		} 
+		else if(!passwordFromSpec.isEmpty() && !passwordFromSecret.isEmpty() && !passwordFromSecret.equals(passwordFromSpec)) {
 			LOG.info("Password changed.");
 			passwordFromSpec.ifPresent(pw -> getSecondaryResource(primary, context)
 					.flatMap(GiteaAdminSecretDependent::getAdminToken)
 					.ifPresent(token -> userService.changeUserPassword(primary, adminUser, pw, token)));
 		}
 		
+		//Optional<String> effectivePassword = passwordFromSpec.filter(pw -> !StringUtil.isNullOrEmpty(pw))
+		//		.or(() -> passwordFromSecret.filter(pw -> !StringUtil.isNullOrEmpty(pw)));
+		
 		Optional<String> effectivePassword = passwordFromSpec.filter(pw -> !StringUtil.isNullOrEmpty(pw))
-				.or(() -> passwordFromSecret.filter(pw -> !StringUtil.isNullOrEmpty(pw)));
+			.or(() -> passwordFromExtraSecret.filter(pw -> !StringUtil.isNullOrEmpty(pw)))
+			.or(() -> passwordFromSecret.filter(pw -> !StringUtil.isNullOrEmpty(pw)));
 		
 		effectivePassword.ifPresent(pw -> desired.getData().put(DATA_KEY_PASSWORD, Base64.getEncoder().encodeToString(
 				pw.getBytes())));

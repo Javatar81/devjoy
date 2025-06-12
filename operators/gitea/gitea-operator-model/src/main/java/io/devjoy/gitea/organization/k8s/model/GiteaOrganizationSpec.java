@@ -8,8 +8,8 @@ import io.devjoy.gitea.organization.domain.OrganizationVisibility;
 public class GiteaOrganizationSpec {
 	@JsonPropertyDescription("The user who owns the org.")
 	private String owner;
-	@JsonPropertyDescription("The visibility of the org. One of private, limited, public.")
-	@JsonProperty(defaultValue = "private")
+	@JsonPropertyDescription("The visibility of the org. One of PRIVATE, LIMITED, PUBLIC.")
+	@JsonProperty(defaultValue = "PRIVATE")
 	private OrganizationVisibility visibility = OrganizationVisibility.PRIVATE;
 	@JsonPropertyDescription("The description of the org.")
 	private String description;

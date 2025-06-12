@@ -27,6 +27,8 @@ import io.devjoy.gitea.util.ApiAccessMode;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -157,6 +159,75 @@ public class GiteaReconcilerIT {
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(gitea.getSpec().getAdminPassword()));
         });
+	}
+
+	@Test
+	void createGiteaWithExistingAdminSecret() {
+		String password = "test1234";
+		Secret adminSecret = new SecretBuilder()
+			.withNewMetadata().withNamespace(getTargetNamespace()).withName("admin-extra-pw-secret").endMetadata()
+				.addToStringData("password", password)
+			.build();
+		try {
+			client.resource(adminSecret).create();
+			client.resource(adminSecret).waitUntilReady(20, TimeUnit.SECONDS);
+			Gitea gitea = createDefault("mygiteaitwpw");
+			gitea.getSpec().setExtraAdminSecretName("admin-extra-pw-secret");
+			env.createStaticPVsIfRequired();
+			client.resource(gitea).create();
+			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertions.assertPostgresPvc(gitea);
+				assertions.assertGiteaPvc(gitea);
+				assertions.assertGiteaDeployment(gitea);
+				assertions.assertAdminSecret(gitea);
+				final var adminSecretUpdated = GiteaAdminSecretDependent.getResource(gitea, client);
+				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecretUpdated.get().getData().get("password"))), is(password));
+			});
+		} finally {
+			if (client.resource(adminSecret).get() != null) {
+				client.resource(adminSecret).delete();
+			}
+		}
+	}
+
+	@Test
+	void changeExistingAdminSecret() {
+		String password = "test1234";
+		String changedPassword = "12333555sdg";
+		Secret adminSecret = new SecretBuilder()
+			.withNewMetadata().withNamespace(getTargetNamespace()).withName("admin-extra-pw-secret").endMetadata()
+				.addToStringData("password", password)
+			.build();
+		try {
+			Gitea gitea = createDefault("mygiteaitwpw");
+			client.resource(adminSecret).create();
+			client.resource(adminSecret).waitUntilReady(20, TimeUnit.SECONDS);
+			gitea.getSpec().setExtraAdminSecretName("admin-extra-pw-secret");
+			env.createStaticPVsIfRequired();
+			client.resource(gitea).create();
+			client.apps().deployments()
+                .inNamespace(getTargetNamespace())
+                .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 180, TimeUnit.SECONDS);
+			
+			await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.secrets().inNamespace(getTargetNamespace()).withName("admin-extra-pw-secret").edit(n -> {
+				n.getStringData().put("password", changedPassword);
+				return n;
+				
+			}) != null)
+			;
+			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
+				assertions.assertPostgresPvc(gitea);
+				assertions.assertGiteaPvc(gitea);
+				assertions.assertGiteaDeployment(gitea);
+				assertions.assertAdminSecret(gitea);
+				final var adminSecretUpdated = GiteaAdminSecretDependent.getResource(gitea, client);
+				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecretUpdated.get().getData().get("changedPassword"))), is(password));
+			});
+		} finally {
+			if (client.resource(adminSecret).get() != null) {
+				client.resource(adminSecret).delete();
+			}
+		}
 	}
 
 	@Test

@@ -17,7 +17,6 @@ public class GiteaRepositorySpec {
 	@JsonProperty(required = true)
 	private String user;
 	@JsonPropertyDescription("Whether the repository should be deleted with the repository resource. Default is true.")
-	@JsonProperty(defaultValue = "true")
 	private boolean deleteOnFinalize = true;
 	@JsonPropertyDescription("Webhooks for the repository.")
 	private List<WebhookSpec> webhooks;

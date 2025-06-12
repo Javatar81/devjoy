@@ -1,11 +1,17 @@
 package io.devjoy.gitea.k8s;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.k8s.dependent.gitea.ExtraAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDiscriminator;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependent;
@@ -30,24 +36,34 @@ import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakOperatorReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakSubscriptionDependent;
+import io.devjoy.gitea.k8s.domain.GiteaLabels;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.organization.k8s.model.GiteaOrganization;
 import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.EventSource;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteSpec;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
+import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
+import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
+import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
@@ -61,6 +77,8 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependent.class),
 		@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependent.class),
 		@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependent.class),
+		//@Dependent(name = "extraAdminSecret", type = ExtraAdminSecretDependent.class, useEventSourceWithName = GiteaReconciler.EXTRA_ADMIN_SECRET_EVENT_SOURCE),
+		@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class),
 		@Dependent(name = "giteaServiceAccount", type = GiteaServiceAccountDependent.class),
 		@Dependent(name = "giteaService", type = GiteaServiceDependent.class), 
 		@Dependent(name = "giteaRoute", type = GiteaRouteDependent.class, reconcilePrecondition = GiteaRouteReconcileCondition.class),
@@ -75,15 +93,16 @@ import jakarta.ws.rs.WebApplicationException;
 		@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 		@Dependent(name = "keycloak", type = KeycloakDependent.class, activationCondition = KeycloakReconcileCondition.class), 
 		@Dependent(name = "keycloakRealm", type = KeycloakRealmDependent.class, activationCondition = KeycloakReconcileCondition.class), 
-		@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class) 	
 })
 @RBACRule(apiGroups = "route.openshift.io", resources = {"routes/custom-host"}, verbs = {"create","patch"})
 @CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME, version = GiteaReconciler.CSV_METADATA_VERSION, displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = GiteaReconciler.CSV_CONTAINER_IMAGE, others= {}))
-public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, SharedCSVMetadata { 
+public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gitea>, SharedCSVMetadata/* , EventSourceInitializer<Gitea> */{ 
 	public static final String CSV_METADATA_VERSION = "0.3.0";
 	public static final String CSV_METADATA_NAME = "gitea-operator-bundle.v" + CSV_METADATA_VERSION;
 	public static final String CSV_CONTAINER_IMAGE = "quay.io/devjoy/gitea-operator:" + CSV_METADATA_VERSION;
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
+	public static final String EXTRA_ADMIN_SECRET_EVENT_SOURCE = "ExtraAdminEventSource";
+	public static final String EXTRA_ADMIN_SECRET_INDEX = "ExtraAdminEventSourceIndex";
 	private final GiteaStatusUpdater updater;
 	private final GiteaAdminSecretDiscriminator adminSecretDiscriminator = new GiteaAdminSecretDiscriminator();
 	private final OpenShiftClient client;
@@ -185,4 +204,44 @@ public class GiteaReconciler implements Reconciler<Gitea>, ErrorStatusHandler<Gi
 		}
 		return ErrorStatusUpdateControl.patchStatus(gitea);
 	}
+
+
+  	/*@Override
+	public Map<String, io.javaoperatorsdk.operator.processing.event.source.EventSource> prepareEventSources(
+			EventSourceContext<Gitea> context) {
+    
+	context.getPrimaryCache().addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
+				.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
+				.orElse(Collections.emptyList())));			
+    var es =
+        new InformerEventSource<>(
+            InformerConfiguration.from(
+                    Secret.class, context)
+                // if there is a many-to-many relationship (thus no direct owner reference)
+                // PrimaryToSecondaryMapper needs to be added
+				//.with
+				.withPrimaryToSecondaryMapper(
+		            (PrimaryToSecondaryMapper<Gitea>) p -> 
+		            Optional.ofNullable(p.getSpec() != null ? p.getSpec().getExtraAdminSecretName() : null).map(adm -> 
+		            Set.of(new ResourceID(adm, p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
+                .withSecondaryToPrimaryMapper(
+                    s ->
+                        context
+                            .getPrimaryCache()
+                            .byIndex(
+                                EXTRA_ADMIN_SECRET_INDEX,
+                                indexKey(
+                                    s.getMetadata().getName(), s.getMetadata().getNamespace()))
+                            .stream()
+                            .map(ResourceID::fromResource)
+                            .collect(Collectors.toSet()))
+                .build(),
+            context);
+
+    return Map.of(EXTRA_ADMIN_SECRET_EVENT_SOURCE, es);
+  }
+
+  private String indexKey(String configMapName, String namespace) {
+    return configMapName + "#" + namespace;
+  }*/
 }
