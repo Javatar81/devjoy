@@ -4,14 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.fabric8.kubernetes.api.model.Condition;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection(registerFullHierarchy = true)
-public class GiteaStatus extends ObservedGenerationAwareStatus {
+public class GiteaStatus {
 
 	private List<Condition> conditions = new ArrayList<>();
 	private String host;
+	private long observedGeneration;
+
+	public long getObservedGeneration() {
+		return observedGeneration;
+	}
+
+	public void setObservedGeneration(long observedGeneration) {
+		this.observedGeneration = observedGeneration;
+	}
 
 	public List<Condition> getConditions() {
 		return conditions;

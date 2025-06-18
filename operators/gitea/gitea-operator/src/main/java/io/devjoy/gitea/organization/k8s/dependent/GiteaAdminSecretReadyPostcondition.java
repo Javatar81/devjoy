@@ -21,7 +21,7 @@ public class GiteaAdminSecretReadyPostcondition implements Condition<Secret, Git
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
 				.filter(t -> !StringUtil.isNullOrEmpty(t))
 				.isPresent();
-		LOG.info("Postcondition is {}", present);
+		LOG.debug("Postcondition is {}", present);
 		return present;
 	}
 

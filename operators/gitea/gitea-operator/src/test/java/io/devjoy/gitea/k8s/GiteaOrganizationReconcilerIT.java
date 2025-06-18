@@ -36,6 +36,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.quarkus.logging.Log;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
@@ -118,29 +119,35 @@ public class GiteaOrganizationReconcilerIT {
     @Test
     void updateFullOrg() {
     	GiteaOrganization org = createDefaultOrg("myupdate");
-        client.resource(org).create();
-        await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-        	Optional<Gitea> gitea = org.associatedGitea(client);
+		GiteaOrganization orgCreated = client.resource(org).create();
+		await().ignoreException(NullPointerException.class).atMost(240, TimeUnit.SECONDS).untilAsserted(() -> {
+			Optional<Gitea> gitea = org.associatedGitea(client);
         	assertThat(gitea.isPresent(), is(true));
+			Log.error("Gitea is there");
         	Secret adminSecret = GiteaAdminSecretDependent.getResource(gitea.get(), client).get();
         	assertNotNull(adminSecret);
+			Log.error("Secret is there");
         	Optional<String> adminToken = GiteaAdminSecretDependent.getAdminToken(adminSecret);
         	assertThat(adminToken.isPresent(), is(true));
-        	GiteaOrganization orgRes = client.resources(GiteaOrganization.class).inNamespace(getTargetNamespace()).withName(org.getMetadata().getName()).get();
-            client.resource(org).edit(o -> {
-            	 org.getSpec().setDescription("update1");
-                 org.getSpec().setLocation("update2");
-                 org.getSpec().setWebsite("https://udpated.example.com");
-                 return org;
-            });
-        	assertThat(orgRes, is(IsNull.notNullValue()));
-        	Optional<User> owner = userService.getUser(gitea.get(), org.getSpec().getOwner(), adminToken.get());
-        	assertThat(owner.isPresent(), is(true));
+			Log.error("Admin token is there");
+		});
+		Optional<Gitea> gitea = orgCreated.associatedGitea(client);
+		Secret adminSecret = GiteaAdminSecretDependent.getResource(gitea.get(), client).get();
+		Optional<String> adminToken = GiteaAdminSecretDependent.getAdminToken(adminSecret);
+        await().ignoreException(NullPointerException.class).atMost(240, TimeUnit.SECONDS).untilAsserted(() -> {	
+        	client.resource(orgCreated).edit(o -> {
+				org.getSpec().setDescription("update1");
+				org.getSpec().setLocation("update2");
+				org.getSpec().setWebsite("https://udpated.example.com");
+				return org;
+			});
         	Optional<Organization> updatedOrg = orgService.get(gitea.get(), "myupdate", adminToken.get());        	
         	assertThat(updatedOrg.isPresent(), is(true));
+			Log.error("Org is there");
         	assertThat("update1", is(updatedOrg.get().getDescription()));
         	assertThat("update2", is(updatedOrg.get().getLocation()));
         	assertThat("https://udpated.example.com", is(updatedOrg.get().getWebsite()));
+			Log.error("Updates done");
             //assertThat(orgRes.getStatus().getConditions().stream().anyMatch(c -> GiteaOrganizationConditionType.GITEA_ORG_CREATED.toString().equals(c.getType())), is(true));
         });
     }

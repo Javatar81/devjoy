@@ -9,12 +9,13 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(labelSelector = WebhookSecretDependent.LABEL_TYPE_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = WebhookSecretDependent.LABEL_TYPE_SELECTOR))
 public class WebhookSecretDependent extends CRUDKubernetesDependentResource<Secret, DevEnvironment>{
 	private static final String KEY_WEBHOOK_SECRET = "webhook-secret";
 	private static final String LABEL_TYPE_KEY = "devjoy.io/secret.type";

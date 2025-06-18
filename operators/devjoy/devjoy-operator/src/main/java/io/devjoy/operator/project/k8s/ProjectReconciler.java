@@ -30,28 +30,28 @@ import io.devjoy.operator.project.k8s.init.SourceRepositoryReadyPostcondition;
 import io.fabric8.kubernetes.api.model.Condition;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRun;
+import io.fabric8.tekton.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.RBACRule;
 import io.quarkus.runtime.util.StringUtil;
 
-@ControllerConfiguration(dependents = { @Dependent(name="sourceRepository", readyPostcondition = SourceRepositoryReadyPostcondition.class, type = SourceRepositoryDependent.class),
+@Workflow(dependents = { @Dependent(name="sourceRepository", readyPostcondition = SourceRepositoryReadyPostcondition.class, type = SourceRepositoryDependent.class),
 		@Dependent(name="gitopsRepository", readyPostcondition = GitopsRepositoryReadyPostcondition.class, type = GitopsRepositoryDependent.class),
 		@Dependent(reconcilePrecondition = ApplicationReconcileCondition.class, activationCondition = ApplicationActivationCondition.class,type = ApplicationDependent.class),
 		@Dependent(activationCondition = PipelineRunActivationCondition.class, dependsOn = "sourceRepository", type = InitPipelineRunDependent.class),
@@ -59,11 +59,10 @@ import io.quarkus.runtime.util.StringUtil;
 		})
 @RBACRule(apiGroups = "config.openshift.io", resources = {"ingresses"}, verbs = {"get"}, resourceNames = {"cluster"})
 @CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME)
-public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandler<Project>, Cleaner<Project> {
+public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(ProjectReconciler.class);
 	private final OpenShiftClient client;
 	private final TektonClient tektonClient;
-	private final SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
 
 	public ProjectReconciler(OpenShiftClient client, TektonClient tektonClient) {
 		this.client = client;
@@ -73,26 +72,27 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 	@Override
 	public UpdateControl<Project> reconcile(Project resource, Context<Project> context) {
 		LOG.info("Reconcile");
-		UpdateControlState<Project> ctrl = new UpdateControlState<>(resource);
-		if (resource.getStatus() == null) {
+		Project resourceForPatch = resourceForPatch(resource);
+		UpdateControlState<Project> ctrl = new UpdateControlState<>(resourceForPatch);
+		if (resourceForPatch.getStatus() == null) {
 			ProjectStatus status = new ProjectStatus();
-			resource.setStatus(status);
-			ctrl.updateStatus();
+			resourceForPatch.setStatus(status);
+			ctrl.patchStatus();
 			LOG.info("Updating empty status");
 		}
-		Optional<DevEnvironment> owningEnvironment = resource.getOwningEnvironment(client);
-		owningEnvironment.orElseThrow(() -> new EnvironmentNotFoundException("Environment cannot be found", resource) );
+		Optional<DevEnvironment> owningEnvironment = resourceForPatch.getOwningEnvironment(client);
+		owningEnvironment.orElseThrow(() -> new EnvironmentNotFoundException("Environment cannot be found", resourceForPatch) );
 		LOG.info("Environment exists");
 		owningEnvironment
-			.filter(env -> !resource.getMetadata().getNamespace().equals(env.getMetadata().getNamespace()))
+			.filter(env -> !resourceForPatch.getMetadata().getNamespace().equals(env.getMetadata().getNamespace()))
 			.ifPresent(env -> {
 				LOG.info("Project is in different namespace than its environment");
-				allowProjectNamespaceToPullImagesFromEnvNamespace(resource, env);
-				makeArgoManageProjectNamespace(resource, env);
+				allowProjectNamespaceToPullImagesFromEnvNamespace(resourceForPatch, env);
+				makeArgoManageProjectNamespace(resourceForPatch, env);
 			});
 		owningEnvironment.ifPresent(e -> {
 			LOG.info("Looking for user secret");
-			String user = resource.getSpec().getOwner().getUser();
+			String user = resourceForPatch.getSpec().getOwner().getUser();
 			boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(e.getMetadata().getNamespace())
 					.withName(user + "-git-secret").get() != null; 
 				String secretPrefix;
@@ -103,7 +103,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					secretPrefix = Optional.ofNullable(GiteaDependentResource.getResource(context.getClient(), e).get()).map(g -> g.getSpec().getAdminUser()).orElse(null);
 				}
 
-			if (resource.getSpec().getQuarkus() != null && resource.getSpec().getQuarkus().isEnabled()) {
+			if (resourceForPatch.getSpec().getQuarkus() != null && resourceForPatch.getSpec().getQuarkus().isEnabled()) {
 				LOG.info("We have a Quarkus project");
 				Optional<PipelineRun> initAppPipeRun = Optional.ofNullable(InitDeployPipelineRunDependent.getResource(tektonClient, client, resource).get());
 				initAppPipeRun.ifPresent(prApp -> {
@@ -132,22 +132,22 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 			
 			secret.ifPresent(st -> {
 				LOG.info("Secret found");
-				if (resource.getStatus().getRepository() == null || !resource.getStatus().getRepository().isUserSecretAvailable()) {
-					resource.getStatus().getRepository().setUserSecretAvailable(true);
+				if (resourceForPatch.getStatus().getRepository() == null || !resourceForPatch.getStatus().getRepository().isUserSecretAvailable()) {
+					resourceForPatch.getStatus().getRepository().setUserSecretAvailable(true);
 					ctrl.patchStatus();
 				}
 				
-				if ((resource.getStatus().getWorkspace() == null 
-					|| StringUtil.isNullOrEmpty(resource.getStatus().getWorkspace().getFactoryUrl())) 
+				if ((resourceForPatch.getStatus().getWorkspace() == null 
+					|| StringUtil.isNullOrEmpty(resourceForPatch.getStatus().getWorkspace().getFactoryUrl())) 
 					&& supportsRequiredPipelinesApi()) {
 					LOG.info("Setting workspace factory url");
-					Optional.ofNullable(InitPipelineRunDependent.getResource(tektonClient, resource).get())
-						.ifPresent(pr -> onPipelineRunComplete(pr, resource, context));
+					Optional.ofNullable(InitPipelineRunDependent.getResource(tektonClient, resourceForPatch).get())
+						.ifPresent(pr -> onPipelineRunComplete(pr, resourceForPatch, context));
 					ctrl.patchStatus();
 				}
 
 				if (!supportsRequiredPipelinesApi() 
-					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString().equals(c.getType()))) {
+					&& !resourceForPatch.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString().equals(c.getType()))) {
 					
 					
 					boolean pipeActivationAvailable = PipelineActivationCondition.serverSupportsApi(client);
@@ -155,35 +155,35 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 					boolean eventListenerAvailable = EventListenerActivationCondition.serverSupportsApi(client);
 					boolean triggerTemplateAvailable = TriggerTemplateActivationCondition.serverSupportsApi(client);
 					Condition noPipelinesApi = new ConditionBuilder()
-						.withObservedGeneration(resource.getStatus().getObservedGeneration())
+						.withObservedGeneration(resourceForPatch.getStatus().getObservedGeneration())
 						.withType(ProjectConditionType.PIPELINES_API_UNAVAILABLE.toString())
 						.withMessage(String.format("PipelineActivation: %s, TriggerBindings: %s, EventListener: %s, TriggerTemplates: %s", pipeActivationAvailable, triggerBindingAvailable, eventListenerAvailable, triggerTemplateAvailable))
 						.withLastTransitionTime(LocalDateTime.now().toString())
 						.withReason("Required api for Tekton not available. Is OpenShift Pipelines installed?")
 						.withStatus("false")
 						.build();
-					resource.getStatus().getConditions().add(noPipelinesApi);
-					resource.getStatus().getInitStatus().setMessage("Required api for Tekton not available.");
+					resourceForPatch.getStatus().getConditions().add(noPipelinesApi);
+					resourceForPatch.getStatus().getInitStatus().setMessage("Required api for Tekton not available.");
 					ctrl.patchStatus();
 				} else if (supportsRequiredPipelinesApi()) {
-					resource.getStatus().getInitStatus().setMessage("Pipelines Api available");
+					resourceForPatch.getStatus().getInitStatus().setMessage("Pipelines Api available");
 				}
 
 				if (!supportsRequiredGitopsApi()
-					&& !resource.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.GITOPS_API_UNAVAILABLE.toString().equals(c.getType()))) {
+					&& !resourceForPatch.getStatus().getConditions().stream().anyMatch(c -> ProjectConditionType.GITOPS_API_UNAVAILABLE.toString().equals(c.getType()))) {
 					Condition noGitopsCondition = new ConditionBuilder()
-						.withObservedGeneration(resource.getStatus().getObservedGeneration())
+						.withObservedGeneration(resourceForPatch.getStatus().getObservedGeneration())
 						.withType(ProjectConditionType.GITOPS_API_UNAVAILABLE.toString())
 						.withMessage("Error")
 						.withLastTransitionTime(LocalDateTime.now().toString())
 						.withReason("Required api for ArgoCD or Application not found. Is OpenShift Gitops installed?")
 						.withStatus("false")
 						.build();
-					resource.getStatus().getConditions().add(noGitopsCondition);
-					resource.getStatus().getDeployStatus().setMessage("Required api for ArgoCD or Application not found");
+					resourceForPatch.getStatus().getConditions().add(noGitopsCondition);
+					resourceForPatch.getStatus().getDeployStatus().setMessage("Required api for ArgoCD or Application not found");
 					ctrl.patchStatus();
 				} else if (supportsRequiredPipelinesApi()) {
-					resource.getStatus().getDeployStatus().setMessage("GitOps Api available");
+					resourceForPatch.getStatus().getDeployStatus().setMessage("GitOps Api available");
 				}
 				//return ctrl.getState();
 			});
@@ -280,7 +280,7 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 		if (resource.getStatus() != null) {
 			resource.getStatus().getInitStatus().setPipelineRunConditions(pipelineRun.getStatus().getConditions());
 			resource.getStatus().getInitStatus().setMessage("Init pipeline run complete.");
-			Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator);
+			Optional<GiteaRepository> repository = context.getSecondaryResource(GiteaRepository.class, "sourceRepository");
 			repository.ifPresent(r -> {
 				String devFilePath = r.getStatus().getInternalCloneUrl().replace(".git", "/raw/branch/main/devfile.yaml");
 				resource.getStatus().getWorkspace().setFactoryUrl(String.format("%s#%s", getDevSpacesUrl(), devFilePath));
@@ -292,4 +292,16 @@ public class ProjectReconciler implements Reconciler<Project>, ErrorStatusHandle
 		String baseDomain = client.config().ingresses().withName("cluster").get().getSpec().getDomain();
 		return String.format("https://devspaces.%s", baseDomain) ;
 	}
+
+	private Project resourceForPatch(
+		Project original) {
+		var res = new Project();
+		res.setMetadata(new ObjectMetaBuilder()
+			.withName(original.getMetadata().getName())
+			.withNamespace(original.getMetadata().getNamespace())
+			.build());
+		res.setSpec(original.getSpec());
+		res.setStatus(original.getStatus());
+		return res;
+  	}
 }

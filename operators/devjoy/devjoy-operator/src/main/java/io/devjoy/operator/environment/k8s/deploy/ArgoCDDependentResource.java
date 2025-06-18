@@ -6,11 +6,12 @@ import io.argoproj.v1beta1.ArgoCD;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(labelSelector = ArgoCDDependentResource.LABEL_TYPE_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = ArgoCDDependentResource.LABEL_TYPE_SELECTOR))
 public class ArgoCDDependentResource extends CRUDKubernetesDependentResource<ArgoCD, DevEnvironment>{
     public static final String LABEL_KEY = "devjoy.io/argo.type";
 	public static final String LABEL_VALUE = "deploy-argo";

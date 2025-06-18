@@ -9,13 +9,21 @@ import io.devjoy.operator.environment.k8s.status.ArgoCdStatus;
 import io.devjoy.operator.environment.k8s.status.DevSpacesStatus;
 import io.devjoy.operator.environment.k8s.status.GiteaStatus;
 import io.fabric8.kubernetes.api.model.Condition;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 
-public class DevEnvironmentStatus extends ObservedGenerationAwareStatus{
+public class DevEnvironmentStatus {
 
     private GiteaStatus gitea;
     private DevSpacesStatus devSpaces;
 	private ArgoCdStatus argoCd;
+	private long observedGeneration;
+
+	public long getObservedGeneration() {
+		return observedGeneration;
+	}
+
+	public void setObservedGeneration(long observedGeneration) {
+		this.observedGeneration = observedGeneration;
+	}
 	
 	@JsonPropertyDescription("The conditions representing the repository status.")
     private List<Condition> conditions = new ArrayList<>();

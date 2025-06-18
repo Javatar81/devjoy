@@ -38,6 +38,7 @@ import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.PasswordService;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
@@ -47,7 +48,6 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Cleaner;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.DeleteControl;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
@@ -64,7 +64,7 @@ import jakarta.ws.rs.WebApplicationException;
 @RBACRule(apiGroups = "", resources = {"configmaps"}, verbs = {"get","list","watch","create"})
 @RBACRule(apiGroups = "", resources = {"pods/exec"}, verbs = {"get"})
 @CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME)
-public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, ErrorStatusHandler<GiteaRepository>, Cleaner<GiteaRepository> { 
+public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, Cleaner<GiteaRepository> { 
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRepositoryReconciler.class);
 	private final OpenShiftClient client;
 	private final PasswordService passwordService;
@@ -81,23 +81,26 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 		this.passwordService = passwordService;
 	}
 
+	
+
 	@Override
 	public UpdateControl<GiteaRepository> reconcile(GiteaRepository resource, Context<GiteaRepository> context) {
-		LOG.info("Reconciling");
-		UpdateControlState<GiteaRepository> state = new UpdateControlState<>(resource);
-		assureStatusInitialized(resource, state);
-		if (resource.getMetadata().getLabels() == null) {
-			resource.getMetadata().setLabels(new HashMap<>());
+		LOG.debug("Reconciling");
+		GiteaRepository resourceToPatch = resourceForPatch(resource);
+		UpdateControlState<GiteaRepository> state = new UpdateControlState<>(resourceToPatch);
+		assureStatusInitialized(resourceToPatch, state);
+		if (resourceToPatch.getMetadata().getLabels() == null) {
+			resourceToPatch.getMetadata().setLabels(new HashMap<>());
 		}
-		return resource.associatedGitea(client).map(g -> {
+		return resourceToPatch.associatedGitea(client).map(g -> {
 			LOG.info("Found Gitea {} ", g.getMetadata().getName());
-			assureGiteaLabelsSet(resource, g, state);
+			assureGiteaLabelsSet(resourceToPatch, g, state);
 			
 			Optional<Repository> repo = Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
 				.flatMap(t -> {
-					assureUserCreated(resource, g, t);
-					return assureRepositoryExists(resource, context, g, t, state);
+					assureUserCreated(resourceToPatch, g, t);
+					return assureRepositoryExists(resourceToPatch, context, g, t, state);
 				});
 			
 			//Optional<Repository> repo = assureRepositoryExists(resource, context, g);
@@ -192,7 +195,7 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 					g.getMetadata().getName());
 			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE,
 					g.getMetadata().getNamespace());
-			state.updateResourceAndStatus();
+			state.patchResourceAndStatus();
 		} 
 	}
 
@@ -225,7 +228,8 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			if(serviceException.getCause() instanceof WebApplicationException webException) {
 				additionalInfo = ".Caused by http error " + webException.getResponse().getStatus();
 			}
-			gitea.getStatus().getConditions().add(new ConditionBuilder()
+			if(gitea.getStatus() != null) {
+				gitea.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
 					.withType(serviceException.getGiteaErrorConditionType().toString())
 					.withMessage("Error")
@@ -233,16 +237,19 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 					.withReason(serviceException.getMessage() + additionalInfo)
 					.withStatus("false")
 					.build());
+			}
 		}
 		if (e.getCause() instanceof GiteaNotFoundException notFoundException) {
-			gitea.getStatus().getConditions().add(new ConditionBuilder()
-					.withObservedGeneration(gitea.getStatus().getObservedGeneration())
-					.withType(GiteaRepositoryConditionType.GITEA_NOT_FOUND.toString())
-					.withMessage("Error")
-					.withLastTransitionTime(LocalDateTime.now().toString())
-					.withReason(notFoundException.getMessage())
-					.withStatus("false")
-					.build());
+			if(gitea.getStatus() != null) {
+				gitea.getStatus().getConditions().add(new ConditionBuilder()
+						.withObservedGeneration(gitea.getStatus().getObservedGeneration())
+						.withType(GiteaRepositoryConditionType.GITEA_NOT_FOUND.toString())
+						.withMessage("Error")
+						.withLastTransitionTime(LocalDateTime.now().toString())
+						.withReason(notFoundException.getMessage())
+						.withStatus("false")
+						.build());
+			}
 		}
 		return ErrorStatusUpdateControl.patchStatus(gitea);
 	}
@@ -280,5 +287,17 @@ public class GiteaRepositoryReconciler implements Reconciler<GiteaRepository>, E
 			return Optional.empty();
 		}
 	}
+
+	private GiteaRepository resourceForPatch(
+		GiteaRepository original) {
+		var res = new GiteaRepository();
+		res.setMetadata(new ObjectMetaBuilder()
+			.withName(original.getMetadata().getName())
+			.withNamespace(original.getMetadata().getNamespace())
+			.build());
+		res.setSpec(original.getSpec());
+		res.setStatus(original.getStatus());
+		return res;
+  	}
 
 }

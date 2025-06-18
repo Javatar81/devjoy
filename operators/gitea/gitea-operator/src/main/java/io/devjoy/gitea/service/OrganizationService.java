@@ -49,7 +49,7 @@ public class OrganizationService {
 	
 	public Optional<Organization> get(Gitea gitea, String orgName, String token) {
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
-			LOG.info("Get org {} with uri={}", orgName, uri);
+			LOG.debug("Get org {} with uri={}", orgName, uri);
 			try {
 				return Optional.of(getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgGet(orgName));
 			} catch (URISyntaxException e) {
@@ -114,9 +114,11 @@ public class OrganizationService {
 			editOrg.setRepoAdminChangeTeamAccess(false);
 			editOrg.setVisibility(EditOrgOption.VisibilityEnum.valueOf(org.getVisibility()));
 			editOrg.setWebsite(org.getWebsite());
-			LOG.info("Creating org {}", editOrg);
+			LOG.info("Updating org {}", editOrg);
 			try {
-				return getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgEdit(orgName, editOrg);
+				Organization updated = getDynamicUrlClient(new URIBuilder(uri).build(), OrganizationApi.class, token).orgEdit(orgName, editOrg);
+				LOG.info("Updated to {}", updated);
+				return updated;
 			} catch (URISyntaxException e) {
 				throw new ServiceException("Org cannot be updated via API", e, GiteaOrganizationConditionType.GITEA_API_ERROR);
 			}	catch (WebApplicationException e) {

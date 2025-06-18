@@ -26,29 +26,28 @@ import io.devjoy.gitea.organization.k8s.model.GiteaOrganizationStatus;
 import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
-import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
-import io.javaoperatorsdk.operator.api.reconciler.EventSourceInitializer;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
-import io.javaoperatorsdk.operator.api.reconciler.dependent.ReconcileResult.Operation;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 
-@ControllerConfiguration(dependents = { 
-		@Dependent(name = "giteaAdminSecretRo", type = GiteaAdminSecretReadonlyDependent.class, readyPostcondition = GiteaAdminSecretReadyPostcondition.class, useEventSourceWithName = OrganizationReconciler.ADMIN_SECRET_EVENT_SOURCE),
-		@Dependent(name = "giteaOrganizationOwner", type = GiteaOrganizationOwnerDependent.class, dependsOn = "giteaAdminSecretRo"),
-		@Dependent(name = OrganizationReconciler.DEPENDENT_NAME_GITEA_ORGANIZATION, type = GiteaOrganizationDependent.class, dependsOn = "giteaOrganizationOwner")
-})
-public class OrganizationReconciler implements Reconciler<GiteaOrganization>, EventSourceInitializer<GiteaOrganization>, ErrorStatusHandler<GiteaOrganization> {
+@Workflow(dependents = { 
+	@Dependent(name = "giteaAdminSecretRo", type = GiteaAdminSecretReadonlyDependent.class, readyPostcondition = GiteaAdminSecretReadyPostcondition.class, useEventSourceWithName = OrganizationReconciler.ADMIN_SECRET_EVENT_SOURCE),
+	@Dependent(name = "giteaOrganizationOwner", type = GiteaOrganizationOwnerDependent.class, dependsOn = "giteaAdminSecretRo"),
+	@Dependent(name = OrganizationReconciler.DEPENDENT_NAME_GITEA_ORGANIZATION, type = GiteaOrganizationDependent.class, dependsOn = "giteaOrganizationOwner")})
+public class OrganizationReconciler implements Reconciler<GiteaOrganization> {
 	public static final String DEPENDENT_NAME_GITEA_ORGANIZATION = "giteaOrganization";
 
 	private static final Logger LOG = LoggerFactory.getLogger(OrganizationReconciler.class);
@@ -61,14 +60,15 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 	public UpdateControl<GiteaOrganization> reconcile(GiteaOrganization resource, Context<GiteaOrganization> context)
 			throws Exception {
 		LOG.info("Reconciling {} organization", resource.getMetadata().getName());
-		UpdateControlState<GiteaOrganization> state = new UpdateControlState<>(resource);
-		if (resource.getStatus() == null) {
-			resource.setStatus(new GiteaOrganizationStatus());
+		var resourceToPatch = resourceForPatch(resource);
+		UpdateControlState<GiteaOrganization> state = new UpdateControlState<>(resourceToPatch);
+		if (resourceToPatch.getStatus() == null) {
+			resourceToPatch.setStatus(new GiteaOrganizationStatus());
 		}
 		
 		resource.associatedGitea(context.getClient()).ifPresentOrElse(g -> {
 			LOG.info("Gitea found");
-			assureGiteaLabelsSet(resource, g, state);
+			assureGiteaLabelsSet(resourceToPatch, g, state);
 		}, () -> {
 			LOG.info("Gitea not found, reschedule after {} seconds ", 10);
 			state.rescheduleAfter(10, TimeUnit.SECONDS);
@@ -78,11 +78,10 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 		
 		
 		context.getSecondaryResource(Organization.class).ifPresent(org -> {
-			context.managedDependentResourceContext().getWorkflowReconcileResult()
-				.map(a -> a.getReconcileResults().get(a.getReconciledDependents().stream().filter(d -> d.resourceType() == Organization.class).findAny().orElse(null)))
-				.filter(r -> r.getSingleOperation().equals(Operation.CREATED))
-				.ifPresent(a -> {
-					
+			context.managedWorkflowAndDependentResourceContext().getWorkflowReconcileResult()
+				.map(a -> a.getReconciledDependents().stream().filter(d -> d.resourceType() == Organization.class).findAny().orElse(null))
+				//TODO.filter(r -> r.getSingleOperation().equals(Operation.CREATED))
+				.ifPresent(a -> {	
 					resource.getStatus().getConditions().add(new ConditionBuilder()
 						.withObservedGeneration(resource.getStatus().getObservedGeneration())
 						.withType(GiteaOrganizationConditionType.GITEA_ORG_CREATED.getValue())
@@ -111,22 +110,30 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 					g.getMetadata().getNamespace());
 			labels.put(GiteaLabels.LABEL_GITEA_ADMIN,
 					g.getSpec().getAdminUser());
-			state.updateResourceAndStatus();
+			state.patchResourceAndStatus();
 		} 
 	}
 
 	@Override
-	public Map<String, io.javaoperatorsdk.operator.processing.event.source.EventSource> prepareEventSources(
+	public List<EventSource<?, GiteaOrganization>> prepareEventSources(
 			EventSourceContext<GiteaOrganization> context) {
-		
+		// there is no owner reference in the config map, but we still want to trigger reconciliation if
+   		// the config map changes. So first we add an index which custom resource references the config
+    	// map.
 		LOG.debug("Prepare event sources");
-		context.getPrimaryCache().addIndexer(ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getMetadata().getLabels().get(GiteaLabels.LABEL_GITEA_ADMIN))
+		context.getPrimaryCache()
+			.addIndexer(ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getMetadata().getLabels().get(GiteaLabels.LABEL_GITEA_ADMIN))
 				.map(adm -> List.of(indexKey(GiteaAdminSecretDependent.getName(adm), primary.getMetadata().getNamespace())))
-				.orElse(Collections.emptyList())));
+				.orElseGet(() -> {
+					LOG.warn("No secret found for index {}", ADMIN_SECRET_INDEX);
+					return Collections.emptyList();
+				})));
 		LOG.debug("Indexer added");
-		var cmES = new InformerEventSource<>(InformerConfiguration
-		        .from(Secret.class, context)
-		        .withLabelSelector(GiteaAdminSecretDependent.LABEL_TYPE_SELECTOR)
+		var cmES = new InformerEventSource<>(InformerEventSourceConfiguration
+		        .from(Secret.class, context.getPrimaryResourceClass())
+		        .withName(ADMIN_SECRET_EVENT_SOURCE)
+				//.withNamespacesInheritedFromController()
+				//.withNamespaces(Set.of("bschmeli-devjoy-test2"))
 		        // if there is a many-to-many relationship (thus no direct owner reference)
 		        // PrimaryToSecondaryMapper needs to be added
 		        .withPrimaryToSecondaryMapper(
@@ -134,17 +141,23 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 		            	//p.associatedGitea(context.getClient()).map(g -> 
 		            	//	Set.of(new ResourceID(GiteaAdminSecretDependent.getName(g), p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
 		            Optional.ofNullable(p.getMetadata().getLabels().get(GiteaLabels.LABEL_GITEA_ADMIN)).map(adm -> 
-		            Set.of(new ResourceID(GiteaAdminSecretDependent.getName(adm), p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
+		            Set.of(new ResourceID(GiteaAdminSecretDependent.getName(adm), p.getMetadata().getNamespace())))
+						.orElseGet(() -> {
+							LOG.warn("No secret found for index {}", ADMIN_SECRET_INDEX);
+							return Collections.emptySet();
+						}))
 		        // the index is used to trigger reconciliation of related custom resources if secret
 		        // changes
 		        .withSecondaryToPrimaryMapper(cm -> context.getPrimaryCache()
-		            .byIndex(ADMIN_SECRET_INDEX, indexKey(cm.getMetadata().getName(),
+					.byIndex(ADMIN_SECRET_INDEX, indexKey(cm.getMetadata().getName(),
 		                cm.getMetadata().getNamespace()))
-		            .stream().map(ResourceID::fromResource).collect(Collectors.toSet()))
+		            .stream()
+					.map(ResourceID::fromResource)
+					.collect(Collectors.toSet()))
 		        .build(),
 		        context);
 		LOG.debug("Informer source created");
-		return Map.of(ADMIN_SECRET_EVENT_SOURCE, cmES);
+		return List.of(cmES);
 	}
 	
 	private String indexKey(String secretName, String namespace) {
@@ -186,4 +199,16 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization>, Ev
 		}
 		return ErrorStatusUpdateControl.noStatusUpdate();
 	}
+
+	private GiteaOrganization resourceForPatch(
+		GiteaOrganization original) {
+		var res = new GiteaOrganization();
+		res.setMetadata(new ObjectMetaBuilder()
+			.withName(original.getMetadata().getName())
+			.withNamespace(original.getMetadata().getNamespace())
+			.build());
+		res.setSpec(original.getSpec());
+		res.setStatus(original.getStatus());
+		return res;
+  	}
 }

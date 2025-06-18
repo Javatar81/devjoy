@@ -8,11 +8,10 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.Condition;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection(registerFullHierarchy = true)
-public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
+public class GiteaRepositoryStatus {
 	private static DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
 	@JsonPropertyDescription("Date when repository has been created.")
 	private String repositoryCreated;
@@ -24,7 +23,16 @@ public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
     private String internalCloneUrl;
 	@JsonPropertyDescription("The conditions representing the repository status.")
     private List<Condition> conditions = new ArrayList<>();
+	private long observedGeneration;
 
+	public long getObservedGeneration() {
+		return observedGeneration;
+	}
+
+	public void setObservedGeneration(long observedGeneration) {
+		this.observedGeneration = observedGeneration;
+	}
+	
 	public List<Condition> getConditions() {
 		return conditions;
 	}
@@ -63,4 +71,5 @@ public class GiteaRepositoryStatus extends ObservedGenerationAwareStatus {
 	public void setInternalCloneUrl(String internalCloneUrl) {
 		this.internalCloneUrl = internalCloneUrl;
 	}
+	
 }

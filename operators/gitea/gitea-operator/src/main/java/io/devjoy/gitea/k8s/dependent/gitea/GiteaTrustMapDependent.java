@@ -3,13 +3,14 @@ package io.devjoy.gitea.k8s.dependent.gitea;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependentResource;
 
-@KubernetesDependent(resourceDiscriminator = GiteaTrustMapDiscriminator.class, labelSelector = GiteaTrustMapDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = GiteaTrustMapDependent.LABEL_SELECTOR))
 public class GiteaTrustMapDependent extends KubernetesDependentResource<ConfigMap, Gitea> implements Creator<ConfigMap, Gitea>, GarbageCollected<Gitea>{
 	private static final String GITEA_TRUST_BUNDLE_MAP_NAME = "-trust-bundle";
 	private static final String LABEL_KEY = "devjoy.io/cm.role";

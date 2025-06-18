@@ -12,15 +12,14 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
 import io.devjoy.operator.project.k8s.Project;
-import io.devjoy.operator.project.k8s.SourceRepositoryDiscriminator;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1.ParamValue;
-import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRun;
+import io.fabric8.tekton.v1.ParamBuilder;
+import io.fabric8.tekton.v1.ParamValue;
+import io.fabric8.tekton.v1.ParamValueBuilder;
+import io.fabric8.tekton.v1.PipelineRefBuilder;
+import io.fabric8.tekton.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
@@ -34,14 +33,13 @@ import jakarta.inject.Inject;
  * This resource is not garbage collected and thus will not use an owner reference
  *
  */
-@KubernetesDependent(resourceDiscriminator = InitPipelineRunDiscriminator.class)
+@KubernetesDependent
 public class InitPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project>{
 	private static final Logger LOG = LoggerFactory.getLogger(InitPipelineRunDependent.class);
 	private boolean preferAdminAsGitUser = false;
 
 	@Inject
 	TektonClient tektonClient;
-	private SourceRepositoryDiscriminator sourceRepoDiscriminator = new SourceRepositoryDiscriminator();
 	
 	public InitPipelineRunDependent() {
 		super(PipelineRun.class);
@@ -60,7 +58,7 @@ public class InitPipelineRunDependent extends KubernetesDependentResource<Pipeli
 		LOG.info("Defining desired run {} referencing {}", name, pipelineRun.getSpec().getPipelineRef().getName());
 		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
 			.filter(url -> !StringUtil.isNullOrEmpty(url))
-			.or(() -> context.getSecondaryResource(GiteaRepository.class, sourceRepoDiscriminator).map(GiteaRepository::getStatus)
+			.or(() -> context.getSecondaryResource(GiteaRepository.class, "sourceRepository").map(GiteaRepository::getStatus)
 					.map(GiteaRepositoryStatus::getCloneUrl))
 			.map(url -> pipelineRun.getSpec().getParams()
 					.add(new ParamBuilder().withName("git_url").withNewValue(url).build()))

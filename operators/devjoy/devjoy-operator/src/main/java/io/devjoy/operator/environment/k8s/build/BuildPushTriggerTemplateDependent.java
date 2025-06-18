@@ -1,25 +1,39 @@
 package io.devjoy.operator.environment.k8s.build;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
+import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1.ParamValue;
-import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRun;
+import io.fabric8.tekton.triggers.v1beta1.TriggerResourceTemplate;
 import io.fabric8.tekton.triggers.v1beta1.TriggerTemplate;
+import io.fabric8.tekton.v1.ParamBuilder;
+import io.fabric8.tekton.v1.ParamValue;
+import io.fabric8.tekton.v1.ParamValueBuilder;
+import io.fabric8.tekton.v1.PipelineRun;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
+import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 
 @KubernetesDependent
 public class BuildPushTriggerTemplateDependent extends CRUDKubernetesDependentResource<TriggerTemplate, DevEnvironment>{
+	private static final Logger LOG = LoggerFactory.getLogger(BuildPushTriggerTemplateDependent.class);
 	@Inject
 	TektonClient tektonClient;
+	@Inject
+	ObjectMapper mapper;
 	
 	public BuildPushTriggerTemplateDependent() {
 		super(TriggerTemplate.class);
@@ -34,9 +48,12 @@ public class BuildPushTriggerTemplateDependent extends CRUDKubernetesDependentRe
 		triggerTemplate.getMetadata().setName(getName(primary));
 		triggerTemplate.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		
-		Optional<PipelineRun> resourceTemplate = triggerTemplate.getSpec().getResourcetemplates()
-				.stream().map(PipelineRun.class::cast).findAny();
-		resourceTemplate.ifPresent(p -> {
+		Optional<TriggerResourceTemplate> template = triggerTemplate.getSpec().getResourcetemplates()
+				.stream().findFirst();
+		Optional<Map<String, Object>> properties = template.map(tr -> tr.getAdditionalProperties());
+		properties
+			.map(t -> mapper.convertValue(t, PipelineRun.class))
+		.ifPresent(p -> {
 			p.getMetadata().setGenerateName(p.getMetadata().getGenerateName() + primary.getMetadata().getName() + "-");
 			p.getMetadata().getLabels().put("tekton.dev/pipeline", p.getMetadata().getLabels().get("tekton.dev/pipeline") + primary.getMetadata().getName());
 			p.getMetadata().setNamespace(primary.getMetadata().getNamespace());
@@ -58,6 +75,10 @@ public class BuildPushTriggerTemplateDependent extends CRUDKubernetesDependentRe
 							w.setPersistentVolumeClaim(new PersistentVolumeClaimVolumeSourceBuilder().withClaimName(primary.getSpec().getMavenSettingsPvc()).build());
 						});
 			}
+			
+			//properties.ifPresent(Map::clear);
+			//
+			template.ifPresent(t -> t.setAdditionalProperties(mapper.convertValue(p, new TypeReference<Map<String, Object>>() {})));
 		});
 
 

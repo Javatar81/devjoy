@@ -29,7 +29,6 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 @KubernetesDependent()
 public class ApplicationDependent extends CRUDNoGCKubernetesDependentResource<Application, Project>{
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationDependent.class);
-    private final GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
     
     @ConfigProperty(name = "io.devjoy.gitea.api.access.mode")
     String accessMode;
@@ -46,7 +45,7 @@ public class ApplicationDependent extends CRUDNoGCKubernetesDependentResource<Ap
     @Override
     protected Application desired(Project primary, Context<Project> context) {
        LOG.info("Setting desired state."); 
-       Optional<GiteaRepository> giteaRepo = context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator);
+       Optional<GiteaRepository> giteaRepo = context.getSecondaryResource(GiteaRepository.class, "gitopsRepository");
        return giteaRepo.map(r -> {
             String cloneUrl = ApiAccessMode.INTERNAL.toString().equals(accessMode) ? r.getStatus().getInternalCloneUrl() : r.getStatus().getCloneUrl();
             try {

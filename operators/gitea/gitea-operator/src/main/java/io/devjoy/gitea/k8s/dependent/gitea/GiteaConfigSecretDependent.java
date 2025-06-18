@@ -20,13 +20,14 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = GiteaConfigSecretDiscriminator.class, labelSelector = GiteaConfigSecretDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = GiteaConfigSecretDependent.LABEL_SELECTOR))
 public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<Secret, Gitea>{
 	static final Logger LOG = LoggerFactory.getLogger(GiteaConfigSecretDependent.class);
 	static final String SECTION_DATABASE = "database";
@@ -115,8 +116,6 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 	@Inject
 	PasswordService passwordService;
 	
-	private GiteaRouteDiscriminator routeDiscriminator = new GiteaRouteDiscriminator();
-	
 	public GiteaConfigSecretDependent() {
 		super(Secret.class);
 	}
@@ -132,7 +131,7 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 	
 	@Override
 	protected Secret desired(Gitea primary, Context<Gitea> context) {
-		LOG.info("Setting desired Gitea config map");
+		LOG.info("Setting desired Gitea config secret");
 		Secret cm = context.getClient()
 				.secrets()
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/config-secret.yaml"))
@@ -155,7 +154,7 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
 		configureDatabase(primary, iniConfiguration);
 		if((primary.getSpec() == null || primary.getSpec().isIngressEnabled()) && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
-			context.getSecondaryResource(Route.class, routeDiscriminator)
+			context.getSecondaryResource(Route.class)
 				.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
 		}
 		configureServer(iniConfiguration);
@@ -171,7 +170,8 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		if (primary.getSpec() != null){
 			addOverrides(primary, iniConfiguration);
 		}
-		String existingJwtSecret = getSecondaryResource(primary, context)
+		LOG.debug("Generating JWT secret.");
+		String existingJwtSecret = Optional.ofNullable(getResource(primary, context.getClient()).get())
 			.map(Secret::getData)
 			.map(m -> m.get("app.ini"))
 			.map(d -> new String(Base64.getDecoder().decode(d)))
@@ -179,16 +179,19 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 			.map(d -> d.getSection(SECTION_OAUTH2))
 			.map(sec -> (String) sec.getProperty("JWT_SECRET"))
 			.orElse("");
-
+		LOG.debug("JWT secret available: {}", !StringUtil.isNullOrEmpty(existingJwtSecret));
 		if (StringUtil.isNullOrEmpty(existingJwtSecret)) {
 			iniConfiguration.getSection(SECTION_OAUTH2).setProperty("JWT_SECRET", passwordService.generateSecret(43));
 		} else {
 			iniConfiguration.getSection(SECTION_OAUTH2).setProperty("JWT_SECRET", existingJwtSecret);
 		}
+		LOG.debug("JWT secret generated.");
 		String finalAppIni = iniConfiguration.toString();
-		LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
+		LOG.info("Written final app.ini.");
 		//cm.getStringData().put("app.ini", finalAppIni);
-
+		if (LOG.isDebugEnabled()) {
+			LOG.debug("app.ini after adding configuration parameters {}", finalAppIni);
+		}
 		cm.getStringData().clear();
 		cm.setData(new HashMap<>());
 		cm.getData().put("app.ini", new String(Base64.getEncoder().encode(

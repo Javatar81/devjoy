@@ -18,9 +18,9 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
     <surefire-plugin.version>3.1.2</surefire-plugin.version>
-    <quarkus.version>3.17.8</quarkus.version>
-		<quarkus.operator-sdk.version>6.9.3</quarkus.operator-sdk.version>
-		<kubernetes-client.version>6.13.4</kubernetes-client.version>
+    <quarkus.version>3.23.2</quarkus.version>
+		<quarkus.operator-sdk.version>7.2.0</quarkus.operator-sdk.version>
+		<kubernetes-client.version>7.3.1</kubernetes-client.version>
   </properties>
   <dependencyManagement>
     <dependencies>
@@ -70,6 +70,10 @@
       <artifactId>quarkus-micrometer-registry-prometheus</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.quarkus</groupId>
+      <artifactId>quarkus-openshift-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>io.fabric8</groupId>
       <artifactId>tekton-client</artifactId>
     </dependency>
@@ -80,7 +84,7 @@
      <dependency>
       <groupId>io.javaoperatorsdk</groupId>
       <artifactId>operator-framework-junit-5</artifactId>
-      <version>4.4.2</version>
+      <version>5.1.1</version>
       <scope>test</scope>
     </dependency>
     <dependency>

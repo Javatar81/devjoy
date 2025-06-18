@@ -6,6 +6,9 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.DevEnvironmentReconciler;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -46,7 +49,7 @@ public class BuildEventListenerDependent extends CRUDKubernetesDependentResource
 				.ifPresent(i -> i.getParams().stream()
 						.filter(p -> "secretRef".equals(p.getName()))
 						.findFirst()
-							.map(sref -> (Map<String, String>) sref.getValue())
+							.map(sref -> (ObjectNode) sref.getValue())
 							.ifPresent(sref -> sref.put("secretName", WebhookSecretDependent.getName(primary))));
 			t.getTemplate().setRef(BuildPushTriggerTemplateDependent.getName(primary));
 		});

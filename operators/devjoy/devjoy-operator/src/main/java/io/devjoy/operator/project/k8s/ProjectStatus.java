@@ -6,9 +6,8 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 import io.fabric8.kubernetes.api.model.Condition;
-import io.javaoperatorsdk.operator.api.ObservedGenerationAwareStatus;
 
-public class ProjectStatus extends ObservedGenerationAwareStatus{
+public class ProjectStatus {
 
     private WorkspaceStatus workspace = new WorkspaceStatus();
     private RepositoryStatus repository = new RepositoryStatus();
@@ -16,6 +15,15 @@ public class ProjectStatus extends ObservedGenerationAwareStatus{
 	private DeployStatus deployStatus = new DeployStatus();
 	@JsonPropertyDescription("The conditions representing the repository status.")
     private List<Condition> conditions = new ArrayList<>();
+	private long observedGeneration;
+
+	public long getObservedGeneration() {
+		return observedGeneration;
+	}
+
+	public void setObservedGeneration(long observedGeneration) {
+		this.observedGeneration = observedGeneration;
+	}
 
 	public List<Condition> getConditions() {
 		return conditions;

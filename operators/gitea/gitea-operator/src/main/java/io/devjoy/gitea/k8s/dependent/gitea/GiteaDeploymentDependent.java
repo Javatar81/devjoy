@@ -19,12 +19,13 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = GiteaDeploymentDiscriminator.class, labelSelector = GiteaDeploymentDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = GiteaDeploymentDependent.LABEL_SELECTOR))
 public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<Deployment, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaDeploymentDependent.class);
 	static final String LABEL_KEY = "devjoy.io/deployment.target";

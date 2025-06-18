@@ -7,11 +7,12 @@ import java.util.stream.Collectors;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = PostgresConfigMapDiscriminator.class, labelSelector = PostgresConfigMapDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = PostgresConfigMapDependent.LABEL_SELECTOR))
 public class PostgresConfigMapDependent extends CRUDKubernetesDependentResource<ConfigMap, Gitea>{
 	private static final String LABEL_KEY = "devjoy.io/configmap.type";
 	private static final String LABEL_VALUE = "gitea-postgres";

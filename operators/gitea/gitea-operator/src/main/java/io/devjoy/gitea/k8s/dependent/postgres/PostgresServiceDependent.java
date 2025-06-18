@@ -4,11 +4,12 @@ import java.util.HashMap;
 
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.Service;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = PostgresServiceDiscriminator.class, labelSelector = PostgresServiceDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = PostgresServiceDependent.LABEL_SELECTOR))
 public class PostgresServiceDependent extends CRUDKubernetesDependentResource<Service, Gitea>{
 	private static final String LABEL_KEY = "devjoy.io/svc.target";
 	private static final String LABEL_VALUE = "postgres";

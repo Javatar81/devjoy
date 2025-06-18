@@ -5,13 +5,14 @@ import java.util.Optional;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.Task;
+import io.fabric8.tekton.v1.Task;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = AdditionalResourceTaskDiscriminator.class, labelSelector = AdditionalResourceTaskDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = AdditionalResourcesConfigmapDependent.LABEL_SELECTOR))
 public class AdditionalResourceTaskDependent extends CRUDKubernetesDependentResource<Task, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/task.type";
 	private static final String LABEL_VALUE = "additionalresources";

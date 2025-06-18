@@ -18,21 +18,26 @@ import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.build.BuildEventListenerDependent;
 import io.devjoy.operator.environment.k8s.build.EventListenerActivationCondition;
 import io.devjoy.operator.environment.k8s.build.WebhookSecretDependent;
-import io.fabric8.knative.internal.pkg.apis.duck.v1beta1.Addressable;
+import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDependent;
+import io.fabric8.knative.duck.v1beta1.Addressable;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.tekton.triggers.v1beta1.EventListener;
 import io.fabric8.tekton.triggers.v1beta1.EventListenerStatus;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = SourceRepositoryDiscriminator.class)
+@KubernetesDependent(informer = @Informer(labelSelector = SourceRepositoryDependent.LABEL_SELECTOR))
 public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<GiteaRepository, Project>{
 	private static final Logger LOG = LoggerFactory.getLogger(SourceRepositoryDependent.class);
 	private static final String ENVIRONMENT_NAME_LABEL_KEY = "devjoy.io/environment.name";
 	private static final String ENVIRONMENT_NAMESPACE_LABEL_KEY = "devjoy.io/environment.namespace";
+	private static final String LABEL_KEY = "devjoy.io/repository.type";
+	private static final String LABEL_VALUE = "sourcecode";
+	static final String LABEL_SELECTOR = LABEL_KEY + "=" + LABEL_VALUE;
 
 	public SourceRepositoryDependent() {
 		super(GiteaRepository.class);
@@ -51,6 +56,7 @@ public class SourceRepositoryDependent extends CRUDKubernetesDependentResource<G
 		HashMap<String, String> labels = new HashMap<>();
 		labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, primary.getSpec().getEnvironmentNamespace());
 		labels.put(ENVIRONMENT_NAME_LABEL_KEY, primary.getSpec().getEnvironmentName());
+		labels.put(LABEL_KEY, LABEL_VALUE);
 		env.ifPresent(e -> {
 			if (StringUtil.isNullOrEmpty(primary.getSpec().getEnvironmentNamespace())) {
 				labels.put(ENVIRONMENT_NAMESPACE_LABEL_KEY, e.getMetadata().getNamespace());

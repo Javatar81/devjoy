@@ -15,7 +15,7 @@ import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDep
 import io.quarkus.runtime.util.StringUtil;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = GiteaRouteDiscriminator.class)
+@KubernetesDependent
 public class GiteaRouteDependent extends CRUDKubernetesDependentResource<Route, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaRouteDependent.class);
 	@Inject

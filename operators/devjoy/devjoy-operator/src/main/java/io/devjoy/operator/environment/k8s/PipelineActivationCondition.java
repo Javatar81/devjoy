@@ -1,7 +1,7 @@
 package io.devjoy.operator.environment.k8s;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.tekton.pipeline.v1.Pipeline;
+import io.fabric8.tekton.v1.Pipeline;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;

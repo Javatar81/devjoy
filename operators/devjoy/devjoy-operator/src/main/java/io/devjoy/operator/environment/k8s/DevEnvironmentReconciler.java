@@ -34,6 +34,7 @@ import io.devjoy.operator.environment.k8s.status.ArgoCdStatus;
 import io.devjoy.operator.environment.k8s.status.GiteaStatus;
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
@@ -41,10 +42,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
-import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusHandler;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
 import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
+import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Annotations;
@@ -52,7 +53,7 @@ import io.quarkiverse.operatorsdk.annotations.CSVMetadata.Provider;
 import io.quarkiverse.operatorsdk.annotations.SharedCSVMetadata;
 import io.quarkus.runtime.util.StringUtil;
 
-@ControllerConfiguration(
+@Workflow(
 		dependents = {
 			@Dependent(activationCondition = PipelineActivationCondition.class, type = BuildPipelineDependent.class),
 			@Dependent(activationCondition = TriggerTemplateActivationCondition.class, type = BuildPushTriggerTemplateDependent.class),
@@ -72,7 +73,7 @@ import io.quarkus.runtime.util.StringUtil;
 
 
 @CSVMetadata(name = DevEnvironmentReconciler.CSV_METADATA_NAME, version = DevEnvironmentReconciler.CSV_METADATA_VERSION, displayName = "Devjoy Operator", description = "An operator to quickly create development environments and projects", provider = @Provider(name = "devjoy.io"), keywords = "Project,Quarkus,GitOps,Pipelines", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = DevEnvironmentReconciler.CSV_CONTAINER_IMAGE, others= {}))
-public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, ErrorStatusHandler<DevEnvironment>, SharedCSVMetadata { 
+public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, SharedCSVMetadata { 
   private static final String ARGOCD_VERSION_EXPECTED = "v1beta1";
   public static final String CSV_METADATA_VERSION = "0.2.0";
   public static final String CSV_METADATA_NAME = "devjoy-operator-bundle.v" + CSV_METADATA_VERSION;
@@ -88,27 +89,26 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, Err
   public UpdateControl<DevEnvironment> reconcile(DevEnvironment resource, Context<DevEnvironment> context) {
 	
 	LOG.info("Reconciling");
-	if (resource.getStatus() == null) {
-	  resource.setStatus(new DevEnvironmentStatus());
+	DevEnvironment resourceToPatch = resourceForPatch(resource);
+	if (resourceToPatch.getStatus() == null) {
+		resourceToPatch.setStatus(new DevEnvironmentStatus());
 	} 
 
+	String status = resourceToPatch.getStatus().toString();
 	
-
-	String status = resource.getStatus().toString();
-
-	var gitea = GiteaDependentResource.getResource(client, resource).get();
+	var gitea = GiteaDependentResource.getResource(client, resourceToPatch).get();
 	
-	updateGiteaStatus(resource);
-	updateArgoCdStatus(resource);
-	if(resource.getSpec() != null
-		&& resource.getSpec().getGitea() != null 
-		&& resource.getSpec().getGitea().isEnabled() 
-		&& StringUtil.isNullOrEmpty(resource.getSpec().getGitea().getResourceName())
+	updateGiteaStatus(resourceToPatch);
+	updateArgoCdStatus(resourceToPatch);
+	if(resourceToPatch.getSpec() != null
+		&& resourceToPatch.getSpec().getGitea() != null 
+		&& resourceToPatch.getSpec().getGitea().isEnabled() 
+		&& StringUtil.isNullOrEmpty(resourceToPatch.getSpec().getGitea().getResourceName())
 		&& gitea != null) {
-		resource.getSpec().getGitea().setResourceName(gitea.getMetadata().getName());
-		return UpdateControl.updateResourceAndStatus(resource);
-	} else if (!status.equals(resource.getStatus().toString())) {
-		return UpdateControl.patchStatus(resource);
+			resourceToPatch.getSpec().getGitea().setResourceName(gitea.getMetadata().getName());
+		return UpdateControl.patchResourceAndStatus(resourceToPatch);
+	} else if (!status.equals(resourceToPatch.getStatus().toString())) {
+		return UpdateControl.patchStatus(resourceToPatch);
 	} else {
 		UpdateControl<DevEnvironment> noUpdate = UpdateControl.noUpdate();
 		return noUpdate.rescheduleAfter(30, TimeUnit.SECONDS);
@@ -184,6 +184,18 @@ public class DevEnvironmentReconciler implements Reconciler<DevEnvironment>, Err
 		}
 		return ErrorStatusUpdateControl.patchStatus(env);
 	}
+
+	private DevEnvironment resourceForPatch(
+		DevEnvironment original) {
+		var res = new DevEnvironment();
+		res.setMetadata(new ObjectMetaBuilder()
+			.withName(original.getMetadata().getName())
+			.withNamespace(original.getMetadata().getNamespace())
+			.build());
+		res.setSpec(original.getSpec());
+		res.setStatus(original.getStatus());
+		return res;
+  	}
 
 }
 

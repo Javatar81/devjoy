@@ -3,7 +3,7 @@ package io.devjoy.operator.project.k8s;
 import java.util.ArrayList;
 import java.util.List;
 
-import io.fabric8.knative.internal.pkg.apis.Condition;
+import io.fabric8.knative.pkg.apis.Condition;
 
 public class InitStatus {
     

@@ -14,12 +14,13 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = PostgresDeploymentDiscriminator.class, labelSelector = PostgresDeploymentDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = PostgresDeploymentDependent.LABEL_SELECTOR))
 public class PostgresDeploymentDependent extends CRUDKubernetesDependentResource<Deployment, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(PostgresDeploymentDependent.class);
 	static final String LABEL_KEY = "devjoy.io/deployment.target";

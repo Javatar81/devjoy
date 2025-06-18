@@ -24,8 +24,8 @@ public class UpdateControlState<P extends HasMetadata> {
 
     public UpdateControlState<P> patchStatus() {
         if (!state.isPatchStatus()) {
-            if (state.isUpdateResource()) {
-                state = UpdateControl.updateResourceAndPatchStatus(resource);
+            if (state.isPatchResource()) {
+                state = UpdateControl.patchResourceAndStatus(resource);
             } else {
                 state = UpdateControl.patchStatus(resource);
             }
@@ -33,44 +33,21 @@ public class UpdateControlState<P extends HasMetadata> {
         return this;
     }
 
-    public UpdateControlState<P>  updateStatus() {
-        if (!state.isUpdateStatus()) {
-            if (state.isUpdateResource()) {
-                state = UpdateControl.updateResourceAndStatus(resource);
-            } else {
-                state = UpdateControl.updateStatus(resource);
-            }
-        }
-        return this;
-    }
-    
-    public UpdateControlState<P>  updateResource() {
-        if (!state.isUpdateResource()) {
+    public UpdateControlState<P> patchResource() {
+        if (!state.isPatchResource()) {
             if (state.isPatchStatus()) {
-                state = UpdateControl.updateResourceAndPatchStatus(resource);
-            } else if (state.isUpdateStatus()) {
-                state = UpdateControl.updateResourceAndStatus(resource);
-            }
-            else {
-                state = UpdateControl.updateResource(resource);
+                state = UpdateControl.patchResourceAndStatus(resource);
+            } else {
+                state = UpdateControl.patchResource(resource);
             }
         }
         return this;
     }
 
-    public UpdateControlState<P>  updateResourceAndStatus() {
-        if (!state.isUpdateResource() || !state.isUpdateStatus()) {
-            if(state.isPatchStatus()) {
-                state = UpdateControl.updateResourceAndPatchStatus(resource);
-            } else {
-                state = UpdateControl.updateResourceAndStatus(resource);
-            }
-        } 
-        return this;
-    }
-
-    public UpdateControlState<P>  updateResourceAndPatchStatus() {
-        state = UpdateControl.updateResourceAndPatchStatus(resource);
+    public UpdateControlState<P> patchResourceAndStatus() {
+        if(!state.isPatchResourceAndStatus()) {
+            state = UpdateControl.patchResourceAndStatus(resource);
+        }
         return this;
     }
 
@@ -93,4 +70,5 @@ public class UpdateControlState<P extends HasMetadata> {
 		this.scheduleDelay = Optional.of(scheduleDelay);
 		return this;
 	}
+    
 }

@@ -21,6 +21,8 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.util.AuthorizationRequestFilter;
+import io.netty.util.internal.StringUtil;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.WebApplicationException;
 
@@ -120,6 +122,10 @@ public class UserService {
 	}
 	
 	public Optional<User> changeUserPassword(Gitea gitea, String user, String password, String token) {
+		LOG.info("Changing password for {} via API. Token set: {}, Pw set: {}", user, !StringUtil.isNullOrEmpty(token), !StringUtil.isNullOrEmpty(password));
+		if (password!= null && password.length() < 8) {
+			LOG.warn("Password length < 8. This might not be accepted by Gitea.");
+		}
 		return apiService.getBaseUri(gitea).flatMap(uri -> {
 			try {
 				EditUserOption editUser = new EditUserOption();
@@ -146,13 +152,29 @@ public class UserService {
 				CreateAccessTokenOption createToken = new CreateAccessTokenOption();
 				createToken.setName(tokenName);
 				createToken.setScopes(Arrays.asList(scopes));
-				return Optional.ofNullable(getDynamicUrlClient(new URI(uri), UserApi.class, userName, password)
+				Optional<AccessToken> token = Optional.ofNullable(getDynamicUrlClient(new URI(uri), UserApi.class, userName, password)
 						.userCreateToken(userName, createToken));
+				LOG.debug("Token available: {}", token.isPresent());
+				return token;
 			} catch (URISyntaxException e) {
 				LOG.error(ERROR_IN_REST_CLIENT, e);
 				return Optional.empty();
 			}
 		});
+	}
+
+	public boolean hasAccessToken(Gitea gitea, String userName, String password, String tokenName) {
+		return apiService.getBaseUri(gitea).map(uri -> {
+			try {
+				List<AccessToken> tokens = getDynamicUrlClient(new URI(uri), UserApi.class, userName, password)
+						.userGetTokens(userName, 0, 1000);
+				return tokens.stream()
+					.anyMatch(t -> t.getName().equals(tokenName));
+			} catch (URISyntaxException e) {
+				LOG.error(ERROR_IN_REST_CLIENT, e);
+				return false;
+			}
+		}).orElse(false);
 	}
 	
 	private <T> T getDynamicUrlClient(URI baseUri, Class<T> clazz, String token) throws URISyntaxException {

@@ -9,13 +9,14 @@ import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
 
-@KubernetesDependent(resourceDiscriminator = PostgresSecretDiscriminator.class, labelSelector = PostgresSecretDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = PostgresSecretDependent.LABEL_SELECTOR))
 public class PostgresSecretDependent extends CRUDKubernetesDependentResource<Secret, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(PostgresSecretDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/secret.target";

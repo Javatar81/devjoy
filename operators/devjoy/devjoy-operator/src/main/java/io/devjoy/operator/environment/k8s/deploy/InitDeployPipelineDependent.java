@@ -4,13 +4,14 @@ import java.util.HashMap;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.Pipeline;
+import io.fabric8.tekton.v1.Pipeline;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import jakarta.inject.Inject;
 
-@KubernetesDependent(resourceDiscriminator = InitDeployPipeplineDiscriminator.class, labelSelector = InitDeployPipelineDependent.LABEL_TYPE_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = InitDeployPipelineDependent.LABEL_TYPE_SELECTOR))
 public class InitDeployPipelineDependent extends CRUDKubernetesDependentResource<Pipeline, DevEnvironment>{
 	public static final String LABEL_KEY = "devjoy.io/pipeline.type";
 	public static final String LABEL_VALUE = "init-deploy";

@@ -10,21 +10,20 @@ import io.devjoy.gitea.repository.k8s.model.GiteaRepository;
 import io.devjoy.gitea.repository.k8s.model.GiteaRepositoryStatus;
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.devjoy.operator.environment.k8s.GiteaDependentResource;
+import io.devjoy.operator.environment.k8s.init.AdditionalResourcesConfigmapDependent;
 import io.devjoy.operator.project.k8s.Project;
-import io.devjoy.operator.project.k8s.SourceRepositoryDiscriminator;
-import io.devjoy.operator.project.k8s.deploy.GitopsRepositoryDiscriminator;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimVolumeSourceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.tekton.client.TektonClient;
-import io.fabric8.tekton.pipeline.v1.ParamBuilder;
-import io.fabric8.tekton.pipeline.v1.ParamValue;
-import io.fabric8.tekton.pipeline.v1.ParamValueBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRefBuilder;
-import io.fabric8.tekton.pipeline.v1.PipelineRun;
+import io.fabric8.tekton.v1.ParamBuilder;
+import io.fabric8.tekton.v1.ParamValue;
+import io.fabric8.tekton.v1.ParamValueBuilder;
+import io.fabric8.tekton.v1.PipelineRefBuilder;
+import io.fabric8.tekton.v1.PipelineRun;
+
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ResourceIDMatcherDiscriminator;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.GarbageCollected;
 import io.javaoperatorsdk.operator.processing.dependent.Creator;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
@@ -37,11 +36,9 @@ import jakarta.inject.Inject;
  * This resource is not garbage collected and thus will not use an owner reference
  *
  */
-@KubernetesDependent(resourceDiscriminator = InitDeployPipelineRunDiscriminator.class)
-public class InitDeployPipelineRunDependent extends KubernetesDependentResource<PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
+@KubernetesDependent
+public class InitDeployPipelineRunDependent extends KubernetesDependentResource<io.fabric8.tekton.v1.PipelineRun, Project> implements Creator<PipelineRun, Project>, GarbageCollected<Project> {
 	private static final Logger LOG = LoggerFactory.getLogger(InitDeployPipelineRunDependent.class);
-	private GitopsRepositoryDiscriminator gitopsRepoDiscriminator = new GitopsRepositoryDiscriminator();
-	private SourceRepositoryDiscriminator srcRepoDiscriminator = new SourceRepositoryDiscriminator();
 	private boolean preferAdminAsGitUser = false;
 	
 	@Inject
@@ -66,8 +63,8 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		LOG.info("Run {} will be started in namespace {}", name, pipelineRun.getMetadata().getNamespace());
 		pipelineRun.getSpec().setPipelineRef(new PipelineRefBuilder().withName(pipelineRun.getSpec().getPipelineRef().getName() + devEnvironment.getMetadata().getName()).build());
 		LOG.info("Defining run {} referencing pipeline {}", name, pipelineRun.getSpec().getPipelineRef().getName());
-		setRepoUrl("git_url", primary, context, pipelineRun, gitopsRepoDiscriminator);
-		setRepoUrl("git_src_url", primary, context, pipelineRun, srcRepoDiscriminator);
+		setRepoUrl("git_url", primary, context, pipelineRun, "gitopsRepository");
+		setRepoUrl("git_src_url", primary, context, pipelineRun, "sourceRepository");
 		String user = primary.getSpec().getOwner().getUser();
 		
 		boolean deprecatedUserSecretAvailable = context.getClient().secrets().inNamespace(devEnvironment.getMetadata().getNamespace())
@@ -98,7 +95,7 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("route_host").withNewValue(String.format("%s-%s.%s", primary.getMetadata().getName(), primary.getMetadata().getNamespace(), baseDomain)).build());
 		
-		Optional<GiteaRepository> gitopsRepo = context.getSecondaryResource(GiteaRepository.class, gitopsRepoDiscriminator);
+		Optional<GiteaRepository> gitopsRepo = context.getSecondaryResource(GiteaRepository.class, "gitopsRepository");
 		gitopsRepo.ifPresent(r -> pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_repository").withNewValue(r.getStatus().getInternalCloneUrl()).build()));
 
@@ -132,10 +129,11 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		return pipelineRun;
 	}
 
-	private void setRepoUrl(String param, Project primary, Context<Project> context, PipelineRun pipelineRun, ResourceIDMatcherDiscriminator<GiteaRepository, Project> discrimnator) {
+	private void setRepoUrl(String param, Project primary, Context<Project> context, PipelineRun pipelineRun, String discrimnator) {
 		Optional.ofNullable(primary.getSpec().getExistingRepositoryCloneUrl())
 				.filter(url -> !StringUtil.isNullOrEmpty(url))
-				.or(() -> context.getSecondaryResource(GiteaRepository.class, discrimnator).map(GiteaRepository::getStatus)
+				.or(() -> context.getSecondaryResource(GiteaRepository.class, discrimnator)
+				.map(GiteaRepository::getStatus)
 						.map(GiteaRepositoryStatus::getCloneUrl))
 				.map(url -> pipelineRun.getSpec().getParams()
 						.add(new ParamBuilder().withName(param).withNewValue(url).build()))

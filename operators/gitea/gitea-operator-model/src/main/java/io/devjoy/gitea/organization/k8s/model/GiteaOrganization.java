@@ -44,6 +44,7 @@ public class GiteaOrganization extends CustomResource<GiteaOrganizationSpec, Git
 					.getItems();
 			if (giteasInSameNamespace.size() == 1) {
 				Gitea uniqueGiteaInSameNamespace = giteasInSameNamespace.get(0);
+				LOG.debug("Gitea found.");
 				return Optional.of(uniqueGiteaInSameNamespace);
 			} else {
 				

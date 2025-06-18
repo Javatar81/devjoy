@@ -34,6 +34,7 @@ public class GiteaOrganizationOwnerDependent extends PerResourcePollingDependent
 
 	@Override
 	protected User desired(GiteaOrganization primary, Context<GiteaOrganization> context) {
+		LOG.debug("Setting desired user");
 		User user = new User();
 		user.setActive(true);
 		user.setEmail(primary.getSpec().getOwnerEmail());
@@ -54,13 +55,14 @@ public class GiteaOrganizationOwnerDependent extends PerResourcePollingDependent
 					userService.getUser(g, primaryResource.getSpec().getOwner(), t)
 				)
 		);
+		LOG.debug("Found user {}", user);
 		return user.map(Set::of).orElse(Collections.emptySet());
 		
 	}
 
 	@Override
 	public User create(User desired, GiteaOrganization primary, Context<GiteaOrganization> context) {
-
+		LOG.debug("Create user");
 		return primary.associatedGitea(client)
 				.flatMap(g -> Optional.ofNullable(GiteaAdminSecretDependent.getResource(g, client).get())
 						.flatMap(GiteaAdminSecretDependent::getAdminToken)

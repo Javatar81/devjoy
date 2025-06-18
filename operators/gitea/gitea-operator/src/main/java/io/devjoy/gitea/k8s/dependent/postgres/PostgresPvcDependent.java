@@ -8,12 +8,13 @@ import org.slf4j.LoggerFactory;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 import io.quarkus.runtime.util.StringUtil;
 
-@KubernetesDependent(resourceDiscriminator = PostgresPvcDiscriminator.class, labelSelector = PostgresPvcDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = PostgresPvcDependent.LABEL_SELECTOR))
 public class PostgresPvcDependent extends CRUDKubernetesDependentResource<PersistentVolumeClaim, Gitea> {
 	private static final Logger LOG = LoggerFactory.getLogger(PostgresPvcDependent.class);
 	private static final String LABEL_KEY = "devjoy.io/pvc.target";

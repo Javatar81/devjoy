@@ -12,11 +12,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 
 import io.devjoy.operator.environment.k8s.DevEnvironment;
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.javaoperatorsdk.operator.api.config.informer.Informer;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.CRUDKubernetesDependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.kubernetes.KubernetesDependent;
 
-@KubernetesDependent(resourceDiscriminator = AdditionalResourcesConfigmapDiscriminator.class, labelSelector = AdditionalResourcesConfigmapDependent.LABEL_SELECTOR)
+@KubernetesDependent(informer = @Informer(labelSelector = AdditionalResourcesConfigmapDependent.LABEL_SELECTOR))
 public class AdditionalResourcesConfigmapDependent extends CRUDKubernetesDependentResource<ConfigMap, DevEnvironment>{
 	private static final String LABEL_KEY = "devjoy.io/configmap.type";
 	private static final String LABEL_VALUE = "additionalresources";
