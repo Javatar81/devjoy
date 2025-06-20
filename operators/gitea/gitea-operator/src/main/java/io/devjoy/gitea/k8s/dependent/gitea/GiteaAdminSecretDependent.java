@@ -138,7 +138,7 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 		
 		effectivePassword.ifPresent(pw -> desired.getData().put(DATA_KEY_PASSWORD, Base64.getEncoder().encodeToString(
 				pw.getBytes())));
-		
+
 		LOG.info("Password available: {}", effectivePassword.isPresent());
 		
 		HashMap<String, String> labels = new HashMap<>();
@@ -244,4 +244,15 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 			.map(t -> new String(Base64.getDecoder().decode(t)).trim())
 			.filter(p -> !StringUtil.isNullOrEmpty(p)); 
 	}
+
+	@Override
+	public Secret update(Secret actual, Secret target, Gitea primary, Context<Gitea> context) {
+		var updated = super.update(actual, target, primary, context);
+		if (!actual.getData().get(DATA_KEY_PASSWORD).equals(target.getData().get(DATA_KEY_PASSWORD))) {
+			LOG.info("Restarting deployment due to password change");
+			context.getClient().apps().deployments().inNamespace(actual.getMetadata().getNamespace())
+					.withName(actual.getMetadata().getOwnerReferences().get(0).getName()).rolling().restart();
+		}
+		return updated;
+	  }
 }

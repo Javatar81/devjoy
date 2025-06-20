@@ -4,6 +4,7 @@ import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
@@ -209,11 +210,16 @@ public class GiteaReconcilerIT {
                 .inNamespace(getTargetNamespace())
                 .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 180, TimeUnit.SECONDS);
 			
-			await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.secrets().inNamespace(getTargetNamespace()).withName("admin-extra-pw-secret").edit(n -> {
-				n.getStringData().put("password", changedPassword);
-				return n;
-				
-			}) != null)
+
+			
+			await().atMost(30, TimeUnit.SECONDS).then().until(() -> 
+				Optional.ofNullable(GiteaAdminSecretDependent.getResource(gitea, client).get()).flatMap(GiteaAdminSecretDependent::getAdminToken).isPresent()
+				&& client.secrets().inNamespace(getTargetNamespace()).withName("admin-extra-pw-secret").edit(n -> {
+					n.getStringData().put("password", changedPassword);
+					return n;
+					
+				}) != null
+			) 
 			;
 			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
 				assertions.assertPostgresPvc(gitea);
@@ -221,7 +227,7 @@ public class GiteaReconcilerIT {
 				assertions.assertGiteaDeployment(gitea);
 				assertions.assertAdminSecret(gitea);
 				final var adminSecretUpdated = GiteaAdminSecretDependent.getResource(gitea, client);
-				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecretUpdated.get().getData().get("changedPassword"))), is(password));
+				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecretUpdated.get().getData().get("password"))), is(changedPassword));
 			});
 		} finally {
 			if (client.resource(adminSecret).get() != null) {
@@ -238,7 +244,7 @@ public class GiteaReconcilerIT {
 		client.resource(gitea).create();
 		client.apps().deployments()
                 .inNamespace(getTargetNamespace())
-                .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 120, TimeUnit.SECONDS);
+                .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 180, TimeUnit.SECONDS);
 		await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.resources(Gitea.class).inNamespace(getTargetNamespace()).withName("pwchange").edit(n -> {
 			n.getSpec().setAdminPassword(changedPassword);
 			return n;

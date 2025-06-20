@@ -31,7 +31,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.javaoperatorsdk.operator.AggregatedOperatorException;
 import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
-import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.EventSourceContext;
 import io.javaoperatorsdk.operator.api.reconciler.Reconciler;
@@ -49,12 +48,10 @@ import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEven
 	@Dependent(name = OrganizationReconciler.DEPENDENT_NAME_GITEA_ORGANIZATION, type = GiteaOrganizationDependent.class, dependsOn = "giteaOrganizationOwner")})
 public class OrganizationReconciler implements Reconciler<GiteaOrganization> {
 	public static final String DEPENDENT_NAME_GITEA_ORGANIZATION = "giteaOrganization";
-
-	private static final Logger LOG = LoggerFactory.getLogger(OrganizationReconciler.class);
-	
 	public static final String ADMIN_SECRET_INDEX = "GiteaAdminSecretIndex";
 	public static final String ADMIN_SECRET_EVENT_SOURCE = "GiteaAdminSecretEventSource";
-	
+
+	private static final Logger LOG = LoggerFactory.getLogger(OrganizationReconciler.class);
 	
 	@Override
 	public UpdateControl<GiteaOrganization> reconcile(GiteaOrganization resource, Context<GiteaOrganization> context)
@@ -161,8 +158,8 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization> {
 	}
 	
 	private String indexKey(String secretName, String namespace) {
-		if(LOG.isDebugEnabled()) {
-			LOG.debug("index key {}", secretName + "#" + namespace);
+		if(LOG.isTraceEnabled()) {
+			LOG.trace("index key {}", secretName + "#" + namespace);
 		}
 	    return secretName + "#" + namespace;
 	}

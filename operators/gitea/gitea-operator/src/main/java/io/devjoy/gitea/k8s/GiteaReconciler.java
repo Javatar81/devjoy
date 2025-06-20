@@ -45,7 +45,6 @@ import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.EventSource;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -53,6 +52,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteSpec;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.config.informer.InformerConfiguration;
+import io.javaoperatorsdk.operator.api.config.informer.InformerEventSourceConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.ControllerConfiguration;
 import io.javaoperatorsdk.operator.api.reconciler.ErrorStatusUpdateControl;
@@ -62,6 +62,7 @@ import io.javaoperatorsdk.operator.api.reconciler.UpdateControl;
 import io.javaoperatorsdk.operator.api.reconciler.Workflow;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.Dependent;
 import io.javaoperatorsdk.operator.processing.event.ResourceID;
+import io.javaoperatorsdk.operator.processing.event.source.EventSource;
 import io.javaoperatorsdk.operator.processing.event.source.PrimaryToSecondaryMapper;
 import io.javaoperatorsdk.operator.processing.event.source.informer.InformerEventSource;
 import io.quarkiverse.operatorsdk.annotations.CSVMetadata;
@@ -218,17 +219,17 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		return res;
   	}
 
-  	/*@Override
-	public Map<String, io.javaoperatorsdk.operator.processing.event.source.EventSource> prepareEventSources(
-			EventSourceContext<Gitea> context) {
+  	@Override
+	public List<EventSource<?, Gitea>> prepareEventSources(
+		EventSourceContext<Gitea> context) {
     
 	context.getPrimaryCache().addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
 				.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
 				.orElse(Collections.emptyList())));			
     var es =
         new InformerEventSource<>(
-            InformerConfiguration.from(
-                    Secret.class, context)
+            InformerEventSourceConfiguration.from(
+                    Secret.class, context.getPrimaryResourceClass())
                 // if there is a many-to-many relationship (thus no direct owner reference)
                 // PrimaryToSecondaryMapper needs to be added
 				//.with
@@ -249,11 +250,11 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
                             .collect(Collectors.toSet()))
                 .build(),
             context);
-
-    return Map.of(EXTRA_ADMIN_SECRET_EVENT_SOURCE, es);
+	LOG.debug("Informer source created");
+	return List.of(es);
   }
 
   private String indexKey(String configMapName, String namespace) {
     return configMapName + "#" + namespace;
-  }*/
+  }
 }
