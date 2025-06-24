@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.devjoy.gitea.k8s.model.Gitea;
-import io.devjoy.gitea.k8s.model.GiteaPostgresSpec;
+import io.devjoy.gitea.k8s.model.postgres.PostgresSpec;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
@@ -52,7 +52,8 @@ public class PostgresDeploymentDependent extends CRUDKubernetesDependentResource
 				.filter(c -> "postgresql".equals(c.getName())).findFirst();
 		postgresContainer.ifPresent(c -> {
 			setEnv(PostgresSecretDependent.getName(primary), c);
-			if (primary.getSpec() != null && primary.getSpec().getPostgres() != null) {
+			if (primary.getSpec() != null && primary.getSpec().getPostgres() != null 
+				&& primary.getSpec().getPostgres().getManagedConfig() != null) {
 				setImage(primary.getSpec().getPostgres(), c);
 				if (primary.getSpec().isResourceRequirementsEnabled()) {
 					setResources(primary.getSpec().getPostgres(), c);
@@ -65,7 +66,10 @@ public class PostgresDeploymentDependent extends CRUDKubernetesDependentResource
 				c.getResources().getLimits().clear();
 			}
 
-			if(primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
+			if(primary.getSpec() != null 
+				&& primary.getSpec().getPostgres() != null
+				&& primary.getSpec().getPostgres().getManagedConfig() != null
+				&& primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
 				c.getVolumeMounts().add(new VolumeMountBuilder().withName("tls-secret").withMountPath(PostgresConfigMapDependent.MOUNT_PATH_CERTS).build());
 				c.getVolumeMounts().add(new VolumeMountBuilder().withName("psql-config").withMountPath("/opt/app-root/src/postgresql-cfg").build());
 			}
@@ -76,7 +80,9 @@ public class PostgresDeploymentDependent extends CRUDKubernetesDependentResource
 		if (deployment.getMetadata().getLabels() == null) {
 			deployment.getMetadata().setLabels(new HashMap<>());
 		}
-		if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
+		if (primary.getSpec() != null && primary.getSpec().getPostgres() != null
+			&& primary.getSpec().getPostgres().getManagedConfig() != null
+			&& primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
 			template.getSpec().getVolumes().add(
 				new VolumeBuilder()
 						.withName("tls-secret")
@@ -112,29 +118,29 @@ public class PostgresDeploymentDependent extends CRUDKubernetesDependentResource
 			.ifPresent(usr -> usr.getValueFrom().getSecretKeyRef().setName(name));
 	}
 
-	private void setResources(GiteaPostgresSpec spec, Container c) {
-		if (!StringUtil.isNullOrEmpty(spec.getCpuRequest())) {
-			LOG.info("Setting cpu requests to {} ", spec.getCpuRequest());
-			c.getResources().getRequests().put("cpu", new Quantity(spec.getCpuRequest()));
+	private void setResources(PostgresSpec spec, Container c) {
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getCpuRequest())) {
+			LOG.info("Setting cpu requests to {} ", spec.getManagedConfig().getCpuRequest());
+			c.getResources().getRequests().put("cpu", new Quantity(spec.getManagedConfig().getCpuRequest()));
 		} 
-		if (!StringUtil.isNullOrEmpty(spec.getMemoryRequest())) {				
-			c.getResources().getRequests().put("memory", new Quantity(spec.getMemoryRequest()));
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getMemoryRequest())) {				
+			c.getResources().getRequests().put("memory", new Quantity(spec.getManagedConfig().getMemoryRequest()));
 		}
-		if (!StringUtil.isNullOrEmpty(spec.getCpuLimit())) {				
-			c.getResources().getLimits().put("cpu", new Quantity(spec.getCpuLimit()));
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getCpuLimit())) {				
+			c.getResources().getLimits().put("cpu", new Quantity(spec.getManagedConfig().getCpuLimit()));
 		}
-		if (!StringUtil.isNullOrEmpty(spec.getMemoryLimit())) {				
-			c.getResources().getLimits().put("memory", new Quantity(spec.getMemoryLimit()));
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getMemoryLimit())) {				
+			c.getResources().getLimits().put("memory", new Quantity(spec.getManagedConfig().getMemoryLimit()));
 		}
 	}
 
-	private void setImage(GiteaPostgresSpec spec, Container c) {
+	private void setImage(PostgresSpec spec, Container c) {
 		String[] imageAndTag = c.getImage().split(":");
-		if (!StringUtil.isNullOrEmpty(spec.getImage())) {
-			imageAndTag[0] = spec.getImage();	
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getImage())) {
+			imageAndTag[0] = spec.getManagedConfig().getImage();	
 		}
-		if (!StringUtil.isNullOrEmpty(spec.getImageTag())) {
-			imageAndTag[1] = spec.getImageTag();	
+		if (!StringUtil.isNullOrEmpty(spec.getManagedConfig().getImageTag())) {
+			imageAndTag[1] = spec.getManagedConfig().getImageTag();	
 		}
 		c.setImage(imageAndTag[0] + ":" + imageAndTag[1]);
 	}

@@ -152,7 +152,7 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		LOG.debug("Reading app.ini initial data {}", iniData);
 		LOG.info("Read app.ini. Adding configuration parameters based on Gitea resource.");
 		iniConfiguration.setProperty("APP_NAME", primary.getMetadata().getName());
-		configureDatabase(primary, iniConfiguration);
+		configureDatabase(primary, iniConfiguration, context);
 		if((primary.getSpec() == null || primary.getSpec().isIngressEnabled()) && ocpClient.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE)){
 			context.getSecondaryResource(Route.class)
 				.ifPresent(r -> configureRoute(iniConfiguration, r, primary.getSpec() != null && primary.getSpec().isSsl()));
@@ -313,14 +313,33 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("SSH_DOMAIN", r.getSpec().getHost());
 		iniConfiguration.getSection(SECTION_SERVER).setProperty("DOMAIN", r.getSpec().getHost());
 	}
-	private void configureDatabase(Gitea primary, GiteaAppIni iniConfiguration) {
-		iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", String.format("postgresql-%s.%s.svc:5432",primary.getMetadata().getName(), primary.getMetadata().getNamespace()));
-		iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
-		iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
-		iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
-		if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
-			iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "verify-full");
+	private void configureDatabase(Gitea primary, GiteaAppIni iniConfiguration, Context<Gitea> context) {
+		if (primary.getSpec() == null || primary.getSpec().getPostgres() == null || primary.getSpec().getPostgres().isManaged()) {
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", String.format("postgresql-%s.%s.svc:5432",primary.getMetadata().getName(), primary.getMetadata().getNamespace()));
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", config.getDatabaseName());
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
+			iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
+			if (primary.getSpec() != null && primary.getSpec().getPostgres() != null 
+				&& primary.getSpec().getPostgres().getManagedConfig() != null && primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
+				iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "verify-full");
+			}
+		} else {
+			if (primary.getSpec().getPostgres().getUnmanagedConfig() != null) {
+				var pgConfig = primary.getSpec().getPostgres().getUnmanagedConfig();
+				iniConfiguration.getSection(SECTION_DATABASE).setProperty("HOST", pgConfig.getHostName());
+				iniConfiguration.getSection(SECTION_DATABASE).setProperty("NAME", pgConfig.getDatabaseName());
+				iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", pgConfig.getUserName());
+				context.getSecondaryResources(Secret.class).stream()
+					.filter(s -> s.getMetadata().getName().equals(pgConfig.getExtraSecretName()))
+					.findFirst()
+					.ifPresent(s -> iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", new String(Base64.getDecoder().decode(s.getData().get("password")))));
+				
+				//iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
+			} else {
+				LOG.error("Cannot configure database for Gitea. Unmanaged config properties must be set when managed == false.");
+			}
 		}
+		
 	}
 
 	public static Resource<Secret> getResource(Gitea primary, KubernetesClient client) {

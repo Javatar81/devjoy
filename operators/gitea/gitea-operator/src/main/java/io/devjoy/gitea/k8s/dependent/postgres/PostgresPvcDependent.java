@@ -40,11 +40,15 @@ public class PostgresPvcDependent extends CRUDKubernetesDependentResource<Persis
 		pvc.getMetadata().setName(name);
 		pvc.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		if (primary.getSpec() != null) {
-			if (primary.getSpec().getPostgres() != null && !StringUtil.isNullOrEmpty(primary.getSpec().getPostgres().getVolumeSize())) {
-				pvc.getSpec().getResources().getRequests().put("storage", Quantity.parse(primary.getSpec().getPostgres().getVolumeSize()));
+			if (primary.getSpec().getPostgres() != null 
+				&& primary.getSpec().getPostgres().getManagedConfig() != null
+				&& !StringUtil.isNullOrEmpty(primary.getSpec().getPostgres().getManagedConfig().getVolumeSize())) {
+				pvc.getSpec().getResources().getRequests().put("storage", Quantity.parse(primary.getSpec().getPostgres().getManagedConfig().getVolumeSize()));
 			}
-			if (primary.getSpec().getPostgres() != null && !StringUtil.isNullOrEmpty(primary.getSpec().getPostgres().getStorageClass())) {
-				pvc.getSpec().setStorageClassName(primary.getSpec().getPostgres().getStorageClass());
+			if (primary.getSpec().getPostgres() != null 
+				&& primary.getSpec().getPostgres().getManagedConfig() != null 
+				&& !StringUtil.isNullOrEmpty(primary.getSpec().getPostgres().getManagedConfig().getStorageClass())) {
+				pvc.getSpec().setStorageClassName(primary.getSpec().getPostgres().getManagedConfig().getStorageClass());
 			}
 		}
 		if (pvc.getMetadata().getLabels() == null) {

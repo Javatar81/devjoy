@@ -22,6 +22,7 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.k8s.model.postgres.PostgresUnmanagedConfig;
 import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.service.UserService;
 import io.devjoy.gitea.util.ApiAccessMode;
@@ -30,6 +31,8 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.QuantityBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
@@ -75,7 +78,7 @@ public class GiteaReconcilerIT {
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
 		spec.setSso(false);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
-		spec.getPostgres().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
+		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		gitea.setSpec(spec);
 		return gitea;
@@ -121,6 +124,53 @@ public class GiteaReconcilerIT {
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
         });
+	}
+
+	@Test
+	void createWithUnmanagedPostgres() {
+		try {
+			Gitea gitea = createDefault("mygiteaitpgunmgt");
+			PostgresUnmanagedConfig spec = new PostgresUnmanagedConfig();
+			spec.setExtraSecretName("postgres-secret");
+			//pgpw12345
+			spec.setDatabaseName("pgtestdb");
+			spec.setHostName("pgtest");
+			spec.setUserName("pguser");
+			gitea.getSpec().getPostgres().setManaged(false);
+			gitea.getSpec().getPostgres().setUnmanagedConfig(spec);
+			env.createStaticPVsIfRequired();
+			// TODO Create postgres manually
+			Deployment pgDeployment = client.apps().deployments()
+					.load(getClass().getClassLoader().getResourceAsStream("postgres/deployment.yaml"))
+					.item();
+			pgDeployment.getMetadata().setNamespace(getTargetNamespace());
+			client.resource(pgDeployment).create();
+			Service pgService = client.services()
+					.load(getClass().getClassLoader().getResourceAsStream("postgres/service.yaml"))
+					.item();
+			pgService.getMetadata().setNamespace(getTargetNamespace());
+			client.resource(pgService).create();
+			Secret extraSecret = client.secrets()
+					.load(getClass().getClassLoader().getResourceAsStream("postgres/secret.yaml"))
+					.item();
+					extraSecret.getMetadata().setNamespace(getTargetNamespace());
+			client.resource(extraSecret).create();
+			client.resource(gitea).create();
+			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
+				// check that we create the deployment
+				// Postgres PVC
+				assertions.assertGiteaPvc(gitea);
+				assertions.assertGiteaDeployment(gitea);
+				assertions.assertAdminSecret(gitea);
+				final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
+				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
+			});
+		} finally {
+			client.resources(Service.class).inNamespace(getTargetNamespace()).withName("pgtest").delete();
+			client.resources(Deployment.class).inNamespace(getTargetNamespace()).withName("pgtest").delete();
+			client.resources(Secret.class).inNamespace(getTargetNamespace()).withName("postgres-secret").delete();
+		}
+        
 	}
 
 	@Test
@@ -292,14 +342,14 @@ public class GiteaReconcilerIT {
 		spec.getMailer().setPassword("test12345"); // notsecretnull);
 		spec.getMailer().setProtocol("smtp");
 		spec.getMailer().setUser("giteadm");
-		spec.getPostgres().setMemoryLimit("1Gi");
-		spec.getPostgres().setMemoryRequest("256Mi");
-		spec.getPostgres().setCpuLimit("800m");
-		spec.getPostgres().setCpuRequest("250m");
-		spec.getPostgres().setImage("registry.redhat.io/rhel8/postgresql-12");
-		spec.getPostgres().setImageTag("latest");
-		spec.getPostgres().setVolumeSize("8Gi");
-		spec.getPostgres().setSsl(true);
+		spec.getPostgres().getManagedConfig().setMemoryLimit("1Gi");
+		spec.getPostgres().getManagedConfig().setMemoryRequest("256Mi");
+		spec.getPostgres().getManagedConfig().setCpuLimit("800m");
+		spec.getPostgres().getManagedConfig().setCpuRequest("250m");
+		spec.getPostgres().getManagedConfig().setImage("registry.redhat.io/rhel8/postgresql-12");
+		spec.getPostgres().getManagedConfig().setImageTag("latest");
+		spec.getPostgres().getManagedConfig().setVolumeSize("8Gi");
+		spec.getPostgres().getManagedConfig().setSsl(true);
 		//TODO Overrides
 		GiteaConfigOverrides over = spec.getConfigOverrides();
 		over.getActions().put("ENABLED", "true");

@@ -196,7 +196,7 @@ public class GiteaOrganizationReconcilerIT {
 		spec.setLogLevel(GiteaLogLevel.DEBUG);
 		spec.setAllowCreateOrganization(true);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
-		spec.getPostgres().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
+		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		gitea.setSpec(spec);
 		return gitea;

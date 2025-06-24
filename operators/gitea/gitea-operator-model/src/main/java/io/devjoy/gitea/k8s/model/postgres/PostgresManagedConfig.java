@@ -1,13 +1,10 @@
-package io.devjoy.gitea.k8s.model;
+package io.devjoy.gitea.k8s.model.postgres;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
-import io.quarkus.runtime.annotations.RegisterForReflection;
-
-@RegisterForReflection
-public class GiteaPostgresSpec {
-	@JsonPropertyDescription("The size of the volume to store Postgres data")
+public class PostgresManagedConfig {
+    @JsonPropertyDescription("The size of the volume to store Postgres data")
 	@JsonProperty(defaultValue = "4Gi")
 	private String volumeSize = "4Gi";
 	@JsonPropertyDescription("The cpu resource limits for the Postgres deployment")
@@ -28,9 +25,8 @@ public class GiteaPostgresSpec {
 	private String imageTag = "latest";
 	@JsonPropertyDescription("Enables SSL for database connections.")
 	private boolean ssl = false;
-	
-	
-	public String getVolumeSize() {
+
+    public String getVolumeSize() {
 		return volumeSize;
 	}
 	public void setVolumeSize(String volumeSize) {

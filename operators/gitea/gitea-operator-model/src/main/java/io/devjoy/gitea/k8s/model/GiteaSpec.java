@@ -3,6 +3,7 @@ package io.devjoy.gitea.k8s.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
+import io.devjoy.gitea.k8s.model.postgres.PostgresSpec;
 import io.quarkus.runtime.annotations.RegisterForReflection;
 
 @RegisterForReflection
@@ -60,7 +61,7 @@ public class GiteaSpec {
 	@JsonPropertyDescription("The log level for Gitea. Default is Warn.")
 	private GiteaLogLevel logLevel;
 	@JsonPropertyDescription("The specification for the postgres database.")
-	private GiteaPostgresSpec postgres = new GiteaPostgresSpec();
+	private PostgresSpec postgres = new PostgresSpec();
 	@JsonPropertyDescription("The specification for the mailer.")
 	private GiteaMailerSpec mailer = new GiteaMailerSpec();
 	@JsonPropertyDescription("Allows to override arbitrary config properties in the app.ini.")
@@ -192,10 +193,10 @@ public class GiteaSpec {
 	public void setLogLevel(GiteaLogLevel logLevel) {
 		this.logLevel = logLevel;
 	}
-	public GiteaPostgresSpec getPostgres() {
+	public PostgresSpec getPostgres() {
 		return postgres;
 	}
-	public void setPostgres(GiteaPostgresSpec postgres) {
+	public void setPostgres(PostgresSpec postgres) {
 		this.postgres = postgres;
 	}
 	public GiteaMailerSpec getMailer() {

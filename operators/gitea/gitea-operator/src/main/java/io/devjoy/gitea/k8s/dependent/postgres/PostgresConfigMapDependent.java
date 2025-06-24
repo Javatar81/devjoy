@@ -27,7 +27,8 @@ public class PostgresConfigMapDependent extends CRUDKubernetesDependentResource<
 		
         Map<String, String> data = new HashMap<>();
         Map<String, String> postgresConfig = new HashMap<>();
-        if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
+        if (primary.getSpec() != null && primary.getSpec().getPostgres() != null 
+            && primary.getSpec().getPostgres().getManagedConfig() != null  && primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
             postgresConfig.put("ssl", "on");
             postgresConfig.put("ssl_cert_file", "'" + MOUNT_PATH_CERTS + "tls.crt'");
             postgresConfig.put("ssl_key_file", "'" + MOUNT_PATH_CERTS + "tls.key'");

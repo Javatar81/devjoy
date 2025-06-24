@@ -12,7 +12,7 @@ public class GiteaPrereqs {
     static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 
     public void assureKeycloakCrdsInstalled() {
-        LOG.error("Assure Keycloak CRDs installed");
+        LOG.info("Assure Keycloak CRDs installed");
    /*     if (client.apiextensions().getApiGroup("keycloak.org") == null) {
             LOG.error("Keycloak CRDs not available. Will be installed.");
             Keycloak keycloak = client.resources(Keycloak.class)

@@ -41,11 +41,14 @@ public class GiteaAssertions {
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(PostgresPvcDependent.getName(desired)).get();
         assertThat(postgresPvc, is(IsNull.notNullValue()));
-        if (desired.getSpec() != null && !StringUtil.isNullOrEmpty(desired.getSpec().getPostgres().getStorageClass())) {
-            assertThat(postgresPvc.getSpec().getStorageClassName(), is(desired.getSpec().getPostgres().getStorageClass()));
+        if (desired.getSpec() != null 
+            && desired.getSpec().getPostgres() != null
+            && desired.getSpec().getPostgres().getManagedConfig() != null
+            && !StringUtil.isNullOrEmpty(desired.getSpec().getPostgres().getManagedConfig().getStorageClass())) {
+            assertThat(postgresPvc.getSpec().getStorageClassName(), is(desired.getSpec().getPostgres().getManagedConfig().getStorageClass()));
         }
         if (desired.getSpec() != null) {
-            assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getPostgres().getVolumeSize()));
+            assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is(desired.getSpec().getPostgres().getManagedConfig().getVolumeSize()));
         } else {
             assertThat(postgresPvc.getSpec().getResources().getRequests().get("storage").toString(), is("4Gi"));
         }
@@ -90,55 +93,59 @@ public class GiteaAssertions {
 
     public void assertGiteaDeployment(Gitea desired) {
         LOG.debug("Assert Gitea Deployment");
-        final var postgresDeployment = client.apps().deployments()
-                .inNamespace(desired.getMetadata().getNamespace())
-                .withName(PostgresDeploymentDependent.getName(desired)).get();
-        final var postgresPvc = client.persistentVolumeClaims()
-                .inNamespace(desired.getMetadata().getNamespace())
-                .withName(PostgresPvcDependent.getName(desired)).get();
-        var postgresSecret = client.secrets()
+        if (desired.getSpec() == null || desired.getSpec().getPostgres() == null || desired.getSpec().getPostgres().isManaged()) {
+            final var postgresDeployment = client.apps().deployments()
                     .inNamespace(desired.getMetadata().getNamespace())
-                    .withName(PostgresSecretDependent.getName(desired)).get();
+                    .withName(PostgresDeploymentDependent.getName(desired)).get();
+            final var postgresPvc = client.persistentVolumeClaims()
+                    .inNamespace(desired.getMetadata().getNamespace())
+                    .withName(PostgresPvcDependent.getName(desired)).get();
+            var postgresSecret = client.secrets()
+                        .inNamespace(desired.getMetadata().getNamespace())
+                        .withName(PostgresSecretDependent.getName(desired)).get();
 
-        assertThat(postgresDeployment, is(IsNull.notNullValue()));
-        assertThat(postgresSecret, is(IsNull.notNullValue()));
-        assertThat(postgresPvc, is(IsNull.notNullValue()));
-        if (desired.getSpec() == null || !desired.getSpec().isResourceRequirementsEnabled()) {
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
-            LOG.debug("Asserted resources is empty for Postgres");
-        } else {
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getMemoryRequest())));
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getCpuRequest())));
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getMemoryLimit())));
-            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getCpuLimit())));
-            LOG.debug("Asserted Resources for Postgres");
-        }
+            assertThat(postgresDeployment, is(IsNull.notNullValue()));
+            assertThat(postgresSecret, is(IsNull.notNullValue()));
+            assertThat(postgresPvc, is(IsNull.notNullValue()));
         
+            if (desired.getSpec() == null || !desired.getSpec().isResourceRequirementsEnabled()) {
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().isEmpty(), is(true));
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().isEmpty(), is(true));
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getVolumes().stream().filter(v -> "postgresql-data".equals(v.getName())).map(v -> v.getPersistentVolumeClaim().getClaimName()).findFirst().get(), is(postgresPvc.getMetadata().getName()));
+                LOG.debug("Asserted resources is empty for Postgres");
+            } else {
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getManagedConfig().getMemoryRequest())));
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getRequests().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getManagedConfig().getCpuRequest())));
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("memory"), is(Quantity.parse(desired.getSpec().getPostgres().getManagedConfig().getMemoryLimit())));
+                assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getResources().getLimits().get("cpu"), is(Quantity.parse(desired.getSpec().getPostgres().getManagedConfig().getCpuLimit())));
+                LOG.debug("Asserted Resources for Postgres");
+            }
+            
 
-        assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
-            .filter(e -> "POSTGRESQL_PASSWORD".equals(e.getName())).findAny().get().getValueFrom().getSecretKeyRef().getName(), is(postgresSecret.getMetadata().getName()));
-        assertThat(postgresDeployment.getStatus().getReadyReplicas(), is(1));
-        // RS
-        Optional<ReplicaSet> postgresReplicaSet = client.apps().replicaSets()
-            .inNamespace(desired.getMetadata().getNamespace())
-            .list()
-            .getItems()
-            .stream()
-            .filter(r -> r.getOwnerReferenceFor(postgresDeployment.getMetadata().getUid()).isPresent())
-            .max(Comparator.comparingInt(r -> Integer.valueOf(r.getMetadata().getAnnotations().get("deployment.kubernetes.io/revision"))));
-        assertThat(postgresReplicaSet.isPresent(), is(true));
-        assertThat(postgresReplicaSet.get().getStatus().getReadyReplicas(), is(1));
-        //Pod
-        Optional<Pod> pod = client.pods()
-            .inNamespace(desired.getMetadata().getNamespace())
-            .list()
-            .getItems()
-            .stream()
-            .filter(p -> p.getOwnerReferenceFor(postgresReplicaSet.get().getMetadata().getUid()).isPresent())
-            .findAny();
-        assertThat(pod.isPresent(), is(true));
+            assertThat(postgresDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().stream()
+                .filter(e -> "POSTGRESQL_PASSWORD".equals(e.getName())).findAny().get().getValueFrom().getSecretKeyRef().getName(), is(postgresSecret.getMetadata().getName()));
+            assertThat(postgresDeployment.getStatus().getReadyReplicas(), is(1));
+            // RS
+            Optional<ReplicaSet> postgresReplicaSet = client.apps().replicaSets()
+                .inNamespace(desired.getMetadata().getNamespace())
+                .list()
+                .getItems()
+                .stream()
+                .filter(r -> r.getOwnerReferenceFor(postgresDeployment.getMetadata().getUid()).isPresent())
+                .max(Comparator.comparingInt(r -> Integer.valueOf(r.getMetadata().getAnnotations().get("deployment.kubernetes.io/revision"))));
+            assertThat(postgresReplicaSet.isPresent(), is(true));
+            assertThat(postgresReplicaSet.get().getStatus().getReadyReplicas(), is(1));
+            //Pod
+            Optional<Pod> pod = client.pods()
+                .inNamespace(desired.getMetadata().getNamespace())
+                .list()
+                .getItems()
+                .stream()
+                .filter(p -> p.getOwnerReferenceFor(postgresReplicaSet.get().getMetadata().getUid()).isPresent())
+                .findAny();
+            assertThat(pod.isPresent(), is(true));
+        }
+
         final var giteaDeployment = client.apps().deployments()
                 .inNamespace(desired.getMetadata().getNamespace())
                 .withName(desired.getMetadata().getName()).get();

@@ -169,7 +169,7 @@ class RepoServiceIT {
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
 		spec.setSso(false);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
-		spec.getPostgres().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
+		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		gitea.setSpec(spec);
 		return gitea;

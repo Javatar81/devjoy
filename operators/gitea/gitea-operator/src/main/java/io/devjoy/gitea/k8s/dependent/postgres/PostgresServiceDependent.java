@@ -34,7 +34,10 @@ public class PostgresServiceDependent extends CRUDKubernetesDependentResource<Se
 			svc.getMetadata().setLabels(new HashMap<>());
 		}
 		svc.getMetadata().getLabels().put(LABEL_KEY, LABEL_VALUE);
-		if (primary.getSpec() != null && primary.getSpec().getPostgres().isSsl()) {
+		if (primary.getSpec() != null 
+			&& primary.getSpec().getPostgres() != null
+			&& primary.getSpec().getPostgres().getManagedConfig() != null
+			&& primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
 			svc.getMetadata().getAnnotations().put(OCP_SERVICE_CERTIFICATE_LABEL, getServiceCertSecretName(primary));
 		}
 		return svc;

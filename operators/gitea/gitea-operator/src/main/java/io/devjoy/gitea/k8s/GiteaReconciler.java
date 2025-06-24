@@ -26,6 +26,7 @@ import io.devjoy.gitea.k8s.dependent.gitea.GiteaTrustMapDependent;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresConfigMapDependent;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresDeploymentDependent;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresPvcDependent;
+import io.devjoy.gitea.k8s.dependent.postgres.PostgresReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresSecretDependent;
 import io.devjoy.gitea.k8s.dependent.postgres.PostgresServiceDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependent;
@@ -78,18 +79,17 @@ import jakarta.ws.rs.WebApplicationException;
 	@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependent.class),
 	@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependent.class),
 	@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependent.class),
-	//@Dependent(name = "extraAdminSecret", type = ExtraAdminSecretDependent.class, useEventSourceWithName = GiteaReconciler.EXTRA_ADMIN_SECRET_EVENT_SOURCE),
 	@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class),
 	@Dependent(name = "giteaServiceAccount", type = GiteaServiceAccountDependent.class),
 	@Dependent(name = "giteaService", type = GiteaServiceDependent.class), 
 	@Dependent(name = "giteaRoute", type = GiteaRouteDependent.class, reconcilePrecondition = GiteaRouteReconcileCondition.class),
 	@Dependent(name = "giteaPvc", type = GiteaPvcDependent.class), 
 	@Dependent(name = "giteaOAuthClient", type = GiteaOAuthClientDependent.class, reconcilePrecondition = GiteaOAuthClientReconcileCondition.class),
-	@Dependent(name = "postgresService", type = PostgresServiceDependent.class),
-	@Dependent(name = "postgresSecret", type = PostgresSecretDependent.class), 
-	@Dependent(name = "postgresPvc", type = PostgresPvcDependent.class),
-	@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependent.class), 
-	@Dependent(name = "postgresConfig", type = PostgresConfigMapDependent.class), 
+	@Dependent(name = "postgresService", type = PostgresServiceDependent.class, reconcilePrecondition = PostgresReconcileCondition.class),
+	@Dependent(name = "postgresSecret", type = PostgresSecretDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
+	@Dependent(name = "postgresPvc", type = PostgresPvcDependent.class, reconcilePrecondition = PostgresReconcileCondition.class),
+	@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
+	@Dependent(name = "postgresConfig", type = PostgresConfigMapDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
 	@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 	@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 	@Dependent(name = "keycloak", type = KeycloakDependent.class, activationCondition = KeycloakReconcileCondition.class), 
@@ -101,8 +101,10 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	public static final String CSV_METADATA_NAME = "gitea-operator-bundle.v" + CSV_METADATA_VERSION;
 	public static final String CSV_CONTAINER_IMAGE = "quay.io/devjoy/gitea-operator:" + CSV_METADATA_VERSION;
 	private static final Logger LOG = LoggerFactory.getLogger(GiteaReconciler.class);
-	public static final String EXTRA_ADMIN_SECRET_EVENT_SOURCE = "ExtraAdminEventSource";
-	public static final String EXTRA_ADMIN_SECRET_INDEX = "ExtraAdminEventSourceIndex";
+	//private static final String EXTRA_ADMIN_SECRET_EVENT_SOURCE = "ExtraAdminSecretEventSource";
+	private static final String EXTRA_ADMIN_SECRET_INDEX = "ExtraAdminSecretEventSourceIndex";
+	//private static final String EXTRA_POSTGRES_SECRET_EVENT_SOURCE = "ExtraPostgresSecretEventSource";
+	private static final String EXTRA_POSTGRES_SECRET_INDEX = "ExtraPostgresSecretEventSourceIndex";
 	private final GiteaStatusUpdater updater;
 	private final OpenShiftClient client;
 	public GiteaReconciler(GiteaStatusUpdater updater, OpenShiftClient client) {
@@ -223,10 +225,15 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	public List<EventSource<?, Gitea>> prepareEventSources(
 		EventSourceContext<Gitea> context) {
     
-	context.getPrimaryCache().addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
-				.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
-				.orElse(Collections.emptyList())));			
-    var es =
+	context.getPrimaryCache()
+		.addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
+			.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
+			.orElse(Collections.emptyList())));
+	context.getPrimaryCache()
+		.addIndexer(EXTRA_POSTGRES_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
+			.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
+			.orElse(Collections.emptyList())));			
+    var adminSecretEventSrc =
         new InformerEventSource<>(
             InformerEventSourceConfiguration.from(
                     Secret.class, context.getPrimaryResourceClass())
@@ -250,8 +257,32 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
                             .collect(Collectors.toSet()))
                 .build(),
             context);
+		var postgresSecretEventSrc =
+			new InformerEventSource<>(
+				InformerEventSourceConfiguration.from(
+						Secret.class, context.getPrimaryResourceClass())
+					// if there is a many-to-many relationship (thus no direct owner reference)
+					// PrimaryToSecondaryMapper needs to be added
+					//.with
+					.withPrimaryToSecondaryMapper(
+						(PrimaryToSecondaryMapper<Gitea>) p -> 
+						Optional.ofNullable(p.getSpec() != null && p.getSpec().getPostgres() != null && p.getSpec().getPostgres().getUnmanagedConfig() != null ? p.getSpec().getPostgres().getUnmanagedConfig().getExtraSecretName() : null).map(adm -> 
+						Set.of(new ResourceID(adm, p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
+					.withSecondaryToPrimaryMapper(
+						s ->
+							context
+								.getPrimaryCache()
+								.byIndex(
+									EXTRA_POSTGRES_SECRET_INDEX,
+									indexKey(
+										s.getMetadata().getName(), s.getMetadata().getNamespace()))
+								.stream()
+								.map(ResourceID::fromResource)
+								.collect(Collectors.toSet()))
+					.build(),
+				context);
 	LOG.debug("Informer source created");
-	return List.of(es);
+	return List.of(adminSecretEventSrc, postgresSecretEventSrc);
   }
 
   private String indexKey(String configMapName, String namespace) {
