@@ -72,7 +72,7 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		
 		Gitea gitea = GiteaDependentResource.getResource(context.getClient(), devEnvironment).get();
 		pipelineRun.getSpec().getParams()
-		.add(new ParamBuilder().withName("git_user").withNewValue(preferAdminAsGitUser ? gitea.getSpec().getAdminUser(): user).build());
+		.add(new ParamBuilder().withName("git_user").withNewValue(preferAdminAsGitUser ? gitea.getSpec().getAdminConfig().getAdminUser(): user).build());
 		pipelineRun.getSpec().getParams()
 			.add(new ParamBuilder().withName("git_user_email").withNewValue(getUserEmailOrDefault(primary,preferAdminAsGitUser,gitea)).build());
         pipelineRun.getSpec().getParams()
@@ -115,7 +115,7 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 		if (deprecatedUserSecretAvailable){
 			secretPrefix = user;
 		} else {
-			secretPrefix = gitea.getSpec().getAdminUser();
+			secretPrefix = gitea.getSpec().getAdminConfig().getAdminUser();
 		}
 		pipelineRun.getSpec().getWorkspaces().stream()
 			.filter(w -> "auth".equals(w.getName()))
@@ -142,10 +142,10 @@ public class InitDeployPipelineRunDependent extends KubernetesDependentResource<
 
 	private String getUserEmailOrDefault(Project primary, boolean preferAdminAsGitUser, Gitea gitea) {
 		if(preferAdminAsGitUser) {
-			if (gitea.getSpec().getAdminEmail() != null) {
-				return gitea.getSpec().getAdminEmail();
+			if (gitea.getSpec().getAdminConfig().getAdminEmail() != null) {
+				return gitea.getSpec().getAdminConfig().getAdminEmail();
 			} else {
-				return gitea.getSpec().getAdminUser()+ "@example.com";
+				return gitea.getSpec().getAdminConfig().getAdminUser()+ "@example.com";
 			}
 		} else {
 			if (primary.getSpec().getOwner() != null && primary.getSpec().getOwner().getUserEmail() != null) {

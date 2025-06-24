@@ -13,6 +13,7 @@ import org.openapi.quarkus.gitea_json.model.AccessToken;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.devjoy.gitea.k8s.model.AdminConfig;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.service.GiteaApiService;
@@ -71,7 +72,8 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 	}
 
 	public static String getName(Gitea primary) {
-		return getName(primary.getSpec() != null ? primary.getSpec().getAdminUser() : "devjoyadmin");
+		return getName(primary.getSpec() != null && primary.getSpec().getAdminConfig() != null
+			? primary.getSpec().getAdminConfig().getAdminUser() : "devjoyadmin");
 	}
 	
 	public static String getName(String admin) {
@@ -89,8 +91,8 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 	
 		Secret desired = context.getClient().resources(Secret.class)
 				.load(getClass().getClassLoader().getResourceAsStream("manifests/gitea/admin-secret.yaml")).item();
-		String adminUser = primary.getSpec() != null ? primary.getSpec().getAdminUser() : "devjoyadmin";
-		Optional<String> passwordFromSpec = Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminPassword);
+		String adminUser = primary.getSpec() != null && primary.getSpec().getAdminConfig() != null ? primary.getSpec().getAdminConfig().getAdminUser() : "devjoyadmin";
+		Optional<String> passwordFromSpec = Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminConfig).map(AdminConfig::getAdminPassword);
 		desired.getMetadata().setName(getName(primary));
 		desired.getMetadata().setNamespace(primary.getMetadata().getNamespace());
 		
@@ -103,8 +105,8 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 			.map(pw -> new String(Base64.getDecoder().decode(pw)));
 		passwordFromSecret.ifPresent(pw -> LOG.debug("Password available from secret"));	
 		LOG.info("Getting password from extra secret");
-		Optional<String> extraAdminSecretName = Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null);
-		String extraAdminSecretPasswordKey = primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretPasswordKey() : DATA_KEY_PASSWORD;
+		Optional<String> extraAdminSecretName = Optional.ofNullable(primary.getSpec() != null && primary.getSpec().getAdminConfig() != null ? primary.getSpec().getAdminConfig().getExtraAdminSecretName() : null);
+		String extraAdminSecretPasswordKey = primary.getSpec() != null && primary.getSpec().getAdminConfig() != null ? primary.getSpec().getAdminConfig().getExtraAdminSecretPasswordKey() : DATA_KEY_PASSWORD;
 		Optional<String> passwordFromExtraSecret =	extraAdminSecretName
 			.flatMap(extraSecretName -> Optional.ofNullable(context.getClient().secrets().inNamespace(primary.getMetadata().getNamespace()).withName(extraSecretName).get()))
 			.map(s -> s.getData().get(extraAdminSecretPasswordKey))
@@ -115,11 +117,11 @@ public class GiteaAdminSecretDependent extends CRUDKubernetesDependentResource<S
 		passwordFromExtraSecret.ifPresent(pw -> LOG.info("Password available from extra secret"));	
 		if (passwordFromExtraSecret.isEmpty() && passwordFromSpec.isEmpty() && passwordFromSecret.isEmpty()) {
 			LOG.info("No password set. Generating new one.");
-			String newPassword = passwordService.generateNewPassword(Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminPasswordLength).orElse(10));
+			String newPassword = passwordService.generateNewPassword(Optional.ofNullable(primary.getSpec()).map(GiteaSpec::getAdminConfig).map(AdminConfig::getAdminPasswordLength).orElse(10));
 			if(primary.getSpec() == null) {
 				primary.setSpec(new GiteaSpec());
 			}
-			primary.getSpec().setAdminPassword(newPassword);
+			primary.getSpec().getAdminConfig().setAdminPassword(newPassword);
 			passwordFromSpec = Optional.of(newPassword);
 		} 
 		else if(!passwordFromSpec.isEmpty() && !passwordFromSecret.isEmpty() && !passwordFromSecret.equals(passwordFromSpec)) {

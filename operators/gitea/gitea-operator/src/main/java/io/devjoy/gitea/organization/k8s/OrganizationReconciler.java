@@ -106,7 +106,7 @@ public class OrganizationReconciler implements Reconciler<GiteaOrganization> {
 			labels.put(GiteaLabels.LABEL_GITEA_NAMESPACE,
 					g.getMetadata().getNamespace());
 			labels.put(GiteaLabels.LABEL_GITEA_ADMIN,
-					g.getSpec().getAdminUser());
+					g.getSpec().getAdminConfig().getAdminUser());
 			state.patchResourceAndStatus();
 		} 
 	}

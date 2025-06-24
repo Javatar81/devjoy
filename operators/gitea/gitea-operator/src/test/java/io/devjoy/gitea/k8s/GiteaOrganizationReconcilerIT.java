@@ -188,8 +188,8 @@ public class GiteaOrganizationReconcilerIT {
                 .withNamespace(getTargetNamespace())
                 .build()); 
 		GiteaSpec spec = new GiteaSpec();
-		spec.setAdminUser("devjoyITAdmin");
-		spec.setAdminEmail("devjoyITAdmin@example.com");
+		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
+		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
 		spec.setSso(false);

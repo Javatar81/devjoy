@@ -72,8 +72,8 @@ public class GiteaReconcilerIT {
 						.withNamespace(getTargetNamespace())
 						.build()); 
 		GiteaSpec spec = new GiteaSpec();
-		spec.setAdminUser("devjoyITAdmin");
-		spec.setAdminEmail("devjoyITAdmin@example.com");
+		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
+		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
 		spec.setSso(false);
@@ -122,7 +122,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
-			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
+			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminConfig().getAdminPasswordLength()));
         });
 	}
 
@@ -163,7 +163,7 @@ public class GiteaReconcilerIT {
 				assertions.assertGiteaDeployment(gitea);
 				assertions.assertAdminSecret(gitea);
 				final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
-				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminPasswordLength()));
+				assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminConfig().getAdminPasswordLength()));
 			});
 		} finally {
 			client.resources(Service.class).inNamespace(getTargetNamespace()).withName("pgtest").delete();
@@ -196,8 +196,8 @@ public class GiteaReconcilerIT {
 	void createGiteaWithPassword() {
 		Gitea gitea = createDefault("mygiteaitwpw");
 		String password = "test1234";
-		gitea.getSpec().setAdminPassword(password);
-		gitea.getSpec().setAdminPasswordLength(password.length());
+		gitea.getSpec().getAdminConfig().setAdminPassword(password);
+		gitea.getSpec().getAdminConfig().setAdminPasswordLength(password.length());
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -208,7 +208,7 @@ public class GiteaReconcilerIT {
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
-			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(gitea.getSpec().getAdminPassword()));
+			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))), is(gitea.getSpec().getAdminConfig().getAdminPassword()));
         });
 	}
 
@@ -223,7 +223,7 @@ public class GiteaReconcilerIT {
 			client.resource(adminSecret).create();
 			client.resource(adminSecret).waitUntilReady(20, TimeUnit.SECONDS);
 			Gitea gitea = createDefault("mygiteaitwpw");
-			gitea.getSpec().setExtraAdminSecretName("admin-extra-pw-secret");
+			gitea.getSpec().getAdminConfig().setExtraAdminSecretName("admin-extra-pw-secret");
 			env.createStaticPVsIfRequired();
 			client.resource(gitea).create();
 			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -253,7 +253,7 @@ public class GiteaReconcilerIT {
 			Gitea gitea = createDefault("mygiteaitwpw");
 			client.resource(adminSecret).create();
 			client.resource(adminSecret).waitUntilReady(20, TimeUnit.SECONDS);
-			gitea.getSpec().setExtraAdminSecretName("admin-extra-pw-secret");
+			gitea.getSpec().getAdminConfig().setExtraAdminSecretName("admin-extra-pw-secret");
 			env.createStaticPVsIfRequired();
 			client.resource(gitea).create();
 			client.apps().deployments()
@@ -296,7 +296,7 @@ public class GiteaReconcilerIT {
                 .inNamespace(getTargetNamespace())
                 .withName(gitea.getMetadata().getName()).waitUntilCondition(c -> c != null && c.getStatus().getReadyReplicas() != null && c.getStatus().getReadyReplicas() == 1, 180, TimeUnit.SECONDS);
 		await().atMost(30, TimeUnit.SECONDS).then().until(() -> client.resources(Gitea.class).inNamespace(getTargetNamespace()).withName("pwchange").edit(n -> {
-			n.getSpec().setAdminPassword(changedPassword);
+			n.getSpec().getAdminConfig().setAdminPassword(changedPassword);
 			return n;
 			
 		}) != null)
@@ -309,7 +309,7 @@ public class GiteaReconcilerIT {
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client).get();
 			assertThat(adminSecret, is(IsNull.notNullValue()));
 			assertThat(GiteaAdminSecretDependent.getAdminPassword(adminSecret).get(), is(changedPassword));
-			assertThat(userService.createAccessToken(gitea, gitea.getSpec().getAdminUser(), changedPassword, "testpwchg", UserService.SCOPE_WRITE_REPO).isEmpty(), is(false));
+			assertThat(userService.createAccessToken(gitea, gitea.getSpec().getAdminConfig().getAdminUser(), changedPassword, "testpwchg", UserService.SCOPE_WRITE_REPO).isEmpty(), is(false));
         });
 	}
 
@@ -318,7 +318,7 @@ public class GiteaReconcilerIT {
 		Gitea gitea = createDefault("allfields");
 		GiteaSpec spec = gitea.getSpec();
 		spec.setSso(true);
-		spec.setAdminPassword("test12345"); // notsecret
+		spec.getAdminConfig().setAdminPassword("test12345"); // notsecret
 		spec.setAllowCreateOrganization(true);
 		spec.setCpuLimit("750m");
 		spec.setCpuRequest("250m");

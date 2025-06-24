@@ -3,13 +3,14 @@ kind: Gitea
 metadata:
   name: devjoy-
 spec:
+  adminConfig:
+    adminPasswordLength: 12
+    adminUser: devjoyadmin
+    adminEmail: devjoyadmin@example.com
   resourceRequirementsEnabled: false
   logLevel: WARN
   disableRegistration: false
-  adminPasswordLength: 12
   registerEmailConfirm: false
-  adminUser: devjoyadmin
   enableCaptcha: false
   allowCreateOrganization: false
-  adminEmail: devjoyadmin@example.com
   ssl: true

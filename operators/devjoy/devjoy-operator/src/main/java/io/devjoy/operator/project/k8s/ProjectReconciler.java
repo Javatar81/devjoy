@@ -100,7 +100,7 @@ public class ProjectReconciler implements Reconciler<Project>, Cleaner<Project> 
 					secretPrefix = user;
 					LOG.warn("You are running a Gitea operator version < 0.3.0. Please update.");
 				} else {
-					secretPrefix = Optional.ofNullable(GiteaDependentResource.getResource(context.getClient(), e).get()).map(g -> g.getSpec().getAdminUser()).orElse(null);
+					secretPrefix = Optional.ofNullable(GiteaDependentResource.getResource(context.getClient(), e).get()).map(g -> g.getSpec().getAdminConfig().getAdminUser()).orElse(null);
 				}
 
 			if (resourceForPatch.getSpec().getQuarkus() != null && resourceForPatch.getSpec().getQuarkus().isEnabled()) {

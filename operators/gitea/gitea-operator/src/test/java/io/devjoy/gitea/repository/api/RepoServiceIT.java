@@ -79,19 +79,19 @@ class RepoServiceIT {
 			GiteaRepository repo = new GiteaRepository();
 			repo.setMetadata(new ObjectMetaBuilder().withName("createRepoViaApi").build());
 			GiteaRepositorySpec spec = new GiteaRepositorySpec();
-			spec.setUser(gitea.getSpec().getAdminUser());
+			spec.setUser(gitea.getSpec().getAdminConfig().getAdminUser());
 			spec.setVisibility(Visibility.PUBLIC);
 			repo.setSpec(spec);
 			Repository repository = repoService.create(repo, token, baseUri);
 			assertNotNull(repository);
-			repoService.delete(gitea.getSpec().getAdminUser(), repo.getMetadata().getName(), auth, baseUri);
+			repoService.delete(gitea.getSpec().getAdminConfig().getAdminUser(), repo.getMetadata().getName(), auth, baseUri);
 			assertRepoDeleted(repoService, repo.getMetadata().getName(), auth, baseUri);
     	});
     }
 
 	private void assertRepoDeleted(RepositoryService repoService, String repoName, String auth, String baseUri) {
 		try {
-			repoService.getByUserAndName(gitea.getSpec().getAdminUser(), repoName, auth, baseUri);
+			repoService.getByUserAndName(gitea.getSpec().getAdminConfig().getAdminUser(), repoName, auth, baseUri);
 		} catch (WebApplicationException e) {
 			assertEquals(404, e.getResponse().getStatus());
 		}
@@ -161,9 +161,9 @@ class RepoServiceIT {
                 .withNamespace(getTargetNamespace())
                 .build()); 
 		GiteaSpec spec = new GiteaSpec();
-		spec.setAdminUser("devjoyITAdmin");
-		spec.setAdminEmail("devjoyITAdmin@example.com");
-		spec.setAdminPassword(adminPassword);
+		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
+		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
+		spec.getAdminConfig().setAdminPassword(adminPassword);
 		spec.setResourceRequirementsEnabled(false);
 		spec.setLogLevel(GiteaLogLevel.DEBUG);
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));

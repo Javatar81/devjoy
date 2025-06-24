@@ -120,9 +120,9 @@ class UserServiceIT {
                 .withNamespace(getTargetNamespace())
                 .build()); 
 		GiteaSpec spec = new GiteaSpec();
-		spec.setAdminUser("devjoyITAdmin");
-		spec.setAdminEmail("devjoyITAdmin@example.com");
-		spec.setAdminPassword(adminPassword);
+		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
+		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
+		spec.getAdminConfig().setAdminPassword(adminPassword);
 		spec.setResourceRequirementsEnabled(false);
 		spec.setLogLevel(GiteaLogLevel.DEBUG);
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));

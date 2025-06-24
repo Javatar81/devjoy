@@ -116,7 +116,8 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	public UpdateControl<Gitea> reconcile(Gitea resource, Context<Gitea> context) {
 		LOG.info("Reconciling gitea resource {} in namespace {}", 
 			resource.getMetadata().getName(), resource.getMetadata().getNamespace());
-		if(resource.getSpec() != null && "admin".equals(resource.getSpec().getAdminUser())) 
+		if(resource.getSpec() != null && resource.getSpec().getAdminConfig() != null
+			&& "admin".equals(resource.getSpec().getAdminConfig().getAdminUser())) 
 			throw new ServiceException("User 'admin' is reserved and cannot be used for spec.adminUser");
 		
 		var patchableGitea = resourceForPatch(resource);
@@ -152,12 +153,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	}
 
 	private void emptyPasswordStatus(Gitea resource) {
-		if (StringUtil.isNullOrEmpty(resource.getSpec().getAdminPassword())) {
+		if (StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
 			LOG.info("Password is empty. GiteaAdminSecretDependentResource will generate one.");
 			resource.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(resource.getStatus().getObservedGeneration())
 					.withType(GiteaConditionType.GITEA_ADMIN_PW_GENERATED.toString())
-					.withMessage(String.format("Password for admin %s has been generated", resource.getSpec().getAdminUser()))
+					.withMessage(String.format("Password for admin %s has been generated", resource.getSpec().getAdminConfig().getAdminUser()))
 					.withLastTransitionTime(LocalDateTime.now().toString())
 					.withReason("No admin password given in Gitea resource.")
 					.withStatus("True")
@@ -171,12 +172,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		Optional<Secret> adminSecret = context.getSecondaryResource(Secret.class, "giteaAdminSecret");
 		Optional<String> adminPasswordInSecret = adminSecret.flatMap(GiteaAdminSecretDependent::getAdminPassword);
 		Optional<String> adminPasswordInSpec = Optional.ofNullable(resource.getSpec())
-				.map(s -> s.getAdminPassword())
+				.map(s -> s.getAdminConfig().getAdminPassword())
 				.filter(pw -> !StringUtil.isNullOrEmpty(pw));
 		
 		if(adminPasswordInSecret.equals(adminPasswordInSpec)) {
 			LOG.info("Admin password matches the one stored in secret, hence removing it.");
-			resource.getSpec().setAdminPassword(null);
+			resource.getSpec().getAdminConfig().setAdminPassword(null);
 			state.patchResource();
 			resource.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(resource.getStatus().getObservedGeneration())
@@ -226,11 +227,11 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		EventSourceContext<Gitea> context) {
     
 	context.getPrimaryCache()
-		.addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
+		.addIndexer(EXTRA_ADMIN_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getAdminConfig().getExtraAdminSecretName() : null)
 			.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
 			.orElse(Collections.emptyList())));
 	context.getPrimaryCache()
-		.addIndexer(EXTRA_POSTGRES_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getExtraAdminSecretName() : null)
+		.addIndexer(EXTRA_POSTGRES_SECRET_INDEX, (primary -> Optional.ofNullable(primary.getSpec() != null ? primary.getSpec().getAdminConfig().getExtraAdminSecretName() : null)
 			.map(adm -> List.of(indexKey(adm, primary.getMetadata().getNamespace())))
 			.orElse(Collections.emptyList())));			
     var adminSecretEventSrc =
@@ -242,7 +243,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 				//.with
 				.withPrimaryToSecondaryMapper(
 		            (PrimaryToSecondaryMapper<Gitea>) p -> 
-		            Optional.ofNullable(p.getSpec() != null ? p.getSpec().getExtraAdminSecretName() : null).map(adm -> 
+		            Optional.ofNullable(p.getSpec() != null ? p.getSpec().getAdminConfig().getExtraAdminSecretName() : null).map(adm -> 
 		            Set.of(new ResourceID(adm, p.getMetadata().getNamespace()))).orElse(Collections.emptySet()))
                 .withSecondaryToPrimaryMapper(
                     s ->
