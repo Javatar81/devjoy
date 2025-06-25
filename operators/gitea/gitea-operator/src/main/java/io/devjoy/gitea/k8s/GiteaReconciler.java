@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.openapi.quarkus.gitea_json.model.ServerVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,7 @@ import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.k8s.model.GiteaStatus;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganization;
+import io.devjoy.gitea.service.MiscService;
 import io.devjoy.gitea.service.ServiceException;
 import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
@@ -107,9 +109,12 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	private static final String EXTRA_POSTGRES_SECRET_INDEX = "ExtraPostgresSecretEventSourceIndex";
 	private final GiteaStatusUpdater updater;
 	private final OpenShiftClient client;
-	public GiteaReconciler(GiteaStatusUpdater updater, OpenShiftClient client) {
+	private final MiscService miscService;
+
+	public GiteaReconciler(GiteaStatusUpdater updater, OpenShiftClient client, MiscService miscService) {
 		this.updater = updater;
 		this.client = client;
+		this.miscService = miscService;
 	}
 
 	@Override
@@ -127,9 +132,10 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 			patchableGitea.setSpec(new GiteaSpec());
 			state.patchResource();
 		}
-		emptyPasswordStatus(patchableGitea);
+		emptyPasswordStatus(patchableGitea, context);
 		removeAdmPwFromSpecIfInSecret(patchableGitea, context, state);
 		updateHost(patchableGitea, state);
+		updateVersion(patchableGitea, state);
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
@@ -137,6 +143,19 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 			LOG.info("No update necessary");
 		}
 		return updateCtrl;
+	}
+
+	private void updateVersion(Gitea resource, UpdateControlState<Gitea> state) {
+		if(StringUtil.isNullOrEmpty(resource.getStatus().getVersion())) {
+			Optional.ofNullable(GiteaAdminSecretDependent.getResource(resource, client).get())
+				.flatMap(GiteaAdminSecretDependent::getAdminToken)
+				.flatMap(t -> miscService.getVersion(resource, t))
+				.map(ServerVersion::getVersion)
+				.ifPresent(v -> {
+					resource.getStatus().setVersion(v);
+					state.patchStatus();
+				});
+		}
 	}
 
 	private void updateHost(Gitea resource, UpdateControlState<Gitea> state) {
@@ -152,8 +171,11 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		;
 	}
 
-	private void emptyPasswordStatus(Gitea resource) {
-		if (StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
+	private void emptyPasswordStatus(Gitea resource, Context<Gitea> ctx) {
+		boolean adminPasswordSet = ctx.getSecondaryResource(Secret.class, "giteaAdminSecret")
+			.flatMap(GiteaAdminSecretDependent::getAdminPassword)
+			.isPresent();
+		if (adminPasswordSet && StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
 			LOG.info("Password is empty. GiteaAdminSecretDependentResource will generate one.");
 			resource.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(resource.getStatus().getObservedGeneration())
