@@ -20,6 +20,7 @@ import io.devjoy.operator.environment.k8s.DevEnvironmentSpec;
 import io.devjoy.operator.environment.k8s.GiteaConfigSpec;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 
@@ -54,6 +55,8 @@ public class ProjectReconcilerIT {
         QuarkusSpec quarkusSpec = new QuarkusSpec();
         quarkusSpec.setEnabled(true);
         quarkusSpec.setExtensions(List.of("quarkus-rest"));
+        // Needed to access the service via route, otherwise we get 401
+        quarkusSpec.setExtensions(List.of("quarkus-smallrye-health"));
         spec.setQuarkus(quarkusSpec);
         project.setSpec(spec);
         client.resource(project).create();
@@ -62,12 +65,10 @@ public class ProjectReconcilerIT {
             assertNotNull(projectResource);
             assertThat(projectResource.getStatus(), is(IsNull.notNullValue()));
             assertThat(projectResource.getStatus().getWorkspace().getFactoryUrl(), is(IsNull.notNullValue()));
-            Ingress ingress = client.network().v1().ingresses().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
-            assertThat(ingress, is(IsNull.notNullValue()));
-            assertThat(ingress.getSpec(), is(IsNull.notNullValue()));
-            assertThat(ingress.getSpec().getRules().isEmpty(), is(false));
-            assertThat(ingress.getSpec().getRules().isEmpty(), is(false));
-            URI uri = new URI("http://" + ingress.getSpec().getRules().get(0).getHost());
+            Route route = client.routes().inNamespace(project.getMetadata().getNamespace()).withName(project.getMetadata().getName()).get();
+            assertThat(route.getSpec(), is(IsNull.notNullValue()));
+            assertThat(route.getSpec().getHost(), is(IsNull.notNullValue()));
+            URI uri = new URI("http://" + route.getSpec().getHost() + "/q/health/live");
             var con = (HttpURLConnection) uri.toURL().openConnection();
             con.connect();
             assertThat(con.getResponseCode(), is(200));

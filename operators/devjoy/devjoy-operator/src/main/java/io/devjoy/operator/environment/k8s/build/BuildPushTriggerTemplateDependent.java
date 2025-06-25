@@ -64,9 +64,9 @@ public class BuildPushTriggerTemplateDependent extends CRUDKubernetesDependentRe
 			);
 			p.getSpec().getPipelineRef().setName(p.getSpec().getPipelineRef().getName() + primary.getMetadata().getName());
 			if (primary.getSpec().getMavenSettingsPvc() != null) {
-				ParamValue mavenRepoPath = new ParamValueBuilder().addToArrayVal("-Dmaven.repo.local=$(workspaces.maven-settings.path)").build();
+				ParamValue mavenRepoPath = new ParamValueBuilder().withStringVal("/workspace/maven_settings/repo").build();
 				p.getSpec().getParams()
-					.add(new ParamBuilder().withName("additional_maven_params").withValue(mavenRepoPath).build());
+					.add(new ParamBuilder().withName("maven_repo").withValue(mavenRepoPath).build());
 				p.getSpec().getWorkspaces().stream()
 					.filter(w -> "mvn-settings".equals(w.getName()))
 					.forEach(w -> 
