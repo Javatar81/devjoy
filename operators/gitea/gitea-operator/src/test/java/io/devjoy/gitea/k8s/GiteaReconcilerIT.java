@@ -7,6 +7,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
@@ -33,19 +34,20 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.openshift.client.OpenShiftAPIGroups;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-public class GiteaReconcilerIT {
+class GiteaReconcilerIT {
 
 	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
+	String fallback = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.fallback", String.class);
+	String pgImageK8s = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.postgres.image.k8s", String.class);
 	TestEnvironment env = new TestEnvironment(client);
-	GiteaApiService apiService = new GiteaApiService(client, accessMode);
-	
+	GiteaApiService apiService = new GiteaApiService(client, accessMode, fallback);
 	UserService userService = new UserService(apiService);
 	
 	GiteaAssertions assertions = new GiteaAssertions(client);
@@ -75,7 +77,7 @@ public class GiteaReconcilerIT {
 		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
 		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
-		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
+		spec.setIngressEnabled(true);
 		spec.setSso(false);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
 		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
@@ -139,23 +141,8 @@ public class GiteaReconcilerIT {
 			gitea.getSpec().getPostgres().setManaged(false);
 			gitea.getSpec().getPostgres().setUnmanagedConfig(spec);
 			env.createStaticPVsIfRequired();
-			// TODO Create postgres manually
-			Deployment pgDeployment = client.apps().deployments()
-					.load(getClass().getClassLoader().getResourceAsStream("postgres/deployment.yaml"))
-					.item();
-			pgDeployment.getMetadata().setNamespace(getTargetNamespace());
-			client.resource(pgDeployment).create();
-			Service pgService = client.services()
-					.load(getClass().getClassLoader().getResourceAsStream("postgres/service.yaml"))
-					.item();
-			pgService.getMetadata().setNamespace(getTargetNamespace());
-			client.resource(pgService).create();
-			Secret extraSecret = client.secrets()
-					.load(getClass().getClassLoader().getResourceAsStream("postgres/secret.yaml"))
-					.item();
-					extraSecret.getMetadata().setNamespace(getTargetNamespace());
-			client.resource(extraSecret).create();
-			client.resource(gitea).create();
+
+			deployExtraPostgres(gitea, client);
 			await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
 				// check that we create the deployment
 				// Postgres PVC
@@ -171,6 +158,28 @@ public class GiteaReconcilerIT {
 			client.resources(Secret.class).inNamespace(getTargetNamespace()).withName("postgres-secret").delete();
 		}
         
+	}
+
+	private void deployExtraPostgres(Gitea gitea, KubernetesClient client) {
+		Deployment pgDeployment = client.apps().deployments()
+				.load(getClass().getClassLoader().getResourceAsStream("postgres/deployment.yaml"))
+				.item();
+		pgDeployment.getMetadata().setNamespace(getTargetNamespace());
+		if(!OpenShiftActivationCondition.serverSupportsApi(client)) {
+			pgDeployment.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(pgImageK8s);
+		}
+		client.resource(pgDeployment).create();
+		Service pgService = client.services()
+				.load(getClass().getClassLoader().getResourceAsStream("postgres/service.yaml"))
+				.item();
+		pgService.getMetadata().setNamespace(getTargetNamespace());
+		client.resource(pgService).create();
+		Secret extraSecret = client.secrets()
+				.load(getClass().getClassLoader().getResourceAsStream("postgres/secret.yaml"))
+				.item();
+				extraSecret.getMetadata().setNamespace(getTargetNamespace());
+		client.resource(extraSecret).create();
+		client.resource(gitea).create();
 	}
 
 	@Test
@@ -333,8 +342,10 @@ public class GiteaReconcilerIT {
 		spec.setResourceRequirementsEnabled(true);
 		spec.setSsl(true);
 		spec.setVolumeSize("2Gi");
-		String baseDomain = client.config().ingresses().withName("cluster").get().getSpec().getDomain();
-		spec.setRoute(String.format("%s-%s.%s", "gitea", getTargetNamespace(), baseDomain));
+		if (OpenShiftActivationCondition.serverSupportsApi(client)) {
+			String baseDomain = client.config().ingresses().withName("cluster").get().getSpec().getDomain();
+			spec.setRoute(String.format("%s-%s.%s", "gitea", getTargetNamespace(), baseDomain));
+		}
 		spec.getMailer().setEnabled(true);
 		spec.getMailer().setFrom("gitea-devjoy@example.com");
 		spec.getMailer().setHeloHostname("gitea");

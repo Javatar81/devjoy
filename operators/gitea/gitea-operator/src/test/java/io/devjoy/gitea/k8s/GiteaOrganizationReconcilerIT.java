@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigProviderResolver;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -44,7 +45,8 @@ public class GiteaOrganizationReconcilerIT {
 
 	static OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	static TestEnvironment env = new TestEnvironment(client, ConfigProvider.getConfig().getOptionalValue("test.quarkus.kubernetes-client.devservices.flavor", String.class));
-	GiteaApiService apiService = new GiteaApiService(client, ApiAccessMode.EXTERNAL);
+	String fallback = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.fallback", String.class);
+	GiteaApiService apiService = new GiteaApiService(client, ApiAccessMode.EXTERNAL, fallback);
 	UserService userService = new UserService(apiService);
 	OrganizationService orgService = new OrganizationService(apiService);
 	
@@ -191,7 +193,7 @@ public class GiteaOrganizationReconcilerIT {
 		spec.getAdminConfig().setAdminUser("devjoyITAdmin");
 		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
-		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
+		spec.setIngressEnabled(true);
 		spec.setSso(false);
 		spec.setLogLevel(GiteaLogLevel.DEBUG);
 		spec.setAllowCreateOrganization(true);

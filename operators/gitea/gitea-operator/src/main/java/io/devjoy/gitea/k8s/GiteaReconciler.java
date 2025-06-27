@@ -4,10 +4,12 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.keycloak.v1alpha1.Keycloak;
 import org.openapi.quarkus.gitea_json.model.ServerVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,11 +18,12 @@ import io.devjoy.gitea.k8s.dependent.gitea.ExtraAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaConfigSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaDeploymentDependent;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaIngressDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaOAuthClientReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaPvcDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteDependent;
-import io.devjoy.gitea.k8s.dependent.gitea.GiteaRouteReconcileCondition;
+import io.devjoy.gitea.k8s.dependent.gitea.GiteaIngressReconcileCondition;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceAccountDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaServiceDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaTrustMapDependent;
@@ -42,6 +45,8 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConditionType;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.k8s.model.GiteaStatus;
+import io.devjoy.gitea.k8s.model.keycloak.KeycloakStatus;
+import io.devjoy.gitea.k8s.model.postgres.PostgresStatus;
 import io.devjoy.gitea.organization.k8s.model.GiteaOrganization;
 import io.devjoy.gitea.service.MiscService;
 import io.devjoy.gitea.service.ServiceException;
@@ -49,7 +54,13 @@ import io.devjoy.gitea.util.UpdateControlState;
 import io.fabric8.kubernetes.api.model.ConditionBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
+import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteSpec;
@@ -81,20 +92,21 @@ import jakarta.ws.rs.WebApplicationException;
 	@Dependent(name = "giteaTrustMap", type = GiteaTrustMapDependent.class),
 	@Dependent(name = "giteaDeployment", type = GiteaDeploymentDependent.class),
 	@Dependent(name = "giteaAdminSecret", type = GiteaAdminSecretDependent.class),
-	@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class),
 	@Dependent(name = "giteaServiceAccount", type = GiteaServiceAccountDependent.class),
 	@Dependent(name = "giteaService", type = GiteaServiceDependent.class), 
-	@Dependent(name = "giteaRoute", type = GiteaRouteDependent.class, reconcilePrecondition = GiteaRouteReconcileCondition.class),
+	@Dependent(name = "giteaRoute", type = GiteaRouteDependent.class, reconcilePrecondition = GiteaIngressReconcileCondition.class, activationCondition = OpenShiftActivationCondition.class),
+	@Dependent(name = "giteaIngress", type = GiteaIngressDependent.class, reconcilePrecondition = GiteaIngressReconcileCondition.class, activationCondition = KubernetesActivationCondition.class),
 	@Dependent(name = "giteaPvc", type = GiteaPvcDependent.class), 
-	@Dependent(name = "giteaOAuthClient", type = GiteaOAuthClientDependent.class, reconcilePrecondition = GiteaOAuthClientReconcileCondition.class),
+	@Dependent(name = "giteaOAuthClient", type = GiteaOAuthClientDependent.class, reconcilePrecondition = GiteaOAuthClientReconcileCondition.class, activationCondition = OpenShiftActivationCondition.class),
 	@Dependent(name = "postgresService", type = PostgresServiceDependent.class, reconcilePrecondition = PostgresReconcileCondition.class),
 	@Dependent(name = "postgresSecret", type = PostgresSecretDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
 	@Dependent(name = "postgresPvc", type = PostgresPvcDependent.class, reconcilePrecondition = PostgresReconcileCondition.class),
 	@Dependent(name = "postgresDeployment", type = PostgresDeploymentDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
 	@Dependent(name = "postgresConfig", type = PostgresConfigMapDependent.class, reconcilePrecondition = PostgresReconcileCondition.class), 
-	@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
-	@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
+	//@Dependent(name = "keycloakOG", type = KeycloakOperatorGroupDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
+	//@Dependent(name = "keycloakSub", type = KeycloakSubscriptionDependent.class, reconcilePrecondition = KeycloakOperatorReconcileCondition.class),
 	@Dependent(name = "keycloak", type = KeycloakDependent.class, activationCondition = KeycloakReconcileCondition.class), 
+	@Dependent(name = "keycloakClient", type = KeycloakClientDependent.class, activationCondition = KeycloakReconcileCondition.class),
 	@Dependent(name = "keycloakRealm", type = KeycloakRealmDependent.class, activationCondition = KeycloakReconcileCondition.class)})
 @RBACRule(apiGroups = "route.openshift.io", resources = {"routes/custom-host"}, verbs = {"create","patch"})
 @CSVMetadata(name = GiteaReconciler.CSV_METADATA_NAME, version = GiteaReconciler.CSV_METADATA_VERSION, displayName = "Gitea Operator", description = "An operator to manage Gitea servers and repositories", provider = @Provider(name = "devjoy.io"), keywords = "Git,Repository,Gitea", annotations = @Annotations(repository = "https://github.com/Javatar81/devjoy", containerImage = GiteaReconciler.CSV_CONTAINER_IMAGE, others= {}))
@@ -126,6 +138,7 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 			throw new ServiceException("User 'admin' is reserved and cannot be used for spec.adminUser");
 		
 		var patchableGitea = resourceForPatch(resource);
+
 		UpdateControlState<Gitea> state = new UpdateControlState<>(patchableGitea);
 		updater.init(patchableGitea);
 		if (resource.getSpec() == null) {
@@ -134,8 +147,9 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		}
 		emptyPasswordStatus(patchableGitea, context);
 		removeAdmPwFromSpecIfInSecret(patchableGitea, context, state);
-		updateHost(patchableGitea, state);
-		updateVersion(patchableGitea, state);
+		updateGiteaStatus(patchableGitea, context, state);
+		updateKeycloakStatus(patchableGitea, state);
+		updatePostgresStatus(patchableGitea, context, state);
 		UpdateControl<Gitea> updateCtrl = state.getState();
 		if(!updateCtrl.isNoUpdate()) {
 			LOG.info("Need to update ");
@@ -145,9 +159,70 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		return updateCtrl;
 	}
 
-	private void updateVersion(Gitea resource, UpdateControlState<Gitea> state) {
+	private void updateGiteaStatus(Gitea resource, Context<Gitea> ctx, UpdateControlState<Gitea> state) {
+		updateHost(resource, ctx, state);
+		updateVersion(resource, ctx, state);
+		ctx.getSecondaryResource(Deployment.class, "giteaDeployment")
+			.map(Deployment::getStatus)
+			.filter(s -> !Objects.equals(s.getReadyReplicas(), resource.getStatus().getDeploymentReadyReplicas()))
+			.ifPresent(s -> {
+				resource.getStatus().setDeploymentReadyReplicas(s.getReadyReplicas());
+				state.patchStatus();
+			});
+		ctx.getSecondaryResource(PersistentVolumeClaim.class, "giteaPvc")
+			.map(PersistentVolumeClaim::getStatus)
+			.filter(s -> !Objects.equals(s.getPhase(), resource.getStatus().getPvcPhase()))
+			.ifPresent(s -> {
+				resource.getStatus().setPvcPhase(s.getPhase());
+				state.patchStatus();
+			});
+	}
+
+	private void updatePostgresStatus(Gitea resource, Context<Gitea> ctx, UpdateControlState<Gitea> state) {
+		if (resource.getSpec() == null || resource.getSpec().getPostgres() == null ||resource.getSpec().getPostgres().isManaged()) {
+			if (resource.getStatus().getPostgres() == null) {
+				resource.getStatus().setPostgres(new PostgresStatus());
+			}
+			ctx.getSecondaryResource(Deployment.class, "postgresDeployment")
+				.map(Deployment::getStatus)
+				.filter(s -> !Objects.equals(s.getReadyReplicas(), resource.getStatus().getPostgres().getDeploymentReadyReplicas()))
+				.ifPresent(s -> {
+					resource.getStatus().getPostgres().setDeploymentReadyReplicas(s.getReadyReplicas());
+					state.patchStatus();
+				});
+			ctx.getSecondaryResource(PersistentVolumeClaim.class, "postgresPvc")
+				.map(PersistentVolumeClaim::getStatus)
+				.filter(s -> !Objects.equals(s.getPhase(), resource.getStatus().getPostgres().getPvcPhase()))
+				.ifPresent(s -> {
+					resource.getStatus().getPostgres().setPvcPhase(s.getPhase());
+					state.patchStatus();
+				});
+		}
+	}
+
+	private void updateKeycloakStatus(Gitea resource, UpdateControlState<Gitea> state) {
+		if(resource.getSpec() != null && resource.getSpec().isSso()) {
+			if (resource.getStatus().getKeycloak() == null) {
+				resource.getStatus().setKeycloak(new KeycloakStatus());
+			}
+			List<String> versions = Optional.ofNullable(client.apiextensions().v1().customResourceDefinitions()
+				.withName(CustomResource.getCRDName(Keycloak.class))
+				.get())
+				.map(CustomResourceDefinition::getSpec)
+				.map(CustomResourceDefinitionSpec::getVersions)
+				.orElse(Collections.emptyList())
+				.stream()
+					.map(CustomResourceDefinitionVersion::getName)
+					.toList();
+			resource.getStatus().getKeycloak().setAvailableApis(versions);
+			resource.getStatus().getKeycloak().setExpectedApi("v1alpha1");
+			state.patchStatus();
+		}
+	}
+
+	private void updateVersion(Gitea resource, Context<Gitea> ctx, UpdateControlState<Gitea> state) {
 		if(StringUtil.isNullOrEmpty(resource.getStatus().getVersion())) {
-			Optional.ofNullable(GiteaAdminSecretDependent.getResource(resource, client).get())
+			ctx.getSecondaryResource(Secret.class, "giteaAdminSecret")
 				.flatMap(GiteaAdminSecretDependent::getAdminToken)
 				.flatMap(t -> miscService.getVersion(resource, t))
 				.map(ServerVersion::getVersion)
@@ -158,8 +233,9 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 		}
 	}
 
-	private void updateHost(Gitea resource, UpdateControlState<Gitea> state) {
-		Optional.ofNullable(GiteaRouteDependent.getResource(resource, client).get())
+	private void updateHost(Gitea resource, Context<Gitea> ctx, UpdateControlState<Gitea> state) {
+		if (OpenShiftActivationCondition.serverSupportsApi(client)) {
+			ctx.getSecondaryResource(Route.class, "giteaRoute")
 			.map(Route::getSpec)
 			.map(RouteSpec::getHost)
 			.ifPresent(h -> {
@@ -168,14 +244,15 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 					state.patchStatus();
 				}
 			});
-		;
+		}
+		
 	}
 
 	private void emptyPasswordStatus(Gitea resource, Context<Gitea> ctx) {
 		boolean adminPasswordSet = ctx.getSecondaryResource(Secret.class, "giteaAdminSecret")
 			.flatMap(GiteaAdminSecretDependent::getAdminPassword)
 			.isPresent();
-		if (adminPasswordSet && StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
+		if (!adminPasswordSet && StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
 			LOG.info("Password is empty. GiteaAdminSecretDependentResource will generate one.");
 			resource.getStatus().getConditions().add(new ConditionBuilder()
 					.withObservedGeneration(resource.getStatus().getObservedGeneration())
@@ -197,7 +274,8 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 				.map(s -> s.getAdminConfig().getAdminPassword())
 				.filter(pw -> !StringUtil.isNullOrEmpty(pw));
 		
-		if(adminPasswordInSecret.equals(adminPasswordInSpec)) {
+		if(adminPasswordInSecret.equals(adminPasswordInSpec) 
+			&& StringUtil.isNullOrEmpty(resource.getSpec().getAdminConfig().getAdminPassword())) {
 			LOG.info("Admin password matches the one stored in secret, hence removing it.");
 			resource.getSpec().getAdminConfig().setAdminPassword(null);
 			state.patchResource();

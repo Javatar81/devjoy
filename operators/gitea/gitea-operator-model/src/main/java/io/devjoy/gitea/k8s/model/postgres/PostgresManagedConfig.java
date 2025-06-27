@@ -18,8 +18,7 @@ public class PostgresManagedConfig {
 	@JsonPropertyDescription("The storage class used to store the Postgres data")
 	private String storageClass;
 	@JsonPropertyDescription("The image to be used for the Postgres pod")
-	@JsonProperty(defaultValue = "registry.redhat.io/rhel9/postgresql-16")
-	private String image = "registry.redhat.io/rhel9/postgresql-16";
+	private String image;
 	@JsonPropertyDescription("The image tag to be used for the Postgres pod")
 	@JsonProperty(defaultValue = "latest")
 	private String imageTag = "latest";

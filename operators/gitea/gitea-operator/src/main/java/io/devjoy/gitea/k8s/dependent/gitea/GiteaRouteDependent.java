@@ -40,7 +40,7 @@ public class GiteaRouteDependent extends CRUDKubernetesDependentResource<Route, 
 			route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect")
 					.withTermination("edge").build());
 		}
-		route.getSpec().setTo(new RouteTargetReferenceBuilder().withName(getName(primary)).build());
+		route.getSpec().setTo(new RouteTargetReferenceBuilder().withName(GiteaServiceDependent.getName(primary)).build());
 		return route;
 	}
 	
