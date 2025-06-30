@@ -60,6 +60,9 @@ import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionVersion;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressRule;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressSpec;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.openshift.api.model.Route;
@@ -201,7 +204,8 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	}
 
 	private void updateKeycloakStatus(Gitea resource, UpdateControlState<Gitea> state) {
-		if(resource.getSpec() != null && resource.getSpec().isSso()) {
+		if(resource.getSpec() != null && resource.getSpec().getKeycloak() != null 
+			&& resource.getSpec().getKeycloak().isManaged()) {
 			if (resource.getStatus().getKeycloak() == null) {
 				resource.getStatus().setKeycloak(new KeycloakStatus());
 			}
@@ -236,14 +240,28 @@ public class GiteaReconciler implements Reconciler<Gitea>, SharedCSVMetadata/* ,
 	private void updateHost(Gitea resource, Context<Gitea> ctx, UpdateControlState<Gitea> state) {
 		if (OpenShiftActivationCondition.serverSupportsApi(client)) {
 			ctx.getSecondaryResource(Route.class, "giteaRoute")
-			.map(Route::getSpec)
-			.map(RouteSpec::getHost)
-			.ifPresent(h -> {
-				if (!h.equals(resource.getStatus().getHost())) {
-					resource.getStatus().setHost(h);
-					state.patchStatus();
-				}
-			});
+				.map(Route::getSpec)
+				.map(RouteSpec::getHost)
+				.ifPresent(h -> {
+					if (!h.equals(resource.getStatus().getHost())) {
+						resource.getStatus().setHost(h);
+						state.patchStatus();
+					}
+				});
+		} else {
+			ctx.getSecondaryResource(Ingress.class, "giteaIngress")
+				.map(Ingress::getSpec)
+				.map(IngressSpec::getRules)
+				.ifPresent(s -> {
+					s.stream()
+						.map(IngressRule::getHost)
+						.filter(h -> !StringUtil.isNullOrEmpty(h))
+						.findFirst()
+						.ifPresent(h -> {
+							resource.getStatus().setHost(h);
+							state.patchStatus();
+						});
+				});
 		}
 		
 	}

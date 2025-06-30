@@ -194,7 +194,6 @@ public class GiteaOrganizationReconcilerIT {
 		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
 		spec.setIngressEnabled(true);
-		spec.setSso(false);
 		spec.setLogLevel(GiteaLogLevel.DEBUG);
 		spec.setAllowCreateOrganization(true);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();

@@ -11,6 +11,7 @@ public class GiteaOAuthClientReconcileCondition implements Condition<Route, Gite
     
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-        return primary.getSpec() != null && primary.getSpec().isSso();
+        return primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+            && primary.getSpec().getKeycloak().isManaged();
     }
 }

@@ -102,7 +102,6 @@ class GiteaRepositoryReconcilerNoEnvIT {
 		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
 		spec.setIngressEnabled(client.supportsOpenShiftAPIGroup(OpenShiftAPIGroups.ROUTE));
-		spec.setSso(false);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
 		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());

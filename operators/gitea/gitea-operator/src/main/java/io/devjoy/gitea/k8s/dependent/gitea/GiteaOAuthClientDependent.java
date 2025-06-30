@@ -69,8 +69,8 @@ public class GiteaOAuthClientDependent extends KubernetesDependentResource<OAuth
 		String callbackPath = OAUTH2_CALLBACK;
 		apiService.getRouterBaseUri(primary).ifPresent(uri -> redirectURIs.add(uri + callbackPath));
 		redirectURIs.add(apiService.getLocalBaseUri(primary) + callbackPath);
-		if (primary.getSpec() != null && primary.getSpec().isSso()) {
-			
+		if (primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+			&& primary.getSpec().getKeycloak().isManaged()) {
 			Optional<String> keycloakUrl = context.getSecondaryResource(Keycloak.class)
 					.map(Keycloak::getStatus)
 					.map(KeycloakStatus::getExternalURL);

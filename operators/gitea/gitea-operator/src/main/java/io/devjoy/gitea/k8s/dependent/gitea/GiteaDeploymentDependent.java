@@ -56,7 +56,8 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 			setImage(primary, c);
 			addAdminEnvVar(c, "ADMIN_USERNAME", GiteaAdminSecretDependent.DATA_KEY_USERNAME, primary);
 			addAdminEnvVar(c, "ADMIN_PASSWORD", GiteaAdminSecretDependent.DATA_KEY_PASSWORD, primary);
-			if (primary.getSpec() != null && primary.getSpec().isSso()) {
+			if (primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+				&& primary.getSpec().getKeycloak().isManaged()) {
 				context.getSecondaryResource(KeycloakClient.class)
 					.map(cl -> cl.getStatus())
 					.map(s -> s.getSecondaryResources())

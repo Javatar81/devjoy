@@ -23,6 +23,7 @@ import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
+import io.devjoy.gitea.k8s.model.keycloak.KeycloakSpec;
 import io.devjoy.gitea.k8s.model.postgres.PostgresUnmanagedConfig;
 import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.service.UserService;
@@ -40,7 +41,7 @@ import io.fabric8.openshift.client.OpenShiftClient;
 import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
-class GiteaReconcilerIT {
+public class GiteaReconcilerIT {
 
 	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
@@ -78,7 +79,6 @@ class GiteaReconcilerIT {
 		spec.getAdminConfig().setAdminEmail("devjoyITAdmin@example.com");
 		spec.setResourceRequirementsEnabled(false);
 		spec.setIngressEnabled(true);
-		spec.setSso(false);
 		Quantity volumeSize = new QuantityBuilder().withAmount("1").withFormat("Gi").build();
 		spec.getPostgres().getManagedConfig().setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
 		spec.setVolumeSize(volumeSize.getAmount() + volumeSize.getFormat());
@@ -185,7 +185,10 @@ class GiteaReconcilerIT {
 	@Test
 	void createGiteaWithSso() {
 		Gitea gitea = createDefault("mygiteait");
-		gitea.getSpec().setSso(true);
+		KeycloakSpec keycloak = new KeycloakSpec();
+		keycloak.setEnabled(true);
+		keycloak.setManaged(true);
+		gitea.getSpec().setKeycloak(keycloak);
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
@@ -326,7 +329,10 @@ class GiteaReconcilerIT {
 	void createGiteaWitAllFields() {
 		Gitea gitea = createDefault("allfields");
 		GiteaSpec spec = gitea.getSpec();
-		spec.setSso(true);
+		KeycloakSpec keycloak = new KeycloakSpec();
+		keycloak.setEnabled(true);
+		keycloak.setManaged(true);
+		spec.setKeycloak(keycloak);
 		spec.getAdminConfig().setAdminPassword("test12345"); // notsecret
 		spec.setAllowCreateOrganization(true);
 		spec.setCpuLimit("750m");

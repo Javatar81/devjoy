@@ -9,22 +9,26 @@ import io.javaoperatorsdk.operator.api.reconciler.Context;
 import io.javaoperatorsdk.operator.api.reconciler.dependent.DependentResource;
 import io.javaoperatorsdk.operator.processing.dependent.workflow.Condition;
 
-
 public class KeycloakReconcileCondition implements Condition<Route, Gitea> {
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakReconcileCondition.class);
-    public static String KEYCLOAK_API_VERSION = "v1";
+    public static final String KEYCLOAK_API_VERSION = "v1";
 
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-        boolean met = primary.getSpec() != null 
-            && primary.getSpec().isSso() 
-            && context.getClient().apiextensions().getApiGroup("keycloak.org") != null 
-            && KEYCLOAK_API_VERSION.equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
+        boolean met = primary.getSpec() != null
+                && primary.getSpec().getKeycloak() != null
+                && primary.getSpec().getKeycloak().isManaged()
+                && context.getClient().apiextensions().getApiGroup("keycloak.org") != null
+                && KEYCLOAK_API_VERSION
+                        .equals(context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion());
         if (!met) {
             boolean apiGroupExists = context.getClient().apiextensions().getApiGroup("keycloak.org") != null;
-            LOG.warn("Keycloak will not be provided. Property sso={}, apiGroupAvailable={}, apiVersion={}", primary.getSpec() != null && primary.getSpec().isSso(),
-                apiGroupExists,
-                apiGroupExists? context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion() : "");
+            LOG.warn("Keycloak will not be provided. Property sso={}, apiGroupAvailable={}, apiVersion={}",
+                    primary.getSpec() != null && primary.getSpec().getKeycloak() != null
+                            && primary.getSpec().getKeycloak().isManaged(),
+                    apiGroupExists,
+                    apiGroupExists ? context.getClient().apiextensions().getApiGroup("keycloak.org").getApiVersion()
+                            : "");
         }
         return met;
     }

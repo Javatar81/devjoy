@@ -1,5 +1,7 @@
 package io.devjoy.gitea.k8s.dependent.gitea;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,6 +10,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBackend;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressBackendBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.IngressServiceBackendBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1.IngressTLSBuilder;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.javaoperatorsdk.operator.api.reconciler.Context;
@@ -36,11 +39,10 @@ public class GiteaIngressDependent extends CRUDKubernetesDependentResource<Ingre
 			ingress.getSpec().getRules().get(0).setHost(spec.getRoute());
 		}
 		if (primary.getSpec() != null && primary.getSpec().isSsl()) {
-			LOG.warn("SSL is only supported for OpenShift");
-			//TODO route.getSpec().setTls(new TLSConfigBuilder().withInsecureEdgeTerminationPolicy("Redirect")
-				//	.withTermination("edge").build());
+			ingress.getSpec().setTls(List.of(new IngressTLSBuilder().withSecretName(primary.getSpec().getTlsSecret()).build()));
 		}
 		ingress.getSpec().getRules().get(0).getHttp().getPaths().get(0).getBackend().getService().setName(GiteaServiceDependent.getName(primary));
+		
 		return ingress;
 	}
 	

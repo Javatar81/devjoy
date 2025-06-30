@@ -15,7 +15,8 @@ public class KeycloakOperatorReconcileCondition implements Condition<Route, Gite
     
     @Override
     public boolean isMet(DependentResource<Route, Gitea> dependentResource, Gitea primary, Context<Gitea> context) {
-        boolean met = primary.getSpec() != null && primary.getSpec().isSso();
+        boolean met = primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+            && primary.getSpec().getKeycloak().isManaged();
         LOG.debug("Keycloak operator reconcilation={}", met);
         return met;
     }
