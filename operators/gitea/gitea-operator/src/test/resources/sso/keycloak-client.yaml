@@ -1,0 +1,24 @@
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: mygiteait-devjoy
+spec:
+  client:
+    clientAuthenticatorType: client-secret
+    clientId: replaced-devjoy-gitea
+    defaultClientScopes:
+      - web-origins
+      - acr
+      - roles
+      - profile
+      - email
+    implicitFlowEnabled: false
+    publicClient: false
+    standardFlowEnabled: true
+    id: 9cdca47a-1c0c-4ea3-a07a-121b7b892a2d
+    directAccessGrantsEnabled: false
+  realmSelector:
+    matchLabels:
+      app.devjoy.io/gitea: mygiteait
+  scopeMappings: {}
+

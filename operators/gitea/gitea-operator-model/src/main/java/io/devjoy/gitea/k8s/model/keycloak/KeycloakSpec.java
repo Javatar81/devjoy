@@ -9,7 +9,7 @@ public class KeycloakSpec {
    @JsonPropertyDescription("Defines if the Keycloak instance is managed by this operator. Only active if enabled == true.")
    private boolean managed = false;
    @JsonPropertyDescription("The config to integrate Gitea with an existing and unmanaged Keycloak.")
-   private KeycloakUnmanaged unmanagedConfig;
+   private KeycloakUnmanagedConfig unmanagedConfig;
    
    public boolean isEnabled() {
     return enabled;
@@ -26,10 +26,10 @@ public class KeycloakSpec {
         this.unmanagedConfig = null;
     }
    }
-   public KeycloakUnmanaged getUnmanagedConfig() {
+   public KeycloakUnmanagedConfig getUnmanagedConfig() {
     return unmanagedConfig;
    }
-   public void setUnmanagedConfig(KeycloakUnmanaged unmanagedConfig) {
+   public void setUnmanagedConfig(KeycloakUnmanagedConfig unmanagedConfig) {
     this.unmanagedConfig = unmanagedConfig;
    } 
 

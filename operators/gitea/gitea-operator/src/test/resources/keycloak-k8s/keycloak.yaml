@@ -1,0 +1,12 @@
+kind: Keycloak
+apiVersion: k8s.keycloak.org/v2alpha1
+metadata:
+  name: example-keycloak
+  labels:
+    app: sso
+spec:
+  instances: 1
+  hostname:
+    hostname: keycloak
+  http:
+    tlsSecret: my-tls-secret

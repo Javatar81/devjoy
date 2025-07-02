@@ -1,0 +1,15 @@
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: mygiteait-devjoy
+  labels:
+    app.devjoy.io/gitea: mygiteait
+spec:
+  instanceSelector:
+    matchLabels:
+      app: sso
+  realm:
+    displayName: mygiteait
+    enabled: true
+    id: mygiteait-devjoy
+    realm: mygiteait-devjoy

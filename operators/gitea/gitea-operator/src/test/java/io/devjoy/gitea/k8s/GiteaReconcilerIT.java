@@ -3,7 +3,11 @@ package io.devjoy.gitea.k8s;
 import static org.awaitility.Awaitility.await;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -13,17 +17,31 @@ import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.keycloak.k8s.v2alpha1.Keycloak;
+import org.keycloak.k8s.v2alpha1.KeycloakRealmImport;
+import org.keycloak.k8s.v2alpha1.KeycloakRealmImportSpec;
+import org.keycloak.k8s.v2alpha1.keycloakrealmimportspec.Placeholders;
+import org.keycloak.k8s.v2alpha1.keycloakrealmimportspec.Realm;
+import org.keycloak.v1alpha1.KeycloakClient;
+import org.keycloak.v1alpha1.KeycloakRealm;
+
+import com.fasterxml.jackson.core.exc.StreamReadException;
+import com.fasterxml.jackson.databind.DatabindException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAdminSecretDependent;
 import io.devjoy.gitea.k8s.dependent.gitea.GiteaAssertions;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakClientDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakDependent;
 import io.devjoy.gitea.k8s.dependent.rhsso.KeycloakRealmDependent;
+import io.devjoy.gitea.k8s.keycloak.KeycloakService;
+import io.devjoy.gitea.k8s.keycloak.SsoService;
 import io.devjoy.gitea.k8s.model.Gitea;
 import io.devjoy.gitea.k8s.model.GiteaConfigOverrides;
 import io.devjoy.gitea.k8s.model.GiteaLogLevel;
 import io.devjoy.gitea.k8s.model.GiteaSpec;
 import io.devjoy.gitea.k8s.model.keycloak.KeycloakSpec;
+import io.devjoy.gitea.k8s.model.keycloak.KeycloakUnmanagedConfig;
 import io.devjoy.gitea.k8s.model.postgres.PostgresUnmanagedConfig;
 import io.devjoy.gitea.service.GiteaApiService;
 import io.devjoy.gitea.service.UserService;
@@ -42,7 +60,7 @@ import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 public class GiteaReconcilerIT {
-
+	
 	OpenShiftClient client = new KubernetesClientBuilder().build().adapt(OpenShiftClient.class);
 	ApiAccessMode accessMode = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.mode", ApiAccessMode.class);
 	String fallback = ConfigProviderResolver.instance().getConfig().getValue("io.devjoy.gitea.api.access.fallback", String.class);
@@ -50,7 +68,8 @@ public class GiteaReconcilerIT {
 	TestEnvironment env = new TestEnvironment(client);
 	GiteaApiService apiService = new GiteaApiService(client, accessMode, fallback);
 	UserService userService = new UserService(apiService);
-	
+	KeycloakService keycloakK8sService = new KeycloakService(client, getTargetNamespace());
+	SsoService ssoService = new SsoService(client, getTargetNamespace());
 	GiteaAssertions assertions = new GiteaAssertions(client);
 	static GiteaPrereqs prereqs = new GiteaPrereqs();
 
@@ -100,15 +119,15 @@ public class GiteaReconcilerIT {
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-            // check that we create the deployment
-            // Postgres PVC
+			// check that we create the deployment
+			// Postgres PVC
 			assertions.assertPostgresPvc(gitea);
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(10));
-        });
+		});
 	}
 
 	@Test
@@ -117,15 +136,15 @@ public class GiteaReconcilerIT {
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(180, TimeUnit.SECONDS).untilAsserted(() -> {
-            // check that we create the deployment
-            // Postgres PVC
+			// check that we create the deployment
+			// Postgres PVC
 			assertions.assertPostgresPvc(gitea);
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
 			assertions.assertAdminSecret(gitea);
 			final var adminSecret = GiteaAdminSecretDependent.getResource(gitea, client);
 			assertThat(new String(java.util.Base64.getDecoder().decode(adminSecret.get().getData().get("password"))).length(), is(gitea.getSpec().getAdminConfig().getAdminPasswordLength()));
-        });
+		});
 	}
 
 	@Test
@@ -157,7 +176,7 @@ public class GiteaReconcilerIT {
 			client.resources(Deployment.class).inNamespace(getTargetNamespace()).withName("pgtest").delete();
 			client.resources(Secret.class).inNamespace(getTargetNamespace()).withName("postgres-secret").delete();
 		}
-        
+		
 	}
 
 	private void deployExtraPostgres(Gitea gitea, KubernetesClient client) {
@@ -192,8 +211,8 @@ public class GiteaReconcilerIT {
 		env.createStaticPVsIfRequired();
 		client.resource(gitea).create();
 		await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
-            // check that we create the deployment
-            // Postgres PVC
+			// check that we create the deployment
+			// Postgres PVC
 			assertions.assertPostgresPvc(gitea);
 			assertions.assertGiteaPvc(gitea);
 			assertions.assertGiteaDeployment(gitea);
@@ -202,6 +221,136 @@ public class GiteaReconcilerIT {
 			assertThat(KeycloakRealmDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
 			assertThat(KeycloakClientDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
 		});
+	}
+
+	@Test
+	void createGiteaWithUnmanagedRhsso() throws IOException {
+		String clientSecret = "dshsdhdfjdh634634";
+		String oidcSecretName = "oidc-secret";
+		String oidcSecretKey = "secret";
+		String oidcClient = "mygiteait-devjoy-gitea";
+		Secret oidcSecret = new SecretBuilder()
+			.withNewMetadata().withNamespace(getTargetNamespace()).withName(oidcSecretName).endMetadata()
+			.addToStringData(oidcSecretKey, clientSecret)
+			.build();
+		
+		org.keycloak.v1alpha1.Keycloak keycloak = null;
+		KeycloakRealm keycloakRealm = null;
+		KeycloakClient keycloakClient= null;
+		try
+		{
+			
+			Gitea gitea = createDefault("mygiteait");
+			KeycloakSpec keycloakSpec = new KeycloakSpec();
+			keycloakSpec.setEnabled(true);
+			keycloakSpec.setManaged(false);
+			KeycloakUnmanagedConfig config = new KeycloakUnmanagedConfig();
+			config.setOidcClient("mygiteait-devjoy-gitea");
+			config.setOidcAutoDiscoverUrl(ssoService.getHostname() + "/auth/realms/mygiteait-devjoy/.well-known/openid-configuration");
+			config.setOidcExtraSecretName(oidcSecretName);
+			keycloakSpec.setUnmanagedConfig(config);
+			gitea.getSpec().setKeycloak(keycloakSpec);
+			env.createStaticPVsIfRequired();
+			keycloak = ssoService.newKeycloak();
+			keycloakRealm = ssoService.newKeycloakRealm();
+			keycloakClient = ssoService.newKeycloakClient("mygiteait", oidcClient, clientSecret);
+			// Create the resources
+			client.resource(keycloak).create();
+			client.resource(oidcSecret).create();
+			client.resource(keycloakClient).create();
+			client.resource(keycloakRealm).create();
+			client.resource(gitea).create();
+			await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
+				// check that we create the deployment
+				// Postgres PVC
+				assertions.assertPostgresPvc(gitea);
+				assertions.assertGiteaPvc(gitea);
+				assertions.assertGiteaDeployment(gitea);
+				assertions.assertAdminSecret(gitea);
+				assertThat(KeycloakDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+				assertThat(KeycloakRealmDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+				assertThat(KeycloakClientDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			});
+		} finally{
+			if (client.resource(oidcSecret).get() != null) {
+				client.resource(oidcSecret).delete();
+			}
+			if (keycloak != null && client.resource(keycloak).get() != null) {
+				client.resource(keycloak).delete();
+			}
+			if (keycloakRealm != null && client.resource(keycloakRealm).get() != null) {
+				client.resource(keycloakRealm).delete();
+			}
+			if (keycloakClient != null && client.resource(keycloakClient).get() != null) {
+				client.resource(keycloakClient).delete();
+			}
+		}
+	}
+
+
+	//TODO Trust problem with self-signed cert
+	void createGiteaWithUnmanagedKeycloak() throws IOException {
+		String clientSecret = "dshsdhdfjdh634634";
+		String oidcSecretName = "oidc-secret";
+		String oidcSecretKey = "secret";
+		Secret oidcSecret = new SecretBuilder()
+			.withNewMetadata().withNamespace(getTargetNamespace()).withName(oidcSecretName).endMetadata()
+			.addToStringData(oidcSecretKey, clientSecret)
+			.build();
+		Secret tlsSecret = null;
+		KeycloakRealmImport keycloakRealmImport = null;
+		Keycloak keycloak = null;
+		try
+		{
+			tlsSecret = keycloakK8sService.newTlsSecret();
+			Gitea gitea = createDefault("mygiteait");
+			//TODO /etc/pki/ca-trust/extracted/keycloak
+			KeycloakSpec keycloakSpec = new KeycloakSpec();
+			keycloakSpec.setEnabled(true);
+			keycloakSpec.setManaged(false);
+			KeycloakUnmanagedConfig config = new KeycloakUnmanagedConfig();
+			config.setOidcClient("mygiteait-devjoy-gitea");
+			config.setOidcAutoDiscoverUrl(keycloakK8sService.getHostname() + "/realms/mygiteait-devjoy/.well-known/openid-configuration");
+			//config.setOidcAutoDiscoverUrl(String.format("https://example-keycloak-service.%s.svc.cluster.local:8443", getTargetNamespace()) + "/realms/mygiteait-devjoy/.well-known/openid-configuration");
+			config.setOidcExtraSecretName(oidcSecretName);
+			keycloakSpec.setUnmanagedConfig(config);
+			gitea.getSpec().setKeycloak(keycloakSpec);
+			env.createStaticPVsIfRequired();
+			keycloak = keycloakK8sService.newKeycloak();
+			keycloakRealmImport = keycloakK8sService.newRealmImport(oidcSecretName, oidcSecretKey);
+
+			// Create the resources
+			client.resource(keycloakK8sService.newKeycloak()).create();
+			client.resource(oidcSecret).create();
+			client.resource(tlsSecret).create();
+			client.resource(keycloakRealmImport).create();
+			client.resource(gitea).create();
+			await().ignoreException(NullPointerException.class).atMost(400, TimeUnit.SECONDS).untilAsserted(() -> {
+				// check that we create the deployment
+				// Postgres PVC
+				assertions.assertPostgresPvc(gitea);
+				assertions.assertGiteaPvc(gitea);
+				assertions.assertGiteaDeployment(gitea);
+				assertions.assertAdminSecret(gitea);
+				assertThat(KeycloakDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+				assertThat(KeycloakRealmDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+				assertThat(KeycloakClientDependent.getResource(gitea, client).get().getStatus().getReady(), is(true));
+			});
+		} finally{
+			if (client.resource(oidcSecret).get() != null) {
+				client.resource(oidcSecret).delete();
+			}
+			if (keycloak != null && client.resource(keycloak).get() != null) {
+				client.resource(keycloak).delete();
+			}
+			if (keycloakRealmImport != null && client.resource(keycloakRealmImport).get() != null) {
+				client.resource(keycloakRealmImport).delete();
+			}
+			if (tlsSecret != null && client.resource(tlsSecret).get() != null) {
+				client.resource(tlsSecret).delete();
+			}
+			
+		}
 	}
 
 	@Test

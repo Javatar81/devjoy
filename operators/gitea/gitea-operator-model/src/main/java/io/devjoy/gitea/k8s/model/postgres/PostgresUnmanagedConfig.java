@@ -3,7 +3,7 @@ package io.devjoy.gitea.k8s.model.postgres;
 import com.fasterxml.jackson.annotation.JsonPropertyDescription;
 
 public class PostgresUnmanagedConfig {
-    @JsonPropertyDescription("The secret containing the password.")
+    @JsonPropertyDescription("The secret containing the password. Key must be 'password'.")
 	private String extraSecretName;
     @JsonPropertyDescription("The host name of the database.")
     private String hostName;

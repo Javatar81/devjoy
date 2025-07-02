@@ -1,0 +1,9 @@
+kind: KeycloakRealmImport
+apiVersion: k8s.keycloak.org/v2alpha1
+metadata:
+  name: example-keycloak-realm-import
+  labels:
+    app: sso
+spec:
+  keycloakCRName: example-keycloak
+  realm: {}

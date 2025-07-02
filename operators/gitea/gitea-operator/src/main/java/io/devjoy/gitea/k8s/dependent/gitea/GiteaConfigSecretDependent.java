@@ -320,7 +320,8 @@ public class GiteaConfigSecretDependent extends CRUDKubernetesDependentResource<
 			iniConfiguration.getSection(SECTION_DATABASE).setProperty("USER", config.getUserName());
 			iniConfiguration.getSection(SECTION_DATABASE).setProperty("PASSWD", config.getPassword());
 			if (primary.getSpec() != null && primary.getSpec().getPostgres() != null 
-				&& primary.getSpec().getPostgres().getManagedConfig() != null && primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
+				&& primary.getSpec().getPostgres().getManagedConfig() != null 
+				&& primary.getSpec().getPostgres().getManagedConfig().isSsl()) {
 				iniConfiguration.getSection(SECTION_DATABASE).setProperty("SSL_MODE", "verify-full");
 			}
 		} else {

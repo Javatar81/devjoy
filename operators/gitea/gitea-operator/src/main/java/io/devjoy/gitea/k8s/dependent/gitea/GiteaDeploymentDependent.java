@@ -16,6 +16,11 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.SecretVolumeSource;
+import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
+import io.fabric8.kubernetes.api.model.VolumeBuilder;
+import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -57,6 +62,7 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 			addAdminEnvVar(c, "ADMIN_USERNAME", GiteaAdminSecretDependent.DATA_KEY_USERNAME, primary);
 			addAdminEnvVar(c, "ADMIN_PASSWORD", GiteaAdminSecretDependent.DATA_KEY_PASSWORD, primary);
 			if (primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+				&& primary.getSpec().getKeycloak().isEnabled()
 				&& primary.getSpec().getKeycloak().isManaged()) {
 				context.getSecondaryResource(KeycloakClient.class)
 					.map(cl -> cl.getStatus())
@@ -70,6 +76,16 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 						addSsoEnvVar(c, "OIDC_CLIENT_SECRET", "CLIENT_SECRET", s);
 					});
 				discoverUrl(context).ifPresent(url -> c.getEnv().add(new EnvVarBuilder().withName("OIDC_AUTO_DISCOVER_URL").withValue(url).build()));
+			} else if(primary.getSpec() != null && primary.getSpec().getKeycloak() != null 
+				&& primary.getSpec().getKeycloak().isEnabled()
+				&& !primary.getSpec().getKeycloak().isManaged()){
+				Optional.ofNullable(primary.getSpec().getKeycloak().getUnmanagedConfig())
+					.ifPresent(cfg -> {
+						addSsoEnvVarFromLiteral(c, "OIDC_CLIENT_ID", cfg.getOidcClient());
+						addSsoEnvVarFromLiteral(c, "OIDC_AUTO_DISCOVER_URL", cfg.getOidcAutoDiscoverUrl());
+						addSsoEnvVar(c, "OIDC_CLIENT_SECRET", "secret", cfg.getOidcExtraSecretName());
+					});
+					
 			}
 			if (primary.getSpec() != null && primary.getSpec().isResourceRequirementsEnabled()) {
 				setResourcesDefaults(primary, c);
@@ -77,7 +93,8 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 				c.getResources().getRequests().clear();
 				c.getResources().getLimits().clear();
 			}
-			
+			/*TODO c.getVolumeMounts().add(new VolumeMountBuilder().withName("gitea-keycloak-trust")
+				.withMountPath("/etc/pki/ca-trust/extracted/pem").build());*/
 		});
 		setVolumes(name, template, primary);
 		if (deployment.getMetadata().getLabels() == null) {
@@ -109,8 +126,18 @@ public class GiteaDeploymentDependent extends CRUDKubernetesDependentResource<De
 					.endValueFrom()
 				.build());
 	}
+
+	private void addSsoEnvVarFromLiteral(Container container, String varName, String value) {
+		container.getEnv().add(new EnvVarBuilder().withName(varName)
+					.withValue(value)
+				.build());
+	}
 	
 	private void setVolumes(String name, PodTemplateSpec template, Gitea gitea) {
+		/*TODO template.getSpec().getVolumes().add(new VolumeBuilder()
+			.withName("gitea-keycloak-trust")
+			.withSecret(new SecretVolumeSourceBuilder().withSecretName("my-tls-secret").build())
+			.build());*/
 		template.getSpec().getVolumes().stream()
 			.filter(v -> "gitea-repositories".equals(v.getName()))
 			.findAny().ifPresent(v -> v.getPersistentVolumeClaim().setClaimName(name + "-pvc"));
